@@ -1,0 +1,1407 @@
+
+Things to do before releasing any new version of the package:
+
+ - check that plugins/*, plugins/README, configure.ac AC_CONFIG_FILES,PLUGINS,
+   debian/control and /usr/lib/ekg2/plugins are in sync
+
+ - after the last point, below, is completed, audit the diff between previous
+   and pending release, and propagate to debian/copyright:
+   * copyright year changes
+   * new/changed copyright holders
+   * new files without copyright/license
+   * code copied from other projects with slightly differing license
+
+Think about splitting the package -- need to calculate the dependencies' size.
+
+Resolve stylesheet location with upstream.
+
+Check exactly which features work, and improve description.
+
+What about ioctl on Hurd?
+
+Is current mailbox support OK with the policy?
+
+Correct copyright information - see http://lists.debian.org/debian-legal/2008/10/msg00017.html
+ - The data below was extracted from the source tree and is up-to-date as of
+   SVN r4712  2008-10-09 21:02:34 +0100
+ - it needs to be formatted properly (perhaps according to
+   http://wiki.debian.org/Proposals/CopyrightFormat)
+ - furthermore, there are many problematic cases:
+   * in some files, copyright holder is missing
+   * in some files, license is missing
+   * in some files (effectively all those not listed below) both copyright and
+     license are missing - need to decide what to do about them. One way is
+     asking upstream to provide this information at least for the largest (i.e.
+     most important) files.
+     Then for the smaller files just add a line saying that the license is the
+     same as for the whole package (specified in the README), but this does not
+     solve the issue of providing a copyright owner.
+     Also, for many tiny files (small xml snippets and tiny makefiles), perhaps
+     nobody cares enough to specify a license and copyright holder? Maybe we
+     should seek advice on debian-legal?
+   * also in some cases, code is taken from other projects, with possibly
+     slightly differing license (such as the "or any later version" clause).
+     These should be audited.
+ - might be good to update FSF's address
+
+
+
+m4/printf-posix.m4: Copyright (C) 2003 Free Software Foundation, Inc.
+m4/lib-link.m4: Copyright (C) 2001-2005 Free Software Foundation, Inc.
+m4/inttypes_h.m4: Copyright (C) 1997-2004 Free Software Foundation, Inc.
+m4/uintmax_t.m4: Copyright (C) 1997-2004 Free Software Foundation, Inc.
+m4/signed.m4: Copyright (C) 2001-2002 Free Software Foundation, Inc.
+m4/iconv.m4: Copyright (C) 2000-2002 Free Software Foundation, Inc.
+m4/longlong.m4: Copyright (C) 1999-2004 Free Software Foundation, Inc.
+m4/inttypes.m4: Copyright (C) 1997-2002 Free Software Foundation, Inc.
+m4/glibc21.m4: Copyright (C) 2000-2002, 2004 Free Software Foundation, Inc.
+m4/codeset.m4: Copyright (C) 2000-2002 Free Software Foundation, Inc.
+m4/longdouble.m4: Copyright (C) 2002-2003 Free Software Foundation, Inc.
+m4/intmax.m4: Copyright (C) 2002-2005 Free Software Foundation, Inc.
+m4/lib-prefix.m4: Copyright (C) 2001-2005 Free Software Foundation, Inc.
+m4/xsize.m4: Copyright (C) 2003-2004 Free Software Foundation, Inc.
+m4/glibc2.m4: Copyright (C) 2000-2002, 2004 Free Software Foundation, Inc.
+m4/lib-ld.m4: Copyright (C) 1996-2003 Free Software Foundation, Inc.
+m4/ulonglong.m4: Copyright (C) 1999-2004 Free Software Foundation, Inc.
+m4/wint_t.m4: Copyright (C) 2003 Free Software Foundation, Inc.
+m4/inttypes-pri.m4: Copyright (C) 1997-2002 Free Software Foundation, Inc.
+m4/stdint_h.m4: Copyright (C) 1997-2004 Free Software Foundation, Inc.
+m4/intdiv0.m4: Copyright (C) 2002 Free Software Foundation, Inc.
+m4/isc-posix.m4: Copyright (C) 1995-2002 Free Software Foundation, Inc.
+m4/size_max.m4: Copyright (C) 2003 Free Software Foundation, Inc.
+m4/wchar_t.m4: Copyright (C) 2002-2003 Free Software Foundation, Inc.
+ This file is free software; the Free Software Foundation
+ gives unlimited permission to copy and/or distribute it,
+ with or without modifications, as long as this notice is preserved.
+
+m4/lcmessage.m4:dnl Copyright (C) 1995-2002, 2004-2005 Free Software Foundation, Inc.
+m4/progtest.m4:dnl Copyright (C) 1996-2003, 2005 Free Software Foundation, Inc.
+m4/po.m4:dnl Copyright (C) 1995-2005 Free Software Foundation, Inc.
+m4/gettext.m4:dnl Copyright (C) 1995-2005 Free Software Foundation, Inc.
+m4/nls.m4:dnl Copyright (C) 1995-2003, 2005 Free Software Foundation, Inc.
+ This file is free software; the Free Software Foundation
+ gives unlimited permission to copy and/or distribute it,
+ with or without modifications, as long as this notice is preserved.
+ .
+ This file can can be used in projects which are not available under
+ the GNU General Public License or the GNU Library General Public
+ License but which still want to provide support for the GNU gettext
+ functionality.
+ Please note that the actual code of the GNU gettext library is covered
+ by the GNU Library General Public License, and the rest of the GNU
+ gettext package package is covered by the GNU General Public License.
+ They are *not* in the public domain.
+
+m4/gpgme.m4:# Copyright (C) 2002, 2003, 2004 g10 Code GmbH
+m4/gpgme.m4-#
+m4/gpgme.m4-# This file is free software; as a special exception the author gives
+m4/gpgme.m4-# unlimited permission to copy and/or distribute it, with or without
+m4/gpgme.m4-# modifications, as long as this notice is preserved.
+m4/gpgme.m4-#
+m4/gpgme.m4-# This file is distributed in the hope that it will be useful, but
+m4/gpgme.m4-# WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+m4/gpgme.m4-# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+plugins/gtk/userlistgui.c-/* X-Chat
+plugins/gtk/userlistgui.c: * Copyright (C) 1998 Peter Zelezny.
+plugins/gtk/userlistgui.c- *
+plugins/gtk/userlistgui.c- * This program is free software; you can redistribute it and/or modify
+plugins/gtk/userlistgui.c- * it under the terms of the GNU General Public License as published by
+plugins/gtk/userlistgui.c- * the Free Software Foundation; either version 2 of the License, or
+plugins/gtk/userlistgui.c- * (at your option) any later version.
+plugins/gtk/userlistgui.c- *
+plugins/gtk/userlistgui.c- * This program is distributed in the hope that it will be useful,
+plugins/gtk/userlistgui.c- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/gtk/userlistgui.c- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/gtk/userlistgui.c- * GNU General Public License for more details.
+plugins/gtk/userlistgui.c- *
+plugins/gtk/userlistgui.c- * You should have received a copy of the GNU General Public License
+plugins/gtk/userlistgui.c- * along with this program; if not, write to the Free Software
+plugins/gtk/userlistgui.c- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+same:
+plugins/gtk/xtext.c: * Copyright (C) 1998 Peter Zelezny.
+plugins/gtk/gtkutil.c: * Copyright (C) 1998 Peter Zelezny.
+
+plugins/gtk/palette.c-/* X-Chat
+plugins/gtk/palette.c: * Copyright (C) 1998 Peter Zelezny.
+plugins/gtk/palette.c- *
+plugins/gtk/palette.c- * This program is free software; you can redistribute it and/or modify
+plugins/gtk/palette.c- * it under the terms of the GNU General Public License as published by
+plugins/gtk/palette.c- * the Free Software Foundation; either version 2 of the License, or
+plugins/gtk/palette.c- * (at your option) any later version.
+plugins/gtk/palette.c- *
+plugins/gtk/palette.c- * This program is distributed in the hope that it will be useful,
+plugins/gtk/palette.c- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/gtk/palette.c- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/gtk/palette.c- * GNU General Public License for more details.
+plugins/gtk/palette.c- *
+plugins/gtk/palette.c- * You should have received a copy of the GNU General Public License
+plugins/gtk/palette.c- * along with this program; if not, write to the Free Software
+plugins/gtk/palette.c- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+plugins/gtk/palette.c- *
+plugins/gtk/palette.c- *  port to ekg2:
+plugins/gtk/palette.c: *  Copyright (C) 2007 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/gtk/palette.c- *			
+plugins/gtk/palette.c- *  This program is free software; you can redistribute it and/or modify
+plugins/gtk/palette.c- *  it under the terms of the GNU General Public License Version 2 as
+plugins/gtk/palette.c- *  published by the Free Software Foundation.
+plugins/gtk/palette.c- *
+plugins/gtk/palette.c- *  This program is distributed in the hope that it will be useful,
+plugins/gtk/palette.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/gtk/palette.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/gtk/palette.c- *  GNU General Public License for more details.
+plugins/gtk/palette.c- *
+plugins/gtk/palette.c- *  You should have received a copy of the GNU General Public License
+plugins/gtk/palette.c- *  along with this program; if not, write to the Free Software
+plugins/gtk/palette.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+same:
+plugins/gtk/menu.c: * Copyright (C) 1998-2007 Peter Zelezny.
+plugins/gtk/menu.c: *  Copyright (C) 2007 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/gtk/main.c: * Copyright (C) 1998 Peter Zelezny.
+plugins/gtk/main.c: *  Copyright (C) 2007 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/gtk/maingui.c: * Copyright (C) 1998-2005 Peter Zelezny.
+plugins/gtk/maingui.c: *  Copyright (C) 2007 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/gtk/bindings.c: * Copyright (C) 1998 Peter Zelezny.
+plugins/gtk/bindings.c: *  Copyright (C) 2007 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+
+plugins/jabber/digest.c:/* Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
+plugins/jabber/digest.c- * rights reserved.
+plugins/jabber/digest.c- *
+plugins/jabber/digest.c- * License to copy and use this software is granted provided that it
+plugins/jabber/digest.c- * is identified as the "RSA Data Security, Inc. MD5 Message-Digest
+plugins/jabber/digest.c- * Algorithm" in all material mentioning or referencing this software
+plugins/jabber/digest.c- * or this function.
+plugins/jabber/digest.c- *
+plugins/jabber/digest.c- * License is also granted to make and use derivative works provided
+plugins/jabber/digest.c- * that such works are identified as "derived from the RSA Data
+plugins/jabber/digest.c- * Security, Inc. MD5 Message-Digest Algorithm" in all material
+plugins/jabber/digest.c- * mentioning or referencing the derived work.
+plugins/jabber/digest.c- *
+plugins/jabber/digest.c- * RSA Data Security, Inc. makes no representations concerning either
+plugins/jabber/digest.c- * the merchantability of this software or the suitability of this
+plugins/jabber/digest.c- * software for any particular purpose. It is provided "as is"
+plugins/jabber/digest.c- * without express or implied warranty of any kind.
+plugins/jabber/digest.c- *
+plugins/jabber/digest.c- * These notices must be retained in any copies of any part of this
+plugins/jabber/digest.c- * documentation and/or software.
+SHA-1 in C
+By Steve Reid <steve@edmweb.com>
+100% Public Domain
+
+plugins/jabber/misc.c: * @note It was ripped from libtlen. (c) Libtlen developers see: http://libtlen.sourceforge.net/
+
+
+plugins/logsoracle/README:Copyright (c) 2006 Szymon Bilinski <simon(at)babel(dot)pl>
+plugins/logsoracle/README-
+plugins/logsoracle/README-             logsoracle plugin for EKG2
+plugins/logsoracle/README-
+plugins/logsoracle/README-1. Licence
+plugins/logsoracle/README-
+plugins/logsoracle/README-Unless stated otherwise this program is distributed under General Public Licence v2 
+plugins/logsoracle/README-as published by Free Software Foundation. Check attached 'COPYING' file for details.
+plugins/logsoracle/README-
+plugins/logsoracle/README-Oracle trademark and the OCI library are a property of Oracle Corporation.
+plugins/logsoracle/README-Read their licence for more information about the rules of using the library.
+plugins/logsoracle/README-
+plugins/logsoracle/README-Oracle code should not be distributed with this program in any way. 
+XXX umm..
+
+plugins/logsoracle/commands-en.txt:// (c) copyright 2006 Szymon Biliński <ecimon@babel.pl>
+plugins/logsoracle/commands-pl.txt:// (c) copyright 2006 Szymon Biliński <ecimon@babel.pl>
+plugins/logsoracle/vars-en.txt:// (c) copyright 2006 Szymon Biliński <ecimon@babel.pl>
+plugins/logsoracle/vars-pl.txt:// (c) copyright 2006 Szymon Biliński <ecimon@babel.pl>
+XXX no license
+
+plugins/logsoracle/oralog.h: *  (C) Copyright 2006 Szymon Bilinski <ecimon(at)babel.pl>
+plugins/logsoracle/oralog.h- *
+plugins/logsoracle/oralog.h- *  This program is free software; you can redistribute it and/or modify
+plugins/logsoracle/oralog.h- *  it under the terms of the GNU Lesser General Public License Version
+plugins/logsoracle/oralog.h- *  2.1 as published by the Free Software Foundation.
+plugins/logsoracle/oralog.h- *
+plugins/logsoracle/oralog.h- *  This program is distributed in the hope that it will be useful,
+plugins/logsoracle/oralog.h- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/logsoracle/oralog.h- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/logsoracle/oralog.h- *  GNU Lesser General Public License for more details.
+plugins/logsoracle/oralog.h- *
+plugins/logsoracle/oralog.h- *  You should have received a copy of the GNU Lesser General Public
+plugins/logsoracle/oralog.h- *  License along with this program; if not, write to the Free Software
+plugins/logsoracle/oralog.h- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+plugins/logsoracle/oralog.c: *  (C) Copyright 2006 Szymon Bilinski <ecimon(at)babel.pl>
+plugins/logsoracle/main.c: *  (C) Copyright 2006 Szymon Bilinski <ecimon(at)babel.pl>
+plugins/logsoracle/main.h: *  (C) Copyright 2006 Szymon Bilinski <ecimon(at)babel.pl>
+plugins/logsoracle/commands.c: *  (C) Copyright 2006 Szymon Bilinski <ecimon(at)babel.pl>
+plugins/logsoracle/commands.h: *  (C) Copyright 2006 Szymon Bilinski <ecimon(at)babel.pl>
+plugins/logsoracle/logsoracle.sql:--  (C) Copyright 2006 Szymon Bilinski <ecimon(at)babel.pl>
+
+plugins/autoresponder/autoresponder.c: * (C) 2006 MichaĹ GĂłrny <peres@peres.int.pl>
+XXX no license
+
+plugins/logsqlite/commands-pl.txt:// (c) copyright 2005 - 2008 Leszek Krupiński <leafnode@wafel.com>
+plugins/logsqlite/commands-pl.txt-//                           Adam Mikuta <adamm@ekg2.org>
+plugins/logsqlite/vars-en.txt:// (c) copyright 2005 Leszek Krupiński <leafnode@wafel.com>
+plugins/rc/vars-pl.txt:// (c) copyright 2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/logs/vars-pl.txt:// (c) copyright 2004 Leszek Krupiński <leafnode@wafel.com>
+plugins/logsqlite/commands-en.txt:// (c) copyright 2005 - 2008 Leszek KrupiĂąski <leafnode@wafel.com>
+plugins/logsqlite/commands-en.txt-//                           Adam Mikuta <adamm@ekg2.org>
+plugins/logsqlite/vars-pl.txt:// (c) copyright 2005 Leszek Krupiński <leafnode@wafel.com>
+plugins/xosd/commands-pl.txt:// (c) copyright 2004-2005 Adam Kuczyński <dredzik@ekg2.org>
+plugins/xosd/vars-pl.txt:// (c) copyright 2004-2005 Adam 'dredzik' Kuczyński <dredzik@ekg2.org>
+XXX no license
+
+
+plugins/logsqlite/logsqlite.c: *  (C) Copyright 2005 Leszek Krupiński <leafnode@wafel.com>
+plugins/logsqlite/logsqlite.c- *		       Marcin Jurkowski <marcin@vilo.eu.org>
+plugins/logsqlite/logsqlite.c- *
+plugins/logsqlite/logsqlite.c- *  This program is free software; you can redistribute it and/or modify
+plugins/logsqlite/logsqlite.c- *  it under the terms of the GNU Lesser General Public License Version
+plugins/logsqlite/logsqlite.c- *  2.1 as published by the Free Software Foundation.
+plugins/logsqlite/logsqlite.c- *
+plugins/logsqlite/logsqlite.c- *  This program is distributed in the hope that it will be useful,
+plugins/logsqlite/logsqlite.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/logsqlite/logsqlite.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/logsqlite/logsqlite.c- *  GNU Lesser General Public License for more details.
+plugins/logsqlite/logsqlite.c- *
+plugins/logsqlite/logsqlite.c- *  You should have received a copy of the GNU Lesser General Public
+plugins/logsqlite/logsqlite.c- *  License along with this program; if not, write to the Free Software
+plugins/logsqlite/logsqlite.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+also:
+plugins/logsqlite/logsqlite.h: *  (C) Copyright 2005 Leszek Krupiński <leafnode@wafel.com>
+plugins/logs/main.c: *  (C) Copyright 2003-2005 Tomasz Torcz <zdzichu@irc.pl>
+plugins/logs/main.c- *			    Leszek Krupiński <leafnode@wafel.com>
+plugins/logs/main.c- *			    Adam Kuczyński <dredzik@ekg2.org>
+plugins/logs/main.c- *			    Adam Mikuta <adamm@ekg2.org>
+plugins/logs/main.h: *  (C) Copyright 2003-2004 Leszek Krupiński <leafnode@wafel.com>
+plugins/logs/main.h- *		       2005 Adam Mikuta <adamm@ekg2.org>
+
+plugins/sniff/sniff_dns.h:/* Copyrights notes: */
+plugins/sniff/sniff_dns.h-
+plugins/sniff/sniff_dns.h-/* symbols: digits[], special(), printable(), ns_name_unpack(), ns_name_ntop(), ns_name_uncompress()
+plugins/sniff/sniff_dns.h- *	copied from glibc resolv/res_data.c
+plugins/sniff/sniff_dns.h- * under licence: */
+plugins/sniff/sniff_dns.h-
+plugins/sniff/sniff_dns.h-/*
+plugins/sniff/sniff_dns.h: * Copyright (c) 1996,1999 by Internet Software Consortium.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * Permission to use, copy, modify, and distribute this software for any
+plugins/sniff/sniff_dns.h- * purpose with or without fee is hereby granted, provided that the above
+plugins/sniff/sniff_dns.h: * copyright notice and this permission notice appear in all copies.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SOFTWARE CONSORTIUM DISCLAIMS
+plugins/sniff/sniff_dns.h- * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+plugins/sniff/sniff_dns.h- * OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL INTERNET SOFTWARE
+plugins/sniff/sniff_dns.h- * CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+plugins/sniff/sniff_dns.h- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+plugins/sniff/sniff_dns.h- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+plugins/sniff/sniff_dns.h- * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+plugins/sniff/sniff_dns.h- * SOFTWARE.
+plugins/sniff/sniff_dns.h- */
+plugins/sniff/sniff_dns.h-
+plugins/sniff/sniff_dns.h-/* symbol: dn_expand() 
+plugins/sniff/sniff_dns.h- *	copied from glibc resolv/res_comp.c 
+plugins/sniff/sniff_dns.h- * under licences: */
+plugins/sniff/sniff_dns.h-
+plugins/sniff/sniff_dns.h-/*
+plugins/sniff/sniff_dns.h: * Copyright (c) 1985, 1993
+plugins/sniff/sniff_dns.h- *    The Regents of the University of California.  All rights reserved.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * Redistribution and use in source and binary forms, with or without
+plugins/sniff/sniff_dns.h- * modification, are permitted provided that the following conditions
+plugins/sniff/sniff_dns.h- * are met:
+plugins/sniff/sniff_dns.h: * 1. Redistributions of source code must retain the above copyright
+plugins/sniff/sniff_dns.h- *    notice, this list of conditions and the following disclaimer.
+plugins/sniff/sniff_dns.h: * 2. Redistributions in binary form must reproduce the above copyright
+plugins/sniff/sniff_dns.h- *    notice, this list of conditions and the following disclaimer in the
+plugins/sniff/sniff_dns.h- *    documentation and/or other materials provided with the distribution.
+plugins/sniff/sniff_dns.h- * 4. Neither the name of the University nor the names of its contributors
+plugins/sniff/sniff_dns.h- *    may be used to endorse or promote products derived from this software
+plugins/sniff/sniff_dns.h- *    without specific prior written permission.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+plugins/sniff/sniff_dns.h- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+plugins/sniff/sniff_dns.h- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+plugins/sniff/sniff_dns.h- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+plugins/sniff/sniff_dns.h- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+plugins/sniff/sniff_dns.h- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+plugins/sniff/sniff_dns.h- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+plugins/sniff/sniff_dns.h- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+plugins/sniff/sniff_dns.h- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+plugins/sniff/sniff_dns.h- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+plugins/sniff/sniff_dns.h- * SUCH DAMAGE.
+plugins/sniff/sniff_dns.h- */
+plugins/sniff/sniff_dns.h-
+plugins/sniff/sniff_dns.h-/*
+plugins/sniff/sniff_dns.h: * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * Permission to use, copy, modify, and distribute this software for any
+plugins/sniff/sniff_dns.h- * purpose with or without fee is hereby granted, provided that the above
+plugins/sniff/sniff_dns.h: * copyright notice and this permission notice appear in all copies, and that
+plugins/sniff/sniff_dns.h- * the name of Digital Equipment Corporation not be used in advertising or
+plugins/sniff/sniff_dns.h- * publicity pertaining to distribution of the document or software without
+plugins/sniff/sniff_dns.h- * specific, written prior permission.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+plugins/sniff/sniff_dns.h- * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+plugins/sniff/sniff_dns.h- * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+plugins/sniff/sniff_dns.h- * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+plugins/sniff/sniff_dns.h- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+plugins/sniff/sniff_dns.h- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+plugins/sniff/sniff_dns.h- * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+plugins/sniff/sniff_dns.h- * SOFTWARE.
+plugins/sniff/sniff_dns.h- */
+plugins/sniff/sniff_dns.h-
+plugins/sniff/sniff_dns.h-/*
+plugins/sniff/sniff_dns.h: * Portions Copyright (c) 1996-1999 by Internet Software Consortium.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * Permission to use, copy, modify, and distribute this software for any
+plugins/sniff/sniff_dns.h- * purpose with or without fee is hereby granted, provided that the above
+plugins/sniff/sniff_dns.h: * copyright notice and this permission notice appear in all copies.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SOFTWARE CONSORTIUM DISCLAIMS
+plugins/sniff/sniff_dns.h- * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+plugins/sniff/sniff_dns.h- * OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL INTERNET SOFTWARE
+plugins/sniff/sniff_dns.h- * CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+plugins/sniff/sniff_dns.h- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+plugins/sniff/sniff_dns.h- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+plugins/sniff/sniff_dns.h- * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+plugins/sniff/sniff_dns.h- * SOFTWARE.
+plugins/sniff/sniff_dns.h- */
+plugins/sniff/sniff_dns.h-
+plugins/sniff/sniff_dns.h-/* all struct and magic values
+plugins/sniff/sniff_dns.h- *	copied from: glibc resolv/arpa/nameser.h && resolv/arpa/nameser_compat.h
+plugins/sniff/sniff_dns.h- * under licences: */
+plugins/sniff/sniff_dns.h-
+plugins/sniff/sniff_dns.h-/*
+plugins/sniff/sniff_dns.h: * Copyright (c) 1983, 1989, 1993
+plugins/sniff/sniff_dns.h- *    The Regents of the University of California.  All rights reserved.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * Redistribution and use in source and binary forms, with or without
+plugins/sniff/sniff_dns.h- * modification, are permitted provided that the following conditions
+plugins/sniff/sniff_dns.h- * are met:
+plugins/sniff/sniff_dns.h: * 1. Redistributions of source code must retain the above copyright
+plugins/sniff/sniff_dns.h- *    notice, this list of conditions and the following disclaimer.
+plugins/sniff/sniff_dns.h: * 2. Redistributions in binary form must reproduce the above copyright
+plugins/sniff/sniff_dns.h- *    notice, this list of conditions and the following disclaimer in the
+plugins/sniff/sniff_dns.h- *    documentation and/or other materials provided with the distribution.
+plugins/sniff/sniff_dns.h- * 4. Neither the name of the University nor the names of its contributors
+plugins/sniff/sniff_dns.h- *    may be used to endorse or promote products derived from this software
+plugins/sniff/sniff_dns.h- *    without specific prior written permission.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+plugins/sniff/sniff_dns.h- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+plugins/sniff/sniff_dns.h- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+plugins/sniff/sniff_dns.h- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+plugins/sniff/sniff_dns.h- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+plugins/sniff/sniff_dns.h- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+plugins/sniff/sniff_dns.h- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+plugins/sniff/sniff_dns.h- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+plugins/sniff/sniff_dns.h- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+plugins/sniff/sniff_dns.h- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+plugins/sniff/sniff_dns.h- * SUCH DAMAGE.
+plugins/sniff/sniff_dns.h- */
+plugins/sniff/sniff_dns.h-
+plugins/sniff/sniff_dns.h-/*
+plugins/sniff/sniff_dns.h: * Copyright (c) 1996-1999 by Internet Software Consortium.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * Permission to use, copy, modify, and distribute this software for any
+plugins/sniff/sniff_dns.h- * purpose with or without fee is hereby granted, provided that the above
+plugins/sniff/sniff_dns.h: * copyright notice and this permission notice appear in all copies.
+plugins/sniff/sniff_dns.h- *
+plugins/sniff/sniff_dns.h- * THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SOFTWARE CONSORTIUM DISCLAIMS
+plugins/sniff/sniff_dns.h- * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+plugins/sniff/sniff_dns.h- * OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL INTERNET SOFTWARE
+plugins/sniff/sniff_dns.h- * CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+plugins/sniff/sniff_dns.h- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+plugins/sniff/sniff_dns.h- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+plugins/sniff/sniff_dns.h- * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+plugins/sniff/sniff_dns.h- * SOFTWARE.
+
+plugins/sniff/sniff_rivchat.h-/* structs and magic values copied from http://akolacz.googlepages.com/RivChat-specyfikacja.PDF
+plugins/sniff/sniff_rivchat.h: * copyright by Arkadiusz Kolacz
+
+plugins/sniff/sniff.c: *  (C) Copyright 2007 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/sniff/sniff.c- *
+plugins/sniff/sniff.c- *  This program is free software; you can redistribute it and/or modify
+plugins/sniff/sniff.c- *  it under the terms of the GNU General Public License Version 2 as
+plugins/sniff/sniff.c- *  published by the Free Software Foundation.
+plugins/sniff/sniff.c- *
+plugins/sniff/sniff.c- *  This program is distributed in the hope that it will be useful,
+plugins/sniff/sniff.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/sniff/sniff.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/sniff/sniff.c- *  GNU General Public License for more details.
+plugins/sniff/sniff.c- *
+plugins/sniff/sniff.c- *  You should have received a copy of the GNU General Public License
+plugins/sniff/sniff.c- *  along with this program; if not, write to the Free Software
+plugins/sniff/sniff.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+plugins/sniff/sniff.c- */
+plugins/sniff/sniff.c-
+plugins/sniff/sniff.c-/* some functions are copied from ekg2's gg plugin/other ekg2's plugins/libgadu 
+plugins/sniff/sniff.c: *	there're copyrighted under GPL-2 */
+
+plugins/sniff/sniff_gg.h: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/sniff/sniff_gg.h- *			    Robert J. WoĹşny <speedy@ziew.org>
+plugins/sniff/sniff_gg.h- *			    Arkadiusz MiĹkiewicz <arekm@pld-linux.org>
+plugins/sniff/sniff_gg.h- *			    Tomasz ChiliĹski <chilek@chilan.com>
+plugins/sniff/sniff_gg.h- *			    Piotr Wysocki <wysek@linux.bydg.org>
+plugins/sniff/sniff_gg.h- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+plugins/sniff/sniff_gg.h- *
+plugins/sniff/sniff_gg.h- *			& many others look at: http://ekg.chmurka.net/docs/protocol.html
+plugins/sniff/sniff_gg.h- *
+plugins/sniff/sniff_gg.h- *  This program is free software; you can redistribute it and/or modify
+plugins/sniff/sniff_gg.h- *  it under the terms of the GNU Lesser General Public License Version
+plugins/sniff/sniff_gg.h- *  2.1 as published by the Free Software Foundation.
+plugins/sniff/sniff_gg.h- *
+plugins/sniff/sniff_gg.h- *  This program is distributed in the hope that it will be useful,
+plugins/sniff/sniff_gg.h- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/sniff/sniff_gg.h- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/sniff/sniff_gg.h- *  GNU Lesser General Public License for more details.
+plugins/sniff/sniff_gg.h- *
+plugins/sniff/sniff_gg.h- *  You should have received a copy of the GNU Lesser General Public
+plugins/sniff/sniff_gg.h- *  License along with this program; if not, write to the Free Software
+plugins/sniff/sniff_gg.h- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307,
+plugins/sniff/sniff_gg.h- *  USA.
+plugins/sniff/sniff_gg.h- */
+plugins/sniff/sniff_gg.h-/* struct data && magic constants copied from libgadu (http://toxygen.net/libgadu) && 
+plugins/sniff/sniff_gg.h- *	gg protocol documentation (http://ekg.chmurka.net/docs/protocol.html)
+plugins/sniff/sniff_gg.h- *	great job guys! thx.
+plugins/sniff/sniff_gg.h- */
+
+plugins/sniff/gg-keygen.c: *  (C) Copyright 2007 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/sniff/gg-keygen.c- *
+plugins/sniff/gg-keygen.c- *  This program is free software; you can redistribute it and/or modify
+plugins/sniff/gg-keygen.c- *  it under the terms of the GNU General Public License Version 2 as
+plugins/sniff/gg-keygen.c- *  published by the Free Software Foundation.
+plugins/sniff/gg-keygen.c- *
+plugins/sniff/gg-keygen.c- *  This program is distributed in the hope that it will be useful,
+plugins/sniff/gg-keygen.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/sniff/gg-keygen.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/sniff/gg-keygen.c- *  GNU General Public License for more details.
+plugins/sniff/gg-keygen.c- *
+plugins/sniff/gg-keygen.c- *  You should have received a copy of the GNU General Public License
+plugins/sniff/gg-keygen.c- *  along with this program; if not, write to the Free Software
+plugins/sniff/gg-keygen.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+plugins/sniff/gg-keygen.c- */
+plugins/sniff/gg-keygen.c-
+plugins/sniff/gg-keygen.c:/* gg_login_hash() copied from libgadu copyrighted under LGPL-2.1 (C) libgadu developers */
+plugins/sniff/gg-keygen.c-/* orginal version of SHA-1 in C by Steve Reid <steve@edmweb.com> */
+
+plugins/icq/icq_flap_handlers.c: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_flap_handlers.c- *		       2008 Wiesław Ochmiński <wiechu@wiechu.com>
+plugins/icq/icq_flap_handlers.c- *
+plugins/icq/icq_flap_handlers.c- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_flap_handlers.c- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_flap_handlers.c- *  published by the Free Software Foundation.
+plugins/icq/icq_flap_handlers.c- *
+plugins/icq/icq_flap_handlers.c- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_flap_handlers.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_flap_handlers.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_flap_handlers.c- *  GNU General Public License for more details.
+plugins/icq/icq_flap_handlers.c- *
+plugins/icq/icq_flap_handlers.c- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_flap_handlers.c- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_flap_handlers.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+same:
+plugins/icq/icq_snac_handlers.c: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers.c- *                     2008 Wiesław Ochmiński <wiechu@wiechu.com>
+plugins/icq/icq.c: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq.c- *		       2008 Wiesław Ochmiński <wiechu@wiechu.com>
+plugins/icq/icq_caps.c: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_caps.c- *                     2008 Wiesław Ochmiński <wiechu@wiechu.com>
+plugins/icq/misc.c: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/misc.c- *		       2008 Wiesław Ochmiński <wiechu@wiechu.com>
+
+plugins/icq/icq_snac_handlers_17sigon.inc: *  (C) Copyright 2000-2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_17sigon.inc: *  (C) Copyright 2001-2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_17sigon.inc: *  (C) Copyright 2002-2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_17sigon.inc: *  (C) Copyright 2004-2008 Joe Kucera
+plugins/icq/icq_snac_handlers_17sigon.inc- *
+plugins/icq/icq_snac_handlers_17sigon.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_17sigon.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_17sigon.inc- *                     2008 WiesĹaw OchmiĹski <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_17sigon.inc- *
+plugins/icq/icq_snac_handlers_17sigon.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_17sigon.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_17sigon.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_17sigon.inc- *
+plugins/icq/icq_snac_handlers_17sigon.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_17sigon.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_17sigon.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_17sigon.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_17sigon.inc- *
+plugins/icq/icq_snac_handlers_17sigon.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_17sigon.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_17sigon.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/icq/icq_snac_handlers_04message.inc: *  (C) Copyright 2000-2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_04message.inc: *  (C) Copyright 2001-2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_04message.inc: *  (C) Copyright 2002-2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_04message.inc: *  (C) Copyright 2004-2008 Joe Kucera
+plugins/icq/icq_snac_handlers_04message.inc- *
+plugins/icq/icq_snac_handlers_04message.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_04message.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_04message.inc- *                     2008 WiesĹaw OchmiĹski <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_04message.inc- *
+plugins/icq/icq_snac_handlers_04message.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_04message.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_04message.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_04message.inc- *
+plugins/icq/icq_snac_handlers_04message.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_04message.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_04message.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_04message.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_04message.inc- *
+plugins/icq/icq_snac_handlers_04message.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_04message.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_04message.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/icq/icq_snac_handlers_0Alookup.inc: *  (C) Copyright 2000,2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_0Alookup.inc: *  (C) Copyright 2001,2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_0Alookup.inc: *  (C) Copyright 2002,2003,2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_0Alookup.inc: *  (C) Copyright 2004,2005,2006 Joe Kucera
+plugins/icq/icq_snac_handlers_0Alookup.inc- *
+plugins/icq/icq_snac_handlers_0Alookup.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_0Alookup.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_0Alookup.inc- *                     2008 WiesĹaw OchmiĹski <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_0Alookup.inc- *
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_0Alookup.inc- *
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_0Alookup.inc- *
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_0Alookup.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/icq/icq_snac_handlers_09bos.inc: *  (C) Copyright 2000-2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_09bos.inc: *  (C) Copyright 2001-2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_09bos.inc: *  (C) Copyright 2002-2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_09bos.inc: *  (C) Copyright 2004-2008 Joe Kucera
+plugins/icq/icq_snac_handlers_09bos.inc- *
+plugins/icq/icq_snac_handlers_09bos.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_09bos.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_09bos.inc- *                     2008 WiesĹaw OchmiĹski <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_09bos.inc- *
+plugins/icq/icq_snac_handlers_09bos.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_09bos.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_09bos.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_09bos.inc- *
+plugins/icq/icq_snac_handlers_09bos.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_09bos.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_09bos.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_09bos.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_09bos.inc- *
+plugins/icq/icq_snac_handlers_09bos.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_09bos.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_09bos.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/icq/digest.c:/* Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
+plugins/icq/digest.c- * rights reserved.
+plugins/icq/digest.c- *
+plugins/icq/digest.c- * License to copy and use this software is granted provided that it
+plugins/icq/digest.c- * is identified as the "RSA Data Security, Inc. MD5 Message-Digest
+plugins/icq/digest.c- * Algorithm" in all material mentioning or referencing this software
+plugins/icq/digest.c- * or this function.
+plugins/icq/digest.c- *
+plugins/icq/digest.c- * License is also granted to make and use derivative works provided
+plugins/icq/digest.c- * that such works are identified as "derived from the RSA Data
+plugins/icq/digest.c- * Security, Inc. MD5 Message-Digest Algorithm" in all material
+plugins/icq/digest.c- * mentioning or referencing the derived work.
+plugins/icq/digest.c- *
+plugins/icq/digest.c- * RSA Data Security, Inc. makes no representations concerning either
+plugins/icq/digest.c- * the merchantability of this software or the suitability of this
+plugins/icq/digest.c- * software for any particular purpose. It is provided "as is"
+plugins/icq/digest.c- * without express or implied warranty of any kind.
+plugins/icq/digest.c- *
+plugins/icq/digest.c- * These notices must be retained in any copies of any part of this
+plugins/icq/digest.c- * documentation and/or software.
+
+plugins/icq/icq_snac_handlers_01service.inc: *  (C) Copyright 2000-2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_01service.inc: *  (C) Copyright 2001-2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_01service.inc: *  (C) Copyright 2002-2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_01service.inc: *  (C) Copyright 2004-2008 Joe Kucera
+plugins/icq/icq_snac_handlers_01service.inc- *
+plugins/icq/icq_snac_handlers_01service.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_01service.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_01service.inc- *                     2008 WiesĹaw OchmiĹski <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_01service.inc- *
+plugins/icq/icq_snac_handlers_01service.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_01service.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_01service.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_01service.inc- *
+plugins/icq/icq_snac_handlers_01service.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_01service.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_01service.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_01service.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_01service.inc- *
+plugins/icq/icq_snac_handlers_01service.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_01service.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_01service.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/icq/icq_snac_handlers_0Bstatus.inc: *  (C) Copyright 2000,2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_0Bstatus.inc: *  (C) Copyright 2001,2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_0Bstatus.inc: *  (C) Copyright 2002,2003,2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_0Bstatus.inc: *  (C) Copyright 2004,2005,2006 Joe Kucera
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *
+plugins/icq/icq_snac_handlers_0Bstatus.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_0Bstatus.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *                     2008 WiesĹaw OchmiĹski <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_0Bstatus.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/icq/icq_snac_handlers_02location.inc: *  (C) Copyright 2000-2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_02location.inc: *  (C) Copyright 2001-2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_02location.inc: *  (C) Copyright 2002-2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_02location.inc: *  (C) Copyright 2004-2008 Joe Kucera
+plugins/icq/icq_snac_handlers_02location.inc- *
+plugins/icq/icq_snac_handlers_02location.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_02location.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_02location.inc- *                     2008 WiesĹaw OchmiĹski <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_02location.inc- *
+plugins/icq/icq_snac_handlers_02location.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_02location.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_02location.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_02location.inc- *
+plugins/icq/icq_snac_handlers_02location.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_02location.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_02location.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_02location.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_02location.inc- *
+plugins/icq/icq_snac_handlers_02location.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_02location.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_02location.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/icq/icq_snac_handlers_03buddy.inc: *  (C) Copyright 2000-2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_03buddy.inc: *  (C) Copyright 2001-2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_03buddy.inc: *  (C) Copyright 2002-2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_03buddy.inc: *  (C) Copyright 2004-2008 Joe Kucera
+plugins/icq/icq_snac_handlers_03buddy.inc- *
+plugins/icq/icq_snac_handlers_03buddy.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_03buddy.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_03buddy.inc- *                     2008 WiesĹaw OchmiĹski <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_03buddy.inc- *
+plugins/icq/icq_snac_handlers_03buddy.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_03buddy.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_03buddy.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_03buddy.inc- *
+plugins/icq/icq_snac_handlers_03buddy.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_03buddy.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_03buddy.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_03buddy.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_03buddy.inc- *
+plugins/icq/icq_snac_handlers_03buddy.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_03buddy.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_03buddy.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/icq/icq_snac_handlers_13userlist.inc: *  (C) Copyright 2000-2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_13userlist.inc: *  (C) Copyright 2001-2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_13userlist.inc: *  (C) Copyright 2002-2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_13userlist.inc: *  (C) Copyright 2004-2008 Joe Kucera
+plugins/icq/icq_snac_handlers_13userlist.inc- *
+plugins/icq/icq_snac_handlers_13userlist.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_13userlist.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_13userlist.inc- *                     2008 WiesĹaw OchmiĹski <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_13userlist.inc- *
+plugins/icq/icq_snac_handlers_13userlist.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_13userlist.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_13userlist.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_13userlist.inc- *
+plugins/icq/icq_snac_handlers_13userlist.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_13userlist.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_13userlist.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_13userlist.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_13userlist.inc- *
+plugins/icq/icq_snac_handlers_13userlist.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_13userlist.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_13userlist.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/icq/icq_fieldnames.inc:// Copyright Ĺ  2000-2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_fieldnames.inc:// Copyright Ĺ  2001-2002 Jon Keating, Richard Hughes
+plugins/icq/icq_fieldnames.inc:// Copyright Ĺ  2002-2004 Martin  berg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_fieldnames.inc:// Copyright Ĺ  2004-2008 Joe Kucera
+plugins/icq/icq_fieldnames.inc-//
+plugins/icq/icq_fieldnames.inc-// This program is free software; you can redistribute it and/or
+plugins/icq/icq_fieldnames.inc-// modify it under the terms of the GNU General Public License
+plugins/icq/icq_fieldnames.inc-// as published by the Free Software Foundation; either version 2
+plugins/icq/icq_fieldnames.inc-// of the License, or (at your option) any later version.
+plugins/icq/icq_fieldnames.inc-//
+plugins/icq/icq_fieldnames.inc-// This program is distributed in the hope that it will be useful,
+plugins/icq/icq_fieldnames.inc-// but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_fieldnames.inc-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_fieldnames.inc-// GNU General Public License for more details.
+plugins/icq/icq_fieldnames.inc-//
+plugins/icq/icq_fieldnames.inc-// You should have received a copy of the GNU General Public License
+plugins/icq/icq_fieldnames.inc-// along with this program; if not, write to the Free Software
+plugins/icq/icq_fieldnames.inc-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+plugins/icq/icq_snac_handlers_15extension.inc-/*
+plugins/icq/icq_snac_handlers_15extension.inc: *  (C) Copyright 2000,2001 Richard Hughes, Roland Rabien, Tristan Van de Vreede
+plugins/icq/icq_snac_handlers_15extension.inc: *  (C) Copyright 2001,2002 Jon Keating, Richard Hughes
+plugins/icq/icq_snac_handlers_15extension.inc: *  (C) Copyright 2002,2003,2004 Martin Ăberg, Sam Kothari, Robert Rainwater
+plugins/icq/icq_snac_handlers_15extension.inc: *  (C) Copyright 2004,2005,2006,2007 Joe Kucera
+plugins/icq/icq_snac_handlers_15extension.inc- *
+plugins/icq/icq_snac_handlers_15extension.inc- * ekg2 port:
+plugins/icq/icq_snac_handlers_15extension.inc: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/icq/icq_snac_handlers_15extension.inc- *                     2008 Wiesław Ochmiński <wiechu@wiechu.com>
+plugins/icq/icq_snac_handlers_15extension.inc- *
+plugins/icq/icq_snac_handlers_15extension.inc- *  This program is free software; you can redistribute it and/or modify
+plugins/icq/icq_snac_handlers_15extension.inc- *  it under the terms of the GNU General Public License Version 2 as
+plugins/icq/icq_snac_handlers_15extension.inc- *  published by the Free Software Foundation.
+plugins/icq/icq_snac_handlers_15extension.inc- *
+plugins/icq/icq_snac_handlers_15extension.inc- *  This program is distributed in the hope that it will be useful,
+plugins/icq/icq_snac_handlers_15extension.inc- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/icq/icq_snac_handlers_15extension.inc- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/icq/icq_snac_handlers_15extension.inc- *  GNU General Public License for more details.
+plugins/icq/icq_snac_handlers_15extension.inc- *
+plugins/icq/icq_snac_handlers_15extension.inc- *  You should have received a copy of the GNU General Public License
+plugins/icq/icq_snac_handlers_15extension.inc- *  along with this program; if not, write to the Free Software
+plugins/icq/icq_snac_handlers_15extension.inc- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+plugins/icq/icq_snac_handlers_15extension.inc- */
+plugins/icq/icq_snac_handlers_15extension.inc-
+plugins/icq/icq_snac_handlers_15extension.inc-SNAC_SUBHANDLER(icq_snac_extension_error) {
+plugins/icq/icq_snac_handlers_15extension.inc-	struct {
+plugins/icq/icq_snac_handlers_15extension.inc-		uint16_t error;
+plugins/icq/icq_snac_handlers_15extension.inc-	} pkt;
+
+plugins/xosd/xosd.c: *  (C) Copyright 2004-2005 Adam Kuczyński <dredzik@ekg2.org>
+plugins/xosd/xosd.c- *
+plugins/xosd/xosd.c- *  This program is free software; you can redistribute it and/or modify
+plugins/xosd/xosd.c- *  it under the terms of the GNU Lesser General Public License Version
+plugins/xosd/xosd.c- *  2.1 as published by the Free Software Foundation.
+plugins/xosd/xosd.c- *
+plugins/xosd/xosd.c- *  This program is distributed in the hope that it will be useful,
+plugins/xosd/xosd.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/xosd/xosd.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/xosd/xosd.c- *  GNU Lesser General Public License for more details.
+plugins/xosd/xosd.c- *
+plugins/xosd/xosd.c- *  You should have received a copy of the GNU Lesser General Public
+plugins/xosd/xosd.c- *  License along with this program; if not, write to the Free Software
+plugins/xosd/xosd.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/xmsg/xmsg.c-/* External message plugin for ekg2
+plugins/xmsg/xmsg.c: * (C) 2006 MichaĹ GĂłrny <peres@peres.int.pl>
+plugins/xmsg/README-xmsg for ekg2
+plugins/xmsg/README:(C) 2006 MichaĹ GĂłrny
+XXX no license
+
+
+plugins/pcm/main.c: *  (C) Copyright 2002 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/pcm/main.c- *
+plugins/pcm/main.c- *  This program is free software; you can redistribute it and/or modify
+plugins/pcm/main.c- *  it under the terms of the GNU Lesser General Public License Version
+plugins/pcm/main.c- *  2.1 as published by the Free Software Foundation.
+plugins/pcm/main.c- *
+plugins/pcm/main.c- *  This program is distributed in the hope that it will be useful,
+plugins/pcm/main.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/pcm/main.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/pcm/main.c- *  GNU Lesser General Public License for more details.
+plugins/pcm/main.c- *
+plugins/pcm/main.c- *  You should have received a copy of the GNU Lesser General Public
+plugins/pcm/main.c- *  License along with this program; if not, write to the Free Software
+plugins/pcm/main.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+also:
+plugins/gsm/main.c: *  (C) Copyright 2002 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/sim/simlite.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/dummy/main.c: *  (C) Copyright 2003 Jan Kowalski <jan.kowalski@gdzies.pl>
+
+plugins/sim/simlite.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/sim/simlite.c- *		       Piotr Domagalski <szalik@szalik.net>
+plugins/sim/simlite.c- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/sim/simlite.c- *
+plugins/sim/simlite.c- *  Idea and concept from SIM by Michal J. Kubski available at
+plugins/sim/simlite.c- *  http://gg.wha.la/crypt/. Original source code can be found
+plugins/sim/simlite.c- *  at http://gg.wha.la/sim.tar.gz
+plugins/sim/simlite.c- *
+plugins/sim/simlite.c- *  This program is free software; you can redistribute it and/or modify
+plugins/sim/simlite.c- *  it under the terms of the GNU Lesser General Public License Version
+plugins/sim/simlite.c- *  2.1 as published by the Free Software Foundation.
+plugins/sim/simlite.c- *
+plugins/sim/simlite.c- *  This program is distributed in the hope that it will be useful,
+plugins/sim/simlite.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/sim/simlite.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/sim/simlite.c- *  GNU Lesser General Public License for more details.
+plugins/sim/simlite.c- *
+plugins/sim/simlite.c- *  You should have received a copy of the GNU Lesser General Public
+plugins/sim/simlite.c- *  License along with this program; if not, write to the Free Software
+plugins/sim/simlite.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+plugins/gpg/gpg.c- *  Code ported from mcabber 0.9.0 to ekg2
+plugins/gpg/gpg.c: *	Copyright (C) 2006 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/gpg/gpg.c- *
+plugins/gpg/gpg.c- *  Orginal code:
+plugins/gpg/gpg.c: *	Copyright (C) 2006 Mikael Berthe <bmikael@lists.lilotux.net>
+plugins/gpg/gpg.c- *	Some parts inspired by centericq (impgp.cc)
+plugins/gpg/gpg.c- *
+plugins/gpg/gpg.c- *  This program is free software; you can redistribute it and/or modify
+plugins/gpg/gpg.c- *  it under the terms of the GNU General Public License Version 2 as
+plugins/gpg/gpg.c- *  published by the Free Software Foundation.
+plugins/gpg/gpg.c- *
+plugins/gpg/gpg.c- *  This program is distributed in the hope that it will be useful,
+plugins/gpg/gpg.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+plugins/gpg/gpg.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+plugins/gpg/gpg.c- *  GNU General Public License for more details.
+plugins/gpg/gpg.c- *
+plugins/gpg/gpg.c- *  You should have received a copy of the GNU General Public License
+plugins/gpg/gpg.c- *  along with this program; if not, write to the Free Software
+plugins/gpg/gpg.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+compat/strndup.c: *  Copyright (c) 2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+compat/strndup.c- *
+compat/strndup.c- *  This program is free software; you can redistribute it and/or modify
+compat/strndup.c- *  it under the terms of the GNU Lesser General Public License Version
+compat/strndup.c- *  2.1 as published by the Free Software Foundation.
+compat/strndup.c- *
+compat/strndup.c- *  This program is distributed in the hope that it will be useful,
+compat/strndup.c- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+compat/strndup.c- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+compat/strndup.c- *  GNU Lesser General Public License for more details.
+compat/strndup.c- *
+compat/strndup.c- *  You should have received a copy of the GNU Lesser General Public
+compat/strndup.c- *  License along with this program; if not, write to the Free Software
+compat/strndup.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+also:
+compat/strlcpy.c: *  Copyright (c) 2003 Piotr Domagalski <szalik@szalik.net>
+compat/strlcat.c: *  Copyright (c) 2003 Piotr Domagalski <szalik@szalik.net>
+compat/scandir.c: *  Copyright (c) 2002-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+compat/scandir.c- *                          Piotr Domagalski <szalik@szalik.net>
+compat/strnlen.c: *  Copyright (c) 2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+compat/strfry.c: *  Copyright (c) 2004 Maciej Pietrzak <maciej@pietrzak.org>
+
+compat/getopt.c:   Copyright (C) 1987,88,89,90,91,92,93,94,95,96,98,99,2000,2001
+compat/getopt.c-   	Free Software Foundation, Inc.
+compat/getopt.c-   This file is part of the GNU C Library.
+compat/getopt.c-
+compat/getopt.c-   The GNU C Library is free software; you can redistribute it and/or
+compat/getopt.c-   modify it under the terms of the GNU Lesser General Public
+compat/getopt.c-   License as published by the Free Software Foundation; either
+compat/getopt.c-   version 2.1 of the License, or (at your option) any later version.
+compat/getopt.c-
+compat/getopt.c-   The GNU C Library is distributed in the hope that it will be useful,
+compat/getopt.c-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+compat/getopt.c-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+compat/getopt.c-   Lesser General Public License for more details.
+compat/getopt.c-
+compat/getopt.c-   You should have received a copy of the GNU Lesser General Public
+compat/getopt.c-   License along with the GNU C Library; if not, write to the Free
+compat/getopt.c-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+compat/getopt.c-   02111-1307 USA.  */
+compat/getopt.c-
+compat/getopt.c-/* Excessive comments removed by Wojtek Kaniewski <wojtekka@irc.pl> */
+also:
+compat/getopt.h:   Copyright (C) 1989-1994, 1996-1999, 2001 Free Software Foundation, Inc.
+compat/getopt1.c:   Copyright (C) 1987,88,89,90,91,92,93,94,96,97,98
+compat/getopt1.c-     Free Software Foundation, Inc.
+compat/getopt1.c-   This file is part of the GNU C Library.
+
+config.rpath:#   Copyright 1996-2005 Free Software Foundation, Inc.
+config.rpath-#   Taken from GNU libtool, 2001
+config.rpath-#   Originally by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
+config.rpath-#
+config.rpath-#   This file is free software; the Free Software Foundation gives
+config.rpath-#   unlimited permission to copy and/or distribute it, with or without
+config.rpath-#   modifications, as long as this notice is preserved.
+
+docs/README-                     Eksperymentalny Klient Gadu-Gadu
+docs/README-
+docs/README:          (C) Copyright 2001-2003 Autorzy (pełna lista poniżej)
+docs/README-
+docs/README-LICENCJA
+docs/README-
+docs/README-    Program jest udostępniony na zasadach licencji GPL v2, której treść
+docs/README-    załączono w pliku src/COPYING. Niektóre pliki mogą być objęte inną
+docs/README-    licencją zgodną z GPL v2. Fakt ten jest odnotowany na początku pliku.
+docs/README-
+docs/README-    Wyjątkiem od licencji GPL v2 jest możliwość kompilacji, konsolidacji
+docs/README-    i używania programu z biblioteką OpenSSL autorstwa Projektu OpenSSL
+docs/README-    (The OpenSSL Project) dostępną pod adresem http://www.openssl.org/
+
+docs/ekg2book/bookinfo.xml-      <author>
+docs/ekg2book/bookinfo.xml-         <firstname>Leszek</firstname>
+docs/ekg2book/bookinfo.xml-         <surname>Krupinski</surname>
+docs/ekg2book/bookinfo.xml-         <email>leszek@wafel.com</email>
+docs/ekg2book/bookinfo.xml-      </author>
+docs/ekg2book/bookinfo.xml-      <author>
+docs/ekg2book/bookinfo.xml-         <firstname>Sebastian</firstname>
+docs/ekg2book/bookinfo.xml-         <surname>Szary</surname>
+docs/ekg2book/bookinfo.xml-         <email>greyer@killer.radom.net</email>
+docs/ekg2book/bookinfo.xml-      </author>
+docs/ekg2book/bookinfo.xml-      <author>
+docs/ekg2book/bookinfo.xml-         <firstname>Adam</firstname>
+docs/ekg2book/bookinfo.xml-         <surname>Kuczyński</surname>
+docs/ekg2book/bookinfo.xml-         <email>dredzik@ekg2.org</email>
+docs/ekg2book/bookinfo.xml-      </author>
+docs/ekg2book/bookinfo.xml-      <author>
+docs/ekg2book/bookinfo.xml-         <firstname>Piotr</firstname>
+docs/ekg2book/bookinfo.xml-         <surname>Kupisiewicz</surname>
+docs/ekg2book/bookinfo.xml-         <email>deletek@ekg2.org</email>
+docs/ekg2book/bookinfo.xml-      </author>
+docs/ekg2book/bookinfo.xml:      <copyright>
+docs/ekg2book/bookinfo.xml-         <year>2004, 2005</year>
+docs/ekg2book/bookinfo.xml-         <holder>Grupa rozwijająca ekg2</holder>
+docs/ekg2book/bookinfo.xml:      </copyright>
+docs/ekg2book/bookinfo.xml-   </bookinfo>
+docs/ekg2book/bookinfo.xml-
+
+docs/ekg2book-en/bookinfo.xml-      <author>
+docs/ekg2book-en/bookinfo.xml-         <firstname>Leszek</firstname>
+docs/ekg2book-en/bookinfo.xml-         <surname>Krupinski</surname>
+docs/ekg2book-en/bookinfo.xml-         <email>leszek@wafel.com</email>
+docs/ekg2book-en/bookinfo.xml-      </author>
+docs/ekg2book-en/bookinfo.xml-      <author>
+docs/ekg2book-en/bookinfo.xml-         <firstname>Sebastian</firstname>
+docs/ekg2book-en/bookinfo.xml-         <surname>Szary</surname>
+docs/ekg2book-en/bookinfo.xml-         <email>greyer@killer.radom.net</email>
+docs/ekg2book-en/bookinfo.xml-      </author>
+docs/ekg2book-en/bookinfo.xml-      <author>
+docs/ekg2book-en/bookinfo.xml-         <firstname>Adam</firstname>
+docs/ekg2book-en/bookinfo.xml-         <surname>Kuczyński</surname>
+docs/ekg2book-en/bookinfo.xml-         <email>dredzik@ekg2.org</email>
+docs/ekg2book-en/bookinfo.xml-      </author>
+docs/ekg2book-en/bookinfo.xml-      <author>
+docs/ekg2book-en/bookinfo.xml-	 <firstname>Piotr</firstname>
+docs/ekg2book-en/bookinfo.xml-	 <surname>Kupisiewicz</surname>
+docs/ekg2book-en/bookinfo.xml-	 <email>deletek@ekg2.org</email>
+docs/ekg2book-en/bookinfo.xml-      </author>
+docs/ekg2book-en/bookinfo.xml:      <copyright>
+docs/ekg2book-en/bookinfo.xml-         <year>2004, 2005</year>
+docs/ekg2book-en/bookinfo.xml-         <holder>Grupa rozwijająca ekg2</holder>
+docs/ekg2book-en/bookinfo.xml:      </copyright>
+docs/ekg2book-en/bookinfo.xml-   </bookinfo>
+docs/ekg2book-en/bookinfo.xml-
+
+ekg/win32.c-/* code of (gettimeofday && friends) in windows ripped from http://www.tcpdump.org/lists/workers/2005/12/msg00003.html
+ekg/win32.c: *    (c) Gisle Vanem 
+
+ekg/audio_wav.h-/* *.wav I/O stolen from xawtv (recode program) which was stolen from cdda2wav */
+ekg/audio_wav.h:/* Copyright (C) by Heiko Eissfeldt */
+
+ekg/recode.c: *  (C) Copyright XXX
+ekg/recode.c-/* some code based on libiconv utf8_mbtowc() && utf8_wctomb() from utf8.h under LGPL-2.1 */
+ekg/recode.c-/* Following two functions shamelessly ripped from mutt-1.4.2i 
+ekg/recode.c- * (http://www.mutt.org, license: GPL)
+ekg/recode.c: * Copyright (C) 1999-2000 Thomas Roessler <roessler@guug.de>
+ekg/recode.c- * Modified 2004 by Maciek Pasternacki <maciekp@japhy.fnord.org>
+
+plugins/ncurses/vars-en.txt:// (c) cpopyright 2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/ncurses/vars-pl.txt:// (c) copyright 2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/jabber/commands-en.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/jabber/commands-en.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/jabber/commands-en.txt:// (c) copyright      2004 tomasz torcz <zdzichu@ekg2.org>
+plugins/jabber/commands-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/jabber/commands-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/jabber/commands-pl.txt:// (c) copyright      2004 tomasz torcz <zdzichu@ekg2.org>
+plugins/jabber/session-en.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/jabber/session-en.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/jabber/session-en.txt:// (c) copyright      2004 tomasz torcz <zdzichu@irc.pl>
+plugins/jabber/session-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/jabber/session-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/jabber/session-pl.txt:// (c) copyright      2004 tomasz torcz <zdzichu@irc.pl>
+plugins/sim/commands-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/sim/commands-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/sim/vars-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/sim/vars-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/gg/commands-en.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/gg/commands-en.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/gg/commands-en.txt:// (c) copyright      2005 mateusz samonek <m@batnet.pl>
+plugins/gg/commands-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/gg/commands-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/gg/session-en.txt:// (c) copyright      2005 sebastian szary <greyer@ekg2.org>
+plugins/gg/vars-en.txt:// (c) copyright 2001-2003 Wojtek Waniewski <wojtekka@irc.pl>
+plugins/gg/vars-en.txt:// (c) copyright      2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/vars-en.txt:// (c) copyright      2004-2006 Adam Mikuta <adamm@ekg2.org>
+plugins/gg/vars-en.txt:// (c) copyright      2005 Mateusz Samonek <m@batnet.pl>
+plugins/gg/session-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/gg/session-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/gg/vars-pl.txt:// (c) copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/gg/vars-pl.txt:// (c) copyright      2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/vars-pl.txt:// (c) copyright      2004-2006 Adam Mikuta <adamm@ekg2.org>
+plugins/sms/commands-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/sms/commands-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/sms/vars-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/sms/vars-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+plugins/irc/commands-pl.txt:// (c) 2004 Michal 'GiM' Spadlinski
+plugins/irc/session-pl.txt:// (c) 2004-2005 Michal 'GiM' Spadlinski
+plugins/irc/session-pl.txt-//		Jakub 'darkjames' Zawadzki
+plugins/ioctld/commands-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+plugins/ioctld/commands-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+docs/events.txt:// (c) copyright 2004-2005 Piotr Kupisiewicz <deli@rzepaknet.us>
+docs/commands-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+docs/commands-pl.txt:// (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
+docs/voip.txt:// (c) copyright 2002 wojtek kaniewski <wojtekka@irc.pl>
+docs/vars-pl.txt:// (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
+docs/vars-pl.txt-//		      2004 adam mikuta <adammikuta@poczta.onet.pl>
+docs/mouse.txt:// (c) copyright 2004-2005 Piotr Kupisiewicz <deli@ekg2.org>
+docs/sim.txt:// (c) copyright 2001-2003 by Wojtek Kaniewski <wojtekka@irc.pl>
+docs/sim.txt-// 		 2004-2005 by Piotr Kupisiewicz <deletek@ekg2.org>
+docs/ui-ncurses.txt:// (c) copyright 2002 wojtek kaniewski <wojtekka@irc.pl>
+docs/ui-ncurses.txt:// (c) copyright 2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+XXX no license
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License Version 2 as
+  published by the Free Software Foundation.
+  .
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  .
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+plugins/python/python.h: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python-session.c: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python-user.h: *  (C) Copyright 2004-2005 Leszek KrupiĹski <leafnode@pld-linux.org>
+plugins/python/python-session.h: *  (C) Copyright 2004-2005 Leszek KrupiĹski <leafnode@pld-linux.org>
+plugins/python/python-plugin.c: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python.c: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python.c- *			    Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/python/python-plugin.h: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python-config.c: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python-ekg.c: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python-window.c: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python-config.h: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python-ekg.h: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python-window.h: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/python/python-user.c: *  (C) Copyright 2004-2005 Leszek Krupiński <leafnode@pld-linux.org>
+plugins/ncurses/bindings.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/ncurses/completion.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/ncurses/completion.c- *		  2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+plugins/ncurses/contacts.c: *  (C) Copyright 2002-2005 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/ncurses/contacts.c- *			    Wojtek Bojdoł <wojboj@htcon.pl>
+plugins/ncurses/contacts.c- *			    Paweł Maziarz <drg@infomex.pl>
+plugins/ncurses/contacts.c- *			    Piotr Kupisiewicz <deli@rzepaknet.us>
+plugins/ncurses/contacts.c- *			    Leszek Krupiński <leafnode@pld-linux.org>
+plugins/ncurses/old.c: *  (C) Copyright 2002-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/ncurses/old.c- *			    Wojtek Bojdoł <wojboj@htcon.pl>
+plugins/ncurses/old.c- *			    Paweł Maziarz <drg@infomex.pl>
+plugins/ncurses/main.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/ncurses/main.c- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/ncurses/mouse.c: *  (C) Copyright 2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/ncurses/mouse.h: *  (C) Copyright 2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+plugins/ncurses/bindings.c: *  (C) Copyright 2002-2004 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/ncurses/bindings.c- *			    Wojtek Bojdoł <wojboj@htcon.pl>
+plugins/ncurses/bindings.c- *			    Paweł Maziarz <drg@infomex.pl>
+plugins/ncurses/bindings.c- *			    Piotr Kupisiewicz <deli@rzepaknet.us>
+plugins/gtk/completion.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/gtk/completion.c- *		  2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+plugins/jabber/commands.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/jabber/commands.c- *		       Tomasz Torcz <zdzichu@irc.pl>	
+plugins/jabber/commands.c- *		       Libtlen developers (http://libtlen.sourceforge.net/index.php?theme=teary&page=authors)
+plugins/jabber/jabber_handlers.c: *  (C) Copyright 2003-2006 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/jabber/jabber_handlers.c- *			    Tomasz Torcz <zdzichu@irc.pl>
+plugins/jabber/jabber_handlers.c- *			    Leszek Krupiński <leafnode@pld-linux.org>
+plugins/jabber/jabber_handlers.c- *			    Piotr Pawłow and other libtlen developers (http://libtlen.sourceforge.net/index.php?theme=teary&page=authors)
+plugins/jabber/jabber_handlers.c: * @note	Tlen Authentication was stolen from libtlen calc_passcode() with magic stuff (C) libtlen's developer and Piotr Pawłow<br>
+plugins/jabber/jabber_handlers.c:/* idea and some code copyrighted by Marek Marczykowski xmpp:marmarek@jabberpl.org */
+plugins/jabber/jabber.c: *  (C) Copyright 2003-2005 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/jabber/jabber.c- *			    Tomasz Torcz <zdzichu@irc.pl>
+plugins/jabber/jabber.c- *			    Leszek Krupiński <leafnode@pld-linux.org>
+plugins/jabber/jabber.c- *			    Piotr Pawłow and other libtlen developers (http://libtlen.sourceforge.net/index.php?theme=teary&page=authors)
+plugins/jabber/jabber.c- * @note	Code to handle SSL_get_verify_result() result copied from qssl.cpp<br>
+plugins/jabber/jabber.c: *		qssl.cpp - Qt OpenSSL plugin Copyright (C) 2001, 2002  Justin Karneges under LGPL 2.1
+plugins/jabber/jabber.c:		/* copied from qssl.cpp - Qt OpenSSL plugin Copyright (C) 2001, 2002  Justin Karneges under LGPL 2.1  */
+plugins/polchat/polchat.c: *  (C) Copyright 2006	Jakub 'ABUKAJ' Kowalski
+plugins/polchat/polchat.c: *  (C) Copyright 2006, 2008 Jakub 'darkjames' Zawadzki <darkjames@darkjames.ath.cx>
+plugins/dbus/dbus.c: *  (C) Copyright 2006	Michal 'GiM' Spadlinski  < gim913 a@t gmail d.o.t com>
+plugins/rivchat/rivchat.c: *  (C) Copyright 2007-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/rivchat/misc.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl
+plugins/rivchat/misc.c- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/rivchat/misc.c- *		  2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/rc/inputs.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/rc/main.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/mail/main.c: *  (C) Copyright 2001-2003 Piotr Domagalski <szalik@szalik.net>
+plugins/mail/main.c- *			    Paweł Maziarz <drg@infomex.pl>
+plugins/mail/main.c- *			    Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/readline/ui-readline.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/readline/ui-readline.c- *			    Robert J. Woźny <speedy@ziew.org>
+plugins/readline/ui-readline.c- *			    Paweł Maziarz <drg@infomex.pl>
+plugins/readline/ui-readline.c-			   Adam Osuchowski <adwol@polsl.gliwice.pl>
+plugins/readline/ui-readline.c- *			    Wojtek Bojdoł <wojboj@htcon.pl>
+plugins/readline/ui-readline.c- *			    Piotr Domagalski <szalik@szalik.net>
+plugins/remote/remote.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/remote/remote.c- *                2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/gg/images.c: *  (C) Copyright 2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/images.c- *		  2006 Adam Mikuta <adamm@ekg2.org>
+plugins/gg/gg.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl
+plugins/gg/gg.h- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/gg.h- *		  2004 - 2006 Adam Mikuta <adamm@ekg2.org>
+plugins/gg/pubdir50.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl
+plugins/gg/pubdir50.h- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/misc.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl
+plugins/gg/misc.h- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/commands.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/gg/commands.c- *		  2003 Adam Czerwiski <acze@acze.net>
+plugins/gg/commands.c- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/commands.c- *		  2006 Adam Mikuta <adamm@ekg2.org>
+plugins/gg/images.h: *  (C) Copyright 2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/images.h- *		  2006 Adam Mikuta <adamm@ekg2.org>
+plugins/gg/pubdir.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl
+plugins/gg/pubdir.c- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/token.h: *  (C) Copyright 2003 Adam Czerwiński <acze@acze.net>
+plugins/gg/pubdir50.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl
+plugins/gg/pubdir50.c- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/pubdir.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl
+plugins/gg/pubdir.h- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/misc.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl
+plugins/gg/misc.c- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/gg.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl
+plugins/gg/gg.c- *		  2004 Piotr Kupisiewicz <deletek@ekg2.org>
+plugins/gg/gg.c- *		  2004 - 2006 Adam Mikuta <adamm@ekg2.org>
+plugins/gg/gg.c- *		  2005 Leszek Krupiński <leafnode@wafel.com>
+plugins/httprc_xajax/ekg2.js: *  (C) Copyright 2006+ Michal 'peres' Gorny
+plugins/httprc_xajax/ekg2.js- *  			Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/httprc_xajax/httprc_xajax.c: *  (C) Copyright 2006+ Jakub 'darkjames' Zawadzki <darkjames@darkjames.ath.cx>
+plugins/httprc_xajax/httprc_xajax.c- *			Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/httprc_xajax/httprc_xajax.c- *			Michal 'peres' Gorny
+plugins/sms/sms.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/sms/sms.c- *			    Robert J. Woźny <speedy@ziew.org>
+plugins/sms/sms.c- *			    Paweł Maziarz <drg@o2.pl>
+plugins/sms/sms.c- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+plugins/sms/sms.c- *			    Piotr Domagalski <szalik@szalik.net>
+plugins/perl/perl_ekg.c: *  (C) Copyright 2005 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/perl/perl_ekg.h: *  (C) Copyright 2005 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/feed/nntp.c: *  (C) Copyright 2006 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/feed/feed.c: *  (C) Copyright 2006 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/feed/rss.c: *  (C) Copyright 2006 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+plugins/jogger/drafts.c: *  (C) Copyright 2007	MichaĹ GĂłrny & EKG2 authors
+plugins/jogger/messages.c: *  (C) Copyright 2007	MichaĹ GĂłrny & EKG2 authors
+plugins/jogger/jogger.c: *  (C) Copyright 2007	MichaĹ GĂłrny & EKG2 authors
+plugins/irc/input.c: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/irc/input.c- *			Jakub 'darkjames' Zawadzki <darkjames@darkjames.ath.cx>
+plugins/irc/misc.h: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/irc/input.h: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/irc/autoacts.c: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/irc/irc.c: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/irc/irc.c- *			Jakub 'darkjames' Zawadzki <darkjames@darkjames.ath.cx>
+plugins/irc/irc.h: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/irc/people.c: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/irc/autoacts.h: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/irc/people.h: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/irc/misc.c: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+plugins/ioctld/ioctld.c: *  (C) Copyright 2002 Paweł Maziarz <drg@infomex.pl>
+plugins/ioctld/ioctld.c- *		       Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/ioctld/ioctld.c- *		       Robert J. Woźny <speedy@ziew.org>
+plugins/ioctld/ioctld.h: *  (C) Copyright 2002	Pawel Maziarz <drg@go2.pl>
+plugins/ioctld/ioctld.h- *			Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/ioctld/ioctld.h- *			Robert J. Wozny <speedy@ziew.org>
+plugins/ioctld/main.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+plugins/ioctld/main.c- *			    Robert J. Woźny <speedy@ziew.org>
+plugins/ioctld/main.c- *			    Paweł Maziarz <drg@infomex.pl>
+plugins/ioctld/main.c- *			    Wojciech Bojdoł <wojboj@htc.net.pl>
+plugins/ioctld/main.c- *			    Piotr Wysocki <wysek@linux.bydg.org>
+plugins/ioctld/main.c- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+plugins/ioctld/main.c- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/metacontacts.c: *  (C) Copyright 2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/xmalloc.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/xmalloc.c-		       2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/msgqueue.h: *  (C) Copyright 2001-2003 Piotr Domagalski <szalik@szalik.net>
+ekg/msgqueue.h- *			    Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/commands.c: *  (C) Copyright 2001-2005 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/commands.c- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/commands.c- *			    Paweł Maziarz <drg@infomex.pl>
+ekg/commands.c- *			    Wojciech Bojdoł <wojboj@htc.net.pl>
+ekg/commands.c- *			    Piotr Wysocki <wysek@linux.bydg.org>
+ekg/commands.c- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/commands.c- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/commands.c- *			    Kuba Kowalski <qbq@kofeina.net>
+ekg/commands.c- *			    Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/commands.c- *			    Leszek Krupiński <leafnode@wafel.com>
+ekg/commands.c- *			    Adam Mikuta <adamm@ekg2.org>
+ekg/dynstuff.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/dynstuff.c- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/dynstuff.c- *                          Adam Wysocki <gophi@ekg.chmurka.net>
+ekg/xmalloc.h: *  (C) Copyright 2001-2002 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/xmalloc.h- *		       2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/commands.h: *  (C) Copyright 2001-2002 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/commands.h- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/dynstuff.h: *  (C) Copyright 2001-2002 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/dynstuff.h- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/dynstuff.h- *                          Adam Wysocki <gophi@ekg.chmurka.net>
+ekg/vars.c: *  (C) Copyright 2001-2004 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/vars.c- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/vars.c- *			    Leszek Krupiński <leafnode@wafel.com>
+ekg/vars.c- *			    Adam Mikuta <adammikuta@poczta.onet.pl>
+ekg/vars.h: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/themes.c: *  (C) Copyright 2001-2006 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/themes.c- *			    Leszek Krupiński <leafnode@wafel.com>
+ekg/themes.c- *			    Adam Mikuta <adamm@ekg2.org>
+ekg/strings.c: *  (C) Copyright 2003-2006 Maciej Pietrzak <maciej@hell.org.pl>
+ekg/strings.c- *			    Jakub Zawadzki <darkjames@darkjames.ath.cx>
+ekg/windows.c: *  (C) Copyright 2002-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/windows.c- *			    Paweł Maziarz <drg@infomex.pl>
+ekg/windows.c- *		       2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/themes.h: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/strings.h: *  (C) Copyright 2003-2006 Maciej Pietrzak <maciej@hell.org.pl>
+ekg/strings.h- *			    Jakub Zawadzki <darkjames@darkjames.ath.cx>
+ekg/objects.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/windows.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/windows.h- *		  2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/emoticons.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/emoticons.c- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/emoticons.c- *			    Paweł Maziarz <drg@o2.pl>
+ekg/emoticons.c- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/emoticons.c- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/audio.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/protocol.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/protocol.c- *		  2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/protocol.c- *		  2004 Adam Mikuta <adammikuta@poczta.onet.pl>
+ekg/protocol.c- *		  2005 Leszek Krupiński <leafnode@wafel.com>
+ekg/events.c: *  (C) Copyright 2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/emoticons.h: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/emoticons.h- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/emoticons.h- *			    Paweł Maziarz <drg@o2.pl>
+ekg/emoticons.h- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/emoticons.h- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/configfile.c: *  (C) Copyright 2001-2005 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/configfile.c- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/configfile.c- *			    Paweł Maziarz <drg@o2.pl>
+ekg/configfile.c- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/configfile.c- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/configfile.c- *			    Piotr Kupisiewicz <deletek@ekg2.org>
+ekg/protocol.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/audio.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/ekg.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/ekg.c- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/ekg.c- *			    Paweł Maziarz <drg@infomex.pl>
+ekg/ekg.c- *			    Adam Osuchowski <adwol@polsl.gliwice.pl>
+ekg/ekg.c- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/ekg.c- *			    Wojciech Bojdoł <wojboj@htcon.pl>
+ekg/ekg.c- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/sessions.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/sessions.c- *		  2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/HEADER: *  (C) Copyright 2003-2007 EKG2 authors
+ekg/events.h: *  (C) Copyright 2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/configfile.h: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/configfile.h- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/configfile.h- *			    Paweł Maziarz <drg@go2.pl>
+ekg/configfile.h- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/configfile.h- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/userlist.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/userlist.c- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/userlist.c- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/srv.c: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+ekg/srv.c- *	parts of this code are losely based on cifs/smb dns utility stuff
+ekg/sessions.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/sessions.h- *		  2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/userlist.h: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/userlist.h- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/srv.h: *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+ekg/plugins.c: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/plugins.c- *		  2004 Piotr Kupisiewicz (deli@rzepaknet.us>
+ekg/log.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/log.c- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/log.c- *			    Paweł Maziarz <drg@o2.pl>
+ekg/log.c- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/log.c- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/metacontacts.h: *  (C) Copyright 2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+ekg/plugins.h: *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/log.h: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/log.h- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/log.h- *			    Paweł Maziarz <drg@o2.pl>
+ekg/log.h- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/log.h- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/net.c: *  (C) Copyright xxxx-2008 XXX
+ekg/net.c- *			Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
+ekg/net.c:#ifdef LIBIDN /* stolen from squid->url.c (C) Duane Wessels */
+ekg/stuff.c: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/stuff.c- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/stuff.c- *			    Paweł Maziarz <drg@o2.pl>
+ekg/stuff.c- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/stuff.c- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/stuff.c- *			    Adam Mikuta <adammikuta@poczta.onet.pl>
+ekg/legacyconfig.c: *  (C) Copyright 2007 EKG2 authors
+
+ekg/msgqueue.c: *  (C) Copyright 2001-2002 Piotr Domagalski <szalik@szalik.net>
+ekg/msgqueue.c- *			    Wojtek Kaniewski <wojtekka@irc.pl>
+
+ekg/net.h: *  (C) Copyright XXX
+
+ekg/stuff.h: *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+ekg/stuff.h- *			    Robert J. Woźny <speedy@ziew.org>
+ekg/stuff.h- *			    Paweł Maziarz <drg@go2.pl>
+ekg/stuff.h- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
+ekg/stuff.h- *			    Piotr Domagalski <szalik@szalik.net>
+ekg/stuff.h- *			    Adam Mikuta <adammikuta@poczta.onet.pl>
+
+contrib/python/notify-bubble.py:# (c) 2006 Tomasz Torcz <zdzichu@irc.pl>
+
+contrib/xmsg-extras/README-xmsgrss:(C) 2006 MichaĹ GĂłrny <peres@peres.int.pl>
+
+contrib/xmsg-extras/youtube.pl-# based on some script found here: http://bashscripts.org/viewtopic.php?t=210
+contrib/xmsg-extras/youtube.pl:# (C) 2007 MichaĹ GĂłrny
+
+contrib/xmsg-extras/README-xmsghandler:(C) 2006 MichaĹ GĂłrny <peres@peres.int.pl>
+
+contrib/themes/irc-irssi.theme:# (C) Copyright 2005-2006 Jakub 'darkjames' Zawadzki <darkjames at darkjames dot ath dot cx> 
+contrib/themes/irc-irssi.theme:# 	some formats (C) Michal 'GiM' Spadlinski 
+
+contrib/themes/dmilith.theme:# (C) Copyright 2008 Wieslaw Ochminski <wiechu at wiechu dot com> 
+contrib/themes/wiechu.theme:# (C) Copyright 2008 Wieslaw Ochminski <wiechu at wiechu dot com> 
+
+contrib/themes/blue_sea_dragon.theme:# (c) dredzik 2004-2006
+
+contrib/logsqlite/logsqlite-stripres.pl:# (C) 2007 MichaĹ GĂłrny
+
+contrib/logsqlite/logs2logsqlite.pl:# (C) 2007 MichaĹ GĂłrny
+
+contrib/logsqlite/logsqlite-fuse.c: * (C) 2007 MichaĹ GĂłrny
+contrib/logsqlite/logsqlite-fuse.c- * covered under GPL2
+
+contrib/logsqlite/logsqlite-jid2xmpp.pl:# (C) 2007 MichaĹ GĂłrny
+
+SConstruct:#  (C) 2008 MichaĹ GĂłrny
+
+COPYING: Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+
+po/de.po:# Copyright (C) 2005 Tomasz Torcz <zdzichu@irc.pl>
+po/de.po-# This file is distributed under the same license as the ekg2 package.
+po/de.po-# Piotr Kupisiewicz <deletek@ekg2.org>, 2005.
+
+po/pl.po:# English (c) translation for ekg2.
+po/pl.po:# Copyright (C) EKG2 team (http://www.ekg2.org)
+po/pl.po-# This file is distributed under the same license as the ekg2 package.
+po/pl.po-# Tomasz Torcz <zdzichu@irc.pl>, 2005.
+po/pl.po-# Piotr Kupisiewicz <deletek@ekg2.org>, 2005.
+po/pl.po-# Leszek Krupiński <leafnode@wafel.com>, 2005.
+po/pl.po-# Michał Górny <peres@peres.int.pl>, 2007.
+
+po/Makevars:COPYRIGHT_HOLDER = Tomasz Torcz <zdzichu@irc.pl>
+XXX ???
+
+gettext.h:   Copyright (C) 1995-1998, 2000-2002 Free Software Foundation, Inc.
+gettext.h-
+gettext.h-   This program is free software; you can redistribute it and/or modify it
+gettext.h-   under the terms of the GNU Library General Public License as published
+gettext.h-   by the Free Software Foundation; either version 2, or (at your option)
+gettext.h-   any later version.
+gettext.h-
+gettext.h-   This program is distributed in the hope that it will be useful,
+gettext.h-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+gettext.h-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+gettext.h-   Library General Public License for more details.
+gettext.h-
+gettext.h-   You should have received a copy of the GNU Library General Public
+gettext.h-   License along with this program; if not, write to the Free Software
+gettext.h-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
+gettext.h-   USA.  */
+
+debian/copyright-This package was debianized by Marcin Owsiany <porridge@debian.org> on
+
+debian/rules:# GNU copyright 1997 to 1999 by Joey Hess.
+debian/rules-# Adapted for ekg2 package by Marcin Owsiany.
+debian/rules:# GNU copyright 2002-2006
+

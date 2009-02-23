@@ -1,0 +1,150 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+# Adapted for ekg2 package by Marcin Owsiany.
+# GNU copyright 2002-2006
+
+#export DH_VERBOSE=1
+
+# Help cross-compiling
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+# This is to ease debugging, until ekg2 stabilizes
+DEB_BUILD_OPTIONS=nostrip noopt
+export DEB_BUILD_OPTIONS
+
+CFLAGS += -g
+ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
+  CFLAGS += -O0
+else
+  CFLAGS += -O2
+endif
+export CFLAGS
+
+# dh_strip will take care of nostrip
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+   NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+   MAKEFLAGS += -j$(NUMJOBS)
+endif
+
+AUTOMAKE = automake-1.9
+ACLOCAL  = aclocal-1.9
+export AUTOMAKE ACLOCAL
+
+include /usr/share/dpatch/dpatch.make
+DPATCH_STAMPFN = patch-stamp
+
+config.status: $(DPATCH_STAMPFN) configure.ac
+	dh_testdir
+# Remember to update README.Debian as well...
+	./autogen.sh \
+		--host=$(DEB_HOST_GNU_TYPE) \
+		--build=$(DEB_BUILD_GNU_TYPE) \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=\$${prefix}/share/man \
+		--infodir=\$${prefix}/share/info \
+		--libexecdir=\$${prefix}/lib/ekg2 \
+		--with-ioctld \
+		--with-libgadu \
+		--with-pthread \
+		--with-openssl \
+		--with-gnutls \
+		--with-expat \
+		--with-ncurses \
+		--with-gtk \
+		--without-libgsm \
+		--with-perl \
+		--with-python \
+		--with-libxosd \
+		--with-sqlite3 \
+		--without-logsoracle \
+		--with-aspell \
+		--without-libjpeg \
+		--without-libungif \
+		--without-libgif \
+		--with-gpm-mouse \
+		--with-gpg \
+		--with-zlib \
+		--without-readline \
+		--enable-unicode
+# Reasons for disabling some features are in README.Debian
+# Remember to update README.Debian as well...
+
+
+build: build-stamp
+build-stamp:  config.status
+	echo 'Building with MAKEFLAGS=$(MAKEFLAGS) and CFLAGS=$(CFLAGS)'
+	dh_testdir
+	$(MAKE)
+	$(MAKE) -C docs/ekg2book    'XSLTRANSFORMER=xsltproc --nonet'
+	cd docs/ekg2book-en && if [ ! -e design ]; then ln -s ../ekg2book/design design; fi
+	$(MAKE) -C docs/ekg2book-en 'XSLTRANSFORMER=xsltproc --nonet'
+	cd docs/ekg2book-en && if [ -L design ]; then rm design; fi
+	cd docs/ && ./generate-doc.sh
+	touch build-stamp
+
+clean: clean-patched unpatch
+
+clean-patched:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp 
+	if [ -e docs/ekg2book/Makefile    ] ; then $(MAKE) -C docs/ekg2book    clean ; fi
+	if [ -e docs/ekg2book-en/Makefile ] ; then $(MAKE) -C docs/ekg2book-en clean ; fi
+	rm -rf docs/doxygen
+	if [ -e Makefile ] ; then $(MAKE) distclean ; fi
+	rm -f docs/ekg2.1
+	-test -r /usr/share/misc/config.sub && \
+	  cp -f /usr/share/misc/config.sub config.sub
+	-test -r /usr/share/misc/config.guess && \
+	  cp -f /usr/share/misc/config.guess config.guess
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	perl_install_args="DESTDIR=$(CURDIR)/debian/tmp INSTALLDIRS=vendor" $(MAKE) install prefix=$(CURDIR)/debian/tmp/usr
+#	install -m 0644 contrib/ruby/*.rb $(CURDIR)/debian/tmp/usr/share/ekg2/scripts/
+
+binary-indep: build install
+# We have nothing to do.
+
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_install --sourcedir=debian/tmp --list-missing
+	dh_installdocs
+	cp -a docs/ekg2book/book    $(CURDIR)/debian/ekg2/usr/share/doc/ekg2/book-pl
+	cp -a docs/ekg2book-en/book $(CURDIR)/debian/ekg2/usr/share/doc/ekg2/book-en
+	cp -a docs/doxygen          $(CURDIR)/debian/ekg2/usr/share/doc/ekg2/
+	dh_installmenu
+	dh_installdirs
+	cp docs/ekg2.en.1 docs/ekg2.1
+	dh_installman docs/ekg2.pl.1 docs/ekg2.1
+	rm -f docs/ekg2.1
+	dh_installchangelogs # ChangeLog
+	dh_link
+	dh_perl
+	dh_pycentral
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps # -X debian/ekg/usr/bin/ekglogs -L libgadu3 -l debian/libgadu3/usr/lib
+# A hack to downgrade ekglogs dependancies to recommedations
+# This is a leftover from ekg 1 package, but may be useful for tuning plugins' deps
+#	dpkg-shlibdeps -Tdebian/ekg.substvars.tmp -dRecommends debian/ekg/usr/bin/ekglogs
+#	cat debian/ekg.substvars.tmp >> debian/ekg.substvars
+#	rm -f debian/ekg.substvars.tmp
+# Endhack :-)
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install 

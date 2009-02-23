@@ -1,0 +1,5 @@
+usr/bin/ekg2
+usr/share/ekg2/*
+usr/lib/ekg2/*
+usr/share/locale/*
+usr/lib/perl5
