@@ -23,7 +23,7 @@ Is current mailbox support OK with the policy?
 
 Correct copyright information - see http://lists.debian.org/debian-legal/2008/10/msg00017.html
  - The data below was extracted from the source tree and is up-to-date as of
-   SVN r4712  2008-10-09 21:02:34 +0100
+   SVN r4783 Tue Feb 17 19:00:58 2009 +0000
  - it needs to be formatted properly (perhaps according to
    http://wiki.debian.org/Proposals/CopyrightFormat)
  - furthermore, there are many problematic cases:
@@ -1336,6 +1336,156 @@ ekg/stuff.h- *			    Paweł Maziarz <drg@go2.pl>
 ekg/stuff.h- *			    Dawid Jarosz <dawjar@poczta.onet.pl>
 ekg/stuff.h- *			    Piotr Domagalski <szalik@szalik.net>
 ekg/stuff.h- *			    Adam Mikuta <adammikuta@poczta.onet.pl>
+
+remote/commands.c:
++ *  (C) Copyright 2001-2005 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Robert J. Woźny <speedy@ziew.org>
++ *                         Paweł Maziarz <drg@infomex.pl>
++ *                         Wojciech Bojdoł <wojboj@htc.net.pl>
++ *                         Piotr Wysocki <wysek@linux.bydg.org>
++ *                         Dawid Jarosz <dawjar@poczta.onet.pl>
++ *                         Piotr Domagalski <szalik@szalik.net>
++ *                         Kuba Kowalski <qbq@kofeina.net>
++ *                         Piotr Kupisiewicz <deli@rzepaknet.us>
++ *                         Leszek Krupiński <leafnode@wafel.com>
++ *                         Adam Mikuta <adamm@ekg2.org>
+GPL2
+
+remote/commands.h
++ *  (C) Copyright 2001-2002 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Dawid Jarosz <dawjar@poczta.onet.pl>
+
+remote/debug.h: ?
+
+remote/dynstuff.c:
++ *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Dawid Jarosz <dawjar@poczta.onet.pl>
+
+remote/dynstuff.h:
++ *  (C) Copyright 2001-2002 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Dawid Jarosz <dawjar@poczta.onet.pl>
++ *                          Adam Wysocki <gophi@ekg.chmurka.net>
+
+
+remote/dynstuff_inline.h: ?
+
+remote/ekg_remote.c
++ *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Robert J. Woźny <speedy@ziew.org>
++ *                         Paweł Maziarz <drg@infomex.pl>
++ *                         Adam Osuchowski <adwol@polsl.gliwice.pl>
++ *                         Dawid Jarosz <dawjar@poczta.onet.pl>
++ *                         Wojciech Bojdoł <wojboj@htcon.pl>
++ *                         Piotr Domagalski <szalik@szalik.net>
+
+remote/plugins.c:
++ *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *               2004 Piotr Kupisiewicz (deli@rzepaknet.us>
+
+remote/plugins.h:
++ *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
+
+remote/queries.h: ?
+
+remote/recode.c:
++ *  (C) Copyright XXX
+
++/* Following two functions shamelessly ripped from mutt-1.4.2i 
++ * (http://www.mutt.org, license: GPL)
++ * 
++ * Copyright (C) 1999-2000 Thomas Roessler <roessler@guug.de>
++ * Modified 2004 by Maciek Pasternacki <maciekp@japhy.fnord.org>
+
+remote/recode.h: ?
+
+remote/remote-ssl.h: ?
+
+remote/remote.c:
++ *  (C) Copyright 2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+
++ * this function is based on some (print_info(), print_cert_info(), print_x509_info(), etc..) from gnutls-2.0.4, src/common.c
++ * Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007 Free Software Foundation
++ * Author: Nikos Mavrogiannopoulos
++ *
++ * under GPL-2 or later */
+
+remote/sessions.c:
++ *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *               2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+
+remote/sessions.h:
++ *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *               2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+
+
+remote/strings.c:
++ *  (C) Copyright 2003-2006 Maciej Pietrzak <maciej@hell.org.pl>
++ *                         Jakub Zawadzki <darkjames@darkjames.ath.cx>
+
+
+remote/strings.h:
++ *  (C) Copyright 2003-2006 Maciej Pietrzak <maciej@hell.org.pl>
++ *                         Jakub Zawadzki <darkjames@darkjames.ath.cx>
+
+remote/stuff.c:
++ *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Robert J. Woźny <speedy@ziew.org>
++ *                         Paweł Maziarz <drg@o2.pl>
++ *                         Dawid Jarosz <dawjar@poczta.onet.pl>
++ *                         Piotr Domagalski <szalik@szalik.net>
++ *                         Adam Mikuta <adammikuta@poczta.onet.pl>
+
+
+remote/stuff.h:
++ *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Robert J. Woźny <speedy@ziew.org>
++ *                         Paweł Maziarz <drg@go2.pl>
++ *                         Dawid Jarosz <dawjar@poczta.onet.pl>
++ *                         Piotr Domagalski <szalik@szalik.net>
++ *                         Adam Mikuta <adammikuta@poczta.onet.pl>
+
+remote/themes.c:
++ *  (C) Copyright 2001-2006 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Leszek Krupiński <leafnode@wafel.com>
++ *                         Adam Mikuta <adamm@ekg2.org>
+
+remote/themes.h:
++ *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+
+remote/userlist.c:
++ *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Robert J. Woźny <speedy@ziew.org>
++ *                         Piotr Domagalski <szalik@szalik.net>
+
+remote/userlist.h:
++ *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Robert J. Woźny <speedy@ziew.org>
+
+remote/vars.c:
++ *  (C) Copyright 2001-2004 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Robert J. Woźny <speedy@ziew.org>
++ *                         Leszek Krupiński <leafnode@wafel.com>
++ *                         Adam Mikuta <adammikuta@poczta.onet.pl>
+
+remote/vars.h:
++ *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
+
+remote/windows.c:
++ *  (C) Copyright 2002-2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                         Paweł Maziarz <drg@infomex.pl>
++ *                    2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+
+remote/windows.h:
++ *  (C) Copyright 2003 Wojtek Kaniewski <wojtekka@irc.pl>
++ *               2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+
+remote/xmalloc.c:
++ *  (C) Copyright 2001-2003 Wojtek Kaniewski <wojtekka@irc.pl>
++                      2004 Piotr Kupisiewicz <deli@rzepaknet.us>
+
+remote/xmalloc.h:
++ *  (C) Copyright 2001-2002 Wojtek Kaniewski <wojtekka@irc.pl>
++ *                    2004 Piotr Kupisiewicz <deli@rzepaknet.us>
 
 contrib/python/notify-bubble.py:# (c) 2006 Tomasz Torcz <zdzichu@irc.pl>
 
