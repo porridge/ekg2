@@ -4,7 +4,7 @@ EKG2 package for Debian
 For the convenience of the user, here are the flags that ekg2 is configured
 with at build time:
 
-	./autogen.sh \
+	EKG2_NO_COLOR_CONFIGURE=1 ./autogen.sh \
 		--host=$(DEB_HOST_GNU_TYPE) \
 		--build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=/usr \

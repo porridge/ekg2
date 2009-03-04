@@ -39,7 +39,7 @@ DPATCH_STAMPFN = patch-stamp
 config.status: $(DPATCH_STAMPFN) configure.ac
 	dh_testdir
 # Remember to update README.Debian as well...
-	./autogen.sh \
+	EKG2_NO_COLOR_CONFIGURE=1 ./autogen.sh \
 		--host=$(DEB_HOST_GNU_TYPE) \
 		--build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=/usr \
