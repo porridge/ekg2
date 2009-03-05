@@ -1,4 +1,5 @@
 usr/bin/ekg2
+usr/bin/ekg2-remote
 usr/share/ekg2/*
 usr/lib/ekg2/*
 usr/share/locale/*

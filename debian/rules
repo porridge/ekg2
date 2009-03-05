@@ -69,6 +69,7 @@ config.status: $(DPATCH_STAMPFN) configure.ac
 		--with-gpg \
 		--with-zlib \
 		--without-readline \
+		--enable-remote \
 		--enable-unicode
 # Reasons for disabling some features are in README.Debian
 # Remember to update README.Debian as well...

@@ -34,6 +34,7 @@ with at build time:
 		--with-gpg \
 		--with-zlib \
 		--without-readline \
+		--enable-remote \
 		--enable-unicode
 
 Please note that the xosd plugin does not handle unicode correctly, due to the
