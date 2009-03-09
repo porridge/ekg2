@@ -126,8 +126,9 @@ binary-arch: build install
 	dh_installmenu
 	dh_installdirs
 	cp docs/ekg2.en.1 docs/ekg2.1
-	dh_installman docs/ekg2.pl.1 docs/ekg2.1
-	rm -f docs/ekg2.1
+	cp docs/ekg2-remote.en.1 docs/ekg2-remote.1
+	dh_installman docs/ekg2.pl.1 docs/ekg2.1 docs/ekg2-remote.pl.1 docs/ekg2-remote.1
+	rm -f docs/ekg2.1 docs/ekg2-remote.1
 	dh_installchangelogs # ChangeLog
 	dh_link
 	dh_perl
