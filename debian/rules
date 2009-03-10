@@ -33,10 +33,11 @@ AUTOMAKE = automake-1.9
 ACLOCAL  = aclocal-1.9
 export AUTOMAKE ACLOCAL
 
-include /usr/share/dpatch/dpatch.make
-DPATCH_STAMPFN = patch-stamp
+include /usr/share/quilt/quilt.make
+-include /usr/share/topgit/tg2quilt.mk
+QUILT_STAMPFN = debian/stamp-patched
 
-config.status: $(DPATCH_STAMPFN) configure.ac
+config.status: $(QUILT_STAMPFN) configure.ac
 	dh_testdir
 # Remember to update README.Debian as well...
 	EKG2_NO_COLOR_CONFIGURE=1 ./autogen.sh \
