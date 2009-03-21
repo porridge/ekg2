@@ -97,8 +97,9 @@ clean-patched:
 	if [ -e docs/ekg2book/Makefile    ] ; then $(MAKE) -C docs/ekg2book    clean ; fi
 	if [ -e docs/ekg2book-en/Makefile ] ; then $(MAKE) -C docs/ekg2book-en clean ; fi
 	rm -rf docs/doxygen
-	if [ -e Makefile ] ; then $(MAKE) distclean ; fi
+	if [ -e Makefile ] ; then $(MAKE) maintainer-clean ; fi
 	rm -f docs/ekg2.1
+	./autoclean.sh
 	-test -r /usr/share/misc/config.sub && \
 	  cp -f /usr/share/misc/config.sub config.sub
 	-test -r /usr/share/misc/config.guess && \
