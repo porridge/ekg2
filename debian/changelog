@@ -1,3 +1,30 @@
+ekg2 (20090311+0000-1) experimental; urgency=low
+
+  * New snapshot from upstream. Major changes:
+    - a few mass symbol renames to support C++ plugins
+    - migration from converters to recoders
+    - ekg2-remote merged into the codebase
+  * Moved my debianization sandbox into a (top)git repository
+  * New patches:
+    - features/autoresponder-sysmsg-note: a documentation addition
+    - features/ekg2-manpages: manpages for ekg2-remote
+    - features/ekg2book-generation: improvements for ekg2book generation
+    - features/gnutls-1.6.3-compat: avoid build failures with old gnutls
+    - features/no-color-configure: allow disabling of colours in configure
+      output
+    - fixes/autoclean: autoclean improvements
+    - fixes/ekg2-remote-cmdline: fixes for cmdline parsing
+    - fixes/nls-m4-canonicalization: revert old unneeded change
+  * Updated copyright changes in the TODO file
+  * Disable colours in configure output, would introduce garbage in
+    autobuilder logs
+  * Added installation of ekg2-remote (binary, manpages, description, menu
+    file)
+  * Improved clean target to clean more cruft
+  * Updated invocation of ekg2book generation/cleanup
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 21 Mar 2009 14:31:59 +0000
+
 ekg2 (20081124+1336-1) experimental; urgency=low
 
   * New snapshot from upstream

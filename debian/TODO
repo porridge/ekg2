@@ -23,7 +23,7 @@ Is current mailbox support OK with the policy?
 
 Correct copyright information - see http://lists.debian.org/debian-legal/2008/10/msg00017.html
  - The data below was extracted from the source tree and is up-to-date as of
-   SVN r4783 Tue Feb 17 19:00:58 2009 +0000
+   SVN r4789 2009-03-10 20:54:33
  - it needs to be formatted properly (perhaps according to
    http://wiki.debian.org/Proposals/CopyrightFormat)
  - furthermore, there are many problematic cases:
@@ -465,6 +465,11 @@ plugins/sniff/sniff_gg.h- *	gg protocol documentation (http://ekg.chmurka.net/do
 plugins/sniff/sniff_gg.h- *	great job guys! thx.
 plugins/sniff/sniff_gg.h- */
 
+plugins/sniff/gg-keygen-gg32.h: gg_login_hash() copied from libgadu copyrighted under LGPL-2.1 (C) libgadu developers */
+plugins/sniff/gg-keygen-gg32.h: cache created by me (darkjames)
+
+plugins/sniff/gg-keygen-sha1.h: /* orginal version of SHA-1 in C by Steve Reid <steve@edmweb.com> */
+
 plugins/sniff/gg-keygen.c: *  (C) Copyright 2007 Jakub Zawadzki <darkjames@darkjames.ath.cx>
 plugins/sniff/gg-keygen.c- *
 plugins/sniff/gg-keygen.c- *  This program is free software; you can redistribute it and/or modify
@@ -479,10 +484,6 @@ plugins/sniff/gg-keygen.c- *
 plugins/sniff/gg-keygen.c- *  You should have received a copy of the GNU General Public License
 plugins/sniff/gg-keygen.c- *  along with this program; if not, write to the Free Software
 plugins/sniff/gg-keygen.c- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-plugins/sniff/gg-keygen.c- */
-plugins/sniff/gg-keygen.c-
-plugins/sniff/gg-keygen.c:/* gg_login_hash() copied from libgadu copyrighted under LGPL-2.1 (C) libgadu developers */
-plugins/sniff/gg-keygen.c-/* orginal version of SHA-1 in C by Steve Reid <steve@edmweb.com> */
 
 plugins/icq/icq_flap_handlers.c: *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
 plugins/icq/icq_flap_handlers.c- *		       2008 Wiesław Ochmiński <wiechu@wiechu.com>
