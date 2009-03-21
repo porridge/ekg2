@@ -1,9 +1,10 @@
 ekg2 (20090311+0000-1) experimental; urgency=low
 
-  * New snapshot from upstream. Major changes:
+  * New snapshot from upstream. Noteworthy changes:
     - a few mass symbol renames to support C++ plugins
     - migration from converters to recoders
     - ekg2-remote merged into the codebase
+    - no_config message is now displayed on first startup, Closes: #506744
   * Moved my debianization sandbox into a (top)git repository
   * New patches:
     - features/autoresponder-sysmsg-note: a documentation addition
@@ -23,7 +24,7 @@ ekg2 (20090311+0000-1) experimental; urgency=low
   * Improved clean target to clean more cruft
   * Updated invocation of ekg2book generation/cleanup
 
- -- Marcin Owsiany <porridge@debian.org>  Sat, 21 Mar 2009 14:31:59 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 21 Mar 2009 15:15:36 +0000
 
 ekg2 (20081124+1336-1) experimental; urgency=low
 
