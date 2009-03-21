@@ -81,10 +81,8 @@ build-stamp:  config.status
 	echo 'Building with MAKEFLAGS=$(MAKEFLAGS) and CFLAGS=$(CFLAGS)'
 	dh_testdir
 	$(MAKE)
-	$(MAKE) -C docs/ekg2book    'XSLTRANSFORMER=xsltproc --nonet'
-	cd docs/ekg2book-en && if [ ! -e design ]; then ln -s ../ekg2book/design design; fi
-	$(MAKE) -C docs/ekg2book-en 'XSLTRANSFORMER=xsltproc --nonet'
-	cd docs/ekg2book-en && if [ -L design ]; then rm design; fi
+	cd docs/ && XSLTRANSFORMER='xsltproc --nonet' sh generate-ekg2book.sh pl generate
+	cd docs/ && XSLTRANSFORMER='xsltproc --nonet' sh generate-ekg2book.sh en generate
 	cd docs/ && ./generate-doc.sh
 	touch build-stamp
 
@@ -94,8 +92,11 @@ clean-patched:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp 
-	if [ -e docs/ekg2book/Makefile    ] ; then $(MAKE) -C docs/ekg2book    clean ; fi
-	if [ -e docs/ekg2book-en/Makefile ] ; then $(MAKE) -C docs/ekg2book-en clean ; fi
+	set -e; if [ -e ./docs/generate-ekg2book.sh ] ; then \
+	  cd docs ; \
+	  sh generate-ekg2book.sh pl clean; \
+	  sh generate-ekg2book.sh en clean; \
+	fi
 	rm -rf docs/doxygen
 	if [ -e Makefile ] ; then $(MAKE) maintainer-clean ; fi
 	rm -f docs/ekg2.1
