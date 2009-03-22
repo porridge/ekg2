@@ -14,6 +14,7 @@ ekg2 (20090322+1413-1) experimental; urgency=low
     - features/gnutls-1.6.3-compat: avoid build failures with old gnutls
     - features/no-color-configure: allow disabling of colours in configure
       output
+    - fixes/gg-keep-reason: obey keep_reason=0, Closes: #506670
     - fixes/autoclean: autoclean improvements
     - fixes/ekg2-remote-cmdline: fixes for cmdline parsing
     - fixes/nls-m4-canonicalization: revert old unneeded change
@@ -25,7 +26,7 @@ ekg2 (20090322+1413-1) experimental; urgency=low
   * Improved clean target to clean more cruft
   * Updated invocation of ekg2book generation/cleanup
 
- -- Marcin Owsiany <porridge@debian.org>  Sun, 22 Mar 2009 14:11:59 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 22 Mar 2009 14:43:13 +0000
 
 ekg2 (20081124+1336-1) experimental; urgency=low
 
