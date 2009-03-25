@@ -101,7 +101,7 @@ clean-patched:
 	if [ -e Makefile ] ; then $(MAKE) maintainer-clean ; fi
 	rm -f docs/ekg2.1
 	if [ -e debian/autoclean.sh ] ; then \
-	  ./debian/autoclean.sh ; \
+	  sh debian/autoclean.sh ; \
 	else \
 	  ./autoclean.sh ; \
 	fi
