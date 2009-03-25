@@ -13,6 +13,21 @@ Things to do before releasing any new version of the package:
 
 Add freedesktop org files
 
+PLUGINS in description - start with ioctld
+
+Investigate plugins:
+ - dbus
+ X pcm,gsm,oss (included, but are these actually usable?)
+ * ruby
+ * sniff
+include or document reasons for non-inclusion in README.Debian
+
+Missing from configure.ac - probably unsupported
+  oss		*		kodek OSS			-
+  ruby          *               obsługa skryptów Ruby           ruby
+  sniff		darkjames	sniffer GG			pcap
+add to build system, but disabled by default - let people use the software!
+ 
 Perhaps some autotools improvements?:
  - make distcheck
  - upgrade autoconf, new AC_INIT(), AC_CONFIG_SRCDIR()
