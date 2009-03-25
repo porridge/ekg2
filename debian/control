@@ -30,7 +30,7 @@ Description: instant messenger and IRC client for UNIX systems
    - "remote control" via pipe or socket
    - XOSD support
    - jogger.pl blog update support
-   - a simple autoresponder
+   - a simple CAPTCHA (autoresponder)
    - Python and Perl scripting
    - launching shell commands on certain events
    - encryption support (SIM, GnuPG, ROT13)
