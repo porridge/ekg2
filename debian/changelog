@@ -6,7 +6,8 @@ ekg2 (20090322+1413-1) experimental; urgency=low
     - ekg2-remote merged into the codebase
     - no_config message is now displayed on first startup, Closes: #506744
     - more space for password prompt, Closes: #506659
-  * Moved my debianization sandbox into a (top)git repository
+  * Moved my debianization sandbox into a (top)git repository and replaced
+    dpatch with quilt
   * New patches:
     - features/autoresponder-sysmsg-note: a documentation addition
     - features/ekg2-manpages: manpages for ekg2-remote
