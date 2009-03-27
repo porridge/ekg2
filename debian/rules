@@ -100,7 +100,10 @@ clean-patched:
 	rm -rf docs/doxygen
 	if [ -e Makefile ] ; then $(MAKE) maintainer-clean ; fi
 	rm -f docs/ekg2.1
-	if [ -e debian/autoclean.sh ] ; then \
+# Run our own copy of autoclean if it exists. We cannot just patch it with
+# quilt, as sometimes this target is invoked when the source tree is unpatched.
+# TODO: perhaps this can be fixed?
+	set -e; if [ -e debian/autoclean.sh ] ; then \
 	  sh debian/autoclean.sh ; \
 	else \
 	  ./autoclean.sh ; \
@@ -125,6 +128,9 @@ binary-indep: build install
 binary-arch: build install
 	dh_testdir
 	dh_testroot
+	# Fail the build as a precaution if our private copy of autoclean.sh
+	# differs from the (at this time certainly) patched upstream version.
+	set -e; if [ -e debian/autoclean.sh ] ; then diff -u autoclean.sh debian/autoclean.sh ; fi
 	dh_install --sourcedir=debian/tmp --list-missing
 	dh_installdocs
 	cp -a docs/ekg2book/book    $(CURDIR)/debian/ekg2/usr/share/doc/ekg2/book-pl
