@@ -19,6 +19,8 @@ ekg2 (20090322+1413-1) experimental; urgency=low
     - fixes/autoclean: autoclean improvements
     - fixes/ekg2-remote-cmdline: fixes for cmdline parsing
     - fixes/nls-m4-canonicalization: revert old unneeded change
+    - fixes/gtk-clist-deprecated: fix build error with sid's gtk+
+    - fixes/plugins-readme: add missing plugins descriptions
   * Updated copyright changes in the TODO file
   * Disable colours in configure output, would introduce garbage in
     autobuilder logs
@@ -26,8 +28,12 @@ ekg2 (20090322+1413-1) experimental; urgency=low
     file)
   * Improved clean target to clean more cruft
   * Updated invocation of ekg2book generation/cleanup
+  * Added a private autoclean copy as the patched upstream is not available at
+    certain points where the clean target might be called. Additionally added
+    a command to fail the build in case they differ, to assure they are kept
+    in sync.
 
- -- Marcin Owsiany <porridge@debian.org>  Sun, 22 Mar 2009 14:43:13 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 27 Mar 2009 17:10:35 +0000
 
 ekg2 (20081124+1336-1) experimental; urgency=low
 
