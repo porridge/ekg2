@@ -17,6 +17,8 @@ ekg2 (20090322+1413-1) experimental; urgency=low
       output
     - fixes/gg-keep-reason: obey keep_reason=0, Closes: #506670
     - fixes/autoclean: autoclean improvements
+    - fixes/ekg2book-autoclean: experimental autoclean improvements for
+      ekg2book Makefiles
     - fixes/ekg2-remote-cmdline: fixes for cmdline parsing
     - fixes/nls-m4-canonicalization: revert old unneeded change
     - fixes/gtk-clist-deprecated: fix build error with sid's gtk+
@@ -33,7 +35,7 @@ ekg2 (20090322+1413-1) experimental; urgency=low
     a command to fail the build in case they differ, to assure they are kept
     in sync.
 
- -- Marcin Owsiany <porridge@debian.org>  Fri, 27 Mar 2009 17:10:35 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 27 Mar 2009 17:54:21 +0000
 
 ekg2 (20081124+1336-1) experimental; urgency=low
 
