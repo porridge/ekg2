@@ -1,4 +1,4 @@
-ekg2 (20090322+1413-1) experimental; urgency=low
+ekg2 (20090404+0800-1) experimental; urgency=low
 
   * New snapshot from upstream. Noteworthy changes:
     - a few mass symbol renames to support C++ plugins
@@ -10,19 +10,13 @@ ekg2 (20090322+1413-1) experimental; urgency=low
     dpatch with quilt
   * New patches:
     - features/autoresponder-sysmsg-note: a documentation addition
-    - features/ekg2-manpages: manpages for ekg2-remote
     - features/ekg2book-generation: improvements for ekg2book generation
-    - features/gnutls-1.6.3-compat: avoid build failures with old gnutls
-    - features/no-color-configure: allow disabling of colours in configure
-      output
     - fixes/gg-keep-reason: obey keep_reason=0, Closes: #506670
-    - fixes/autoclean: autoclean improvements
     - fixes/ekg2book-autoclean: experimental autoclean improvements for
       ekg2book Makefiles
     - fixes/ekg2-remote-cmdline: fixes for cmdline parsing
-    - fixes/nls-m4-canonicalization: revert old unneeded change
     - fixes/gtk-clist-deprecated: fix build error with sid's gtk+
-    - fixes/plugins-readme: add missing plugins descriptions
+    - fixes/perl-install: Abort perl plugin subdir processing if one directory fails.
   * Updated copyright changes in the TODO file
   * Disable colours in configure output, would introduce garbage in
     autobuilder logs
@@ -35,7 +29,7 @@ ekg2 (20090322+1413-1) experimental; urgency=low
     a command to fail the build in case they differ, to assure they are kept
     in sync.
 
- -- Marcin Owsiany <porridge@debian.org>  Fri, 27 Mar 2009 17:54:21 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 04 Apr 2009 09:21:44 +0100
 
 ekg2 (20081124+1336-1) experimental; urgency=low
 
