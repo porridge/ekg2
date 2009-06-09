@@ -32,10 +32,12 @@ Perhaps some autotools improvements?:
  - make distcheck
  - upgrade autoconf, new AC_INIT(), AC_CONFIG_SRCDIR()
  - use AC_CONFIG_AUX_DIR()
- - make sure ./configure, ekg2book gen (et al.?) is only invoked one during build.
+ - make sure ./configure, ekg2book gen (et al.?) is only invoked one during build. (gone in sid)
  - config.status: WARNING:  po/Makefile.in.in seems to ignore the --datarootdir setting
+ - Investigate warning: configure: WARNING: unrecognized options: --with-gnutls
 
 Investigate warning: #warning "PATH_MAX not found! Defaulting to 4096, please report."
+ (gone in sid)
 
 Think about splitting the package -- need to calculate the dependencies' size.
 
