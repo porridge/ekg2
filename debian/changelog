@@ -1,3 +1,14 @@
+ekg2 (20091008+2020-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Removed patches - merged upstream
+    - fixes/ekg2book-autoclean
+    - fixes/perl-install
+    - features/autoresponder-sysmsg-note
+    - features/ekg2book-generation
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 08 Oct 2009 21:48:56 +0100
+
 ekg2 (20090404+0800-1) experimental; urgency=low
 
   * New snapshot from upstream. Noteworthy changes:
