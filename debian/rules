@@ -94,16 +94,8 @@ clean-patched:
 	  sh generate-ekg2book.sh en clean; \
 	fi
 	rm -rf docs/doxygen
-	if [ -e Makefile ] ; then $(MAKE) maintainer-clean ; fi
+	if [ -e Makefile ] ; then $(MAKE) distclean ; fi
 	rm -f docs/ekg2.1
-# Run our own copy of autoclean if it exists. We cannot just patch it with
-# quilt, as sometimes this target is invoked when the source tree is unpatched.
-# TODO: perhaps this can be fixed?
-	set -e; if [ -e debian/autoclean.sh ] ; then \
-	  sh debian/autoclean.sh ; \
-	else \
-	  ./autoclean.sh ; \
-	fi
 	-test -r /usr/share/misc/config.sub && \
 	  cp -f /usr/share/misc/config.sub config.sub
 	-test -r /usr/share/misc/config.guess && \
