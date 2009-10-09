@@ -9,8 +9,9 @@ ekg2 (20091008+2020-1) experimental; urgency=low
   * Removed dependencies on autotools
   * Added patches:
     - fixes/gpgme-lfs: enable building against libgpgme with LFS support
+    - fixes/txtfiles-syntax: fix text file syntax
 
- -- Marcin Owsiany <porridge@debian.org>  Fri, 09 Oct 2009 17:21:48 +0100
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 09 Oct 2009 17:49:42 +0100
 
 ekg2 (20090404+0800-1) experimental; urgency=low
 
