@@ -29,18 +29,14 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
    MAKEFLAGS += -j$(NUMJOBS)
 endif
 
-AUTOMAKE = automake-1.9
-ACLOCAL  = aclocal-1.9
-export AUTOMAKE ACLOCAL
-
 include /usr/share/quilt/quilt.make
 -include /usr/share/topgit/tg2quilt.mk
 QUILT_STAMPFN = debian/stamp-patched
 
-config.status: $(QUILT_STAMPFN) configure.ac
+config.status: $(QUILT_STAMPFN) configure
 	dh_testdir
 # Remember to update README.Debian as well...
-	EKG2_NO_COLOR_CONFIGURE=1 ./autogen.sh \
+	EKG2_NO_COLOR_CONFIGURE=1 ./configure \
 		--host=$(DEB_HOST_GNU_TYPE) \
 		--build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=/usr \
