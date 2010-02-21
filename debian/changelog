@@ -1,3 +1,14 @@
+ekg2 (20100221+1200-1) experimental; urgency=low
+
+  * New upstream snapshot
+  * Removed patches - merged upstream in some way
+    - fixes/ekg2-remote-cmdline
+    - fixes/gpgme-lfs
+    - fixes/gtk-clist-deprecated
+    - fixes/txtfiles-syntax
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 21 Feb 2010 17:11:33 +0000
+
 ekg2 (20091008+2020-1) experimental; urgency=low
 
   * New snapshot from upstream
