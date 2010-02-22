@@ -67,7 +67,8 @@ config.status: $(QUILT_STAMPFN) configure
 		--with-zlib \
 		--without-readline \
 		--enable-remote \
-		--enable-unicode
+		--enable-unicode \
+		--enable-skip-relative-plugins-dir
 # Reasons for disabling some features are in README.Debian
 # Remember to update README.Debian as well...
 
