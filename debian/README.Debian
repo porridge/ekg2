@@ -35,7 +35,8 @@ with at build time:
 		--with-zlib \
 		--without-readline \
 		--enable-remote \
-		--enable-unicode
+		--enable-unicode \
+		--enable-skip-relative-plugins-dir
 
 Please note that the xosd plugin does not handle unicode correctly, due to the
 xosd library using a deprecated X11 interface.
