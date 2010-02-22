@@ -32,6 +32,27 @@ git rebase -i debian
 git checkout debian
 git merge debian-PENDING
 git branch -d debian-PENDING
-  
+
+git checkout autostuff
+git merge upstream
+NOCONFIGURE=1 ./autogen.sh
+git status # inspect and remove any cruft or temp files
+git add # any new necessary files
+git commit -a -m 'Updated generated autostuff files.'
+
+TS=YYYYMMDD+HHMM
+git tag ekg2_$TS
+# TODO: Perhaps the following command can be skipped, as git-buildpackage can create a tarball.
+git archive --prefix=ekg2_$TS/  --verbose HEAD | gzip -9 > ../ekg2_${TS}.orig.tar.gz
+
+git checkout build
+git merge autostuff debian # in case of conflicts in .gitignore, ignore just autom4te.cache and commit
+./debian/rules tg-cleanexport
+git add debian/patches
+git commit -m 'Refreshed topgit-generated patches.'
+
+# TODO: move to .gbp.conf in debian branch
+script -c "git-buildpackage --git-verbose --git-upstream-branch=autostuff --git-debian-branch=build" ../typescript.YYYYMMDD-X
+
 Build and test on sid.
 
