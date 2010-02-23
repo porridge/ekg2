@@ -9,8 +9,12 @@ ekg2 (20100221+1200-1) experimental; urgency=low
   * Added a README.source and WORKFLOW files as a starting point for source
     package documentation.
   * Added --enable-skip-relative-plugins-dir to configure invocation
+  * Silenced an echo command
+  * Use INSTALLDIRS=vendor at build time in an attempt to skip .packlist
+    installation and properly follow the Debian Perl Policy. Also remove them
+    manually just in case, as this does not seem to work on some systems.
 
- -- Marcin Owsiany <porridge@debian.org>  Mon, 22 Feb 2010 19:43:29 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Tue, 23 Feb 2010 12:56:28 +0000
 
 ekg2 (20091008+2020-1) experimental; urgency=low
 
