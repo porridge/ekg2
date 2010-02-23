@@ -1,0 +1,48 @@
+From: Marcin Owsiany <porridge@debian.org>
+Subject: [PATCH] fixes/gg-keep-reason
+
+Try and fix http://bugs.ekg2.org/ticket/21
+
+Signed-off-by: Marcin Owsiany <porridge@debian.org>
+
+---
+ plugins/gg/commands.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/plugins/gg/commands.c b/plugins/gg/commands.c
+index 758ab29..7961e54 100644
+--- a/plugins/gg/commands.c
++++ b/plugins/gg/commands.c
+@@ -117,6 +117,8 @@ static COMMAND(gg_command_connect) {
+ 				tmp = locale_to_gg_dup(session, myreason);
+ 				session_descr_set(session, tmp ? myreason : NULL);
+ 			} else {
++				if(!config_keep_reason)
++					session_descr_set(session, NULL);
+ 				myreason = xstrdup(session_descr_get(session));
+ 				tmp = locale_to_gg_dup(session, myreason);
+ 			}
+@@ -185,6 +187,21 @@ static COMMAND(gg_command_connect) {
+ 		if ((session_status_get(session) == EKG_STATUS_NA))
+ 			session_status_set(session, EKG_STATUS_AVAIL);
+ 
++		{
++			const char *__reason = params[0];
++			char *myreason;
++			char *tmp;
++			if (__reason) {
++				if (!xstrcmp(__reason, "-"))	myreason = NULL;
++				else				myreason = xstrdup(__reason);
++				tmp = ekg_locale_to_cp_dup(myreason);
++				session_descr_set(session, tmp ? myreason : NULL);
++			} else {
++				if(!config_keep_reason)
++					session_descr_set(session, NULL);
++			}
++		}
++
+ 		_status = gg_text_to_status(session_status_get(session), session_descr_get(session));
+ 		
+ 		/* dcc */
+-- 
+tg: (103d3e4..) fixes/gg-keep-reason (depends on: upstream)
