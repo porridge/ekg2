@@ -75,9 +75,9 @@ config.status: $(QUILT_STAMPFN) configure
 
 build: build-stamp
 build-stamp:  config.status
-	echo 'Building with MAKEFLAGS=$(MAKEFLAGS) and CFLAGS=$(CFLAGS)'
+	@echo 'Building with MAKEFLAGS=$(MAKEFLAGS) and CFLAGS=$(CFLAGS)'
 	dh_testdir
-	$(MAKE)
+	$(MAKE) PERL_MM_OPT=INSTALLDIRS=vendor
 	cd docs/ && XSLTRANSFORMER='xsltproc --nonet' sh generate-ekg2book.sh pl generate
 	cd docs/ && XSLTRANSFORMER='xsltproc --nonet' sh generate-ekg2book.sh en generate
 	cd docs/ && ./generate-doc.sh
@@ -109,6 +109,8 @@ install: build
 	dh_clean -k
 	dh_installdirs
 	perl_install_args="DESTDIR=$(CURDIR)/debian/tmp INSTALLDIRS=vendor" $(MAKE) install prefix=$(CURDIR)/debian/tmp/usr
+# Apparently INSTALLDIRS=vendor is not enough in some cases. Remove packfiles manually.
+	find debian/tmp -type f -name .packlist | xargs -r rm -f
 #	install -m 0644 contrib/ruby/*.rb $(CURDIR)/debian/tmp/usr/share/ekg2/scripts/
 
 binary-indep: build install
