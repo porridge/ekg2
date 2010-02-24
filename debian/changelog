@@ -1,6 +1,8 @@
 ekg2 (20100221+1200-1) experimental; urgency=low
 
   * New upstream snapshot
+    - this or previous version has a fix for garbage on terminal resize,
+      Closes: #506669
   * Removed patches - merged upstream in some way
     - fixes/ekg2-remote-cmdline
     - fixes/gpgme-lfs
@@ -16,7 +18,7 @@ ekg2 (20100221+1200-1) experimental; urgency=low
   * Bumped debian/compat to 7 (no changes needed)
   * Bumped Standards-Version to 3.8.4 (no changes needed)
 
- -- Marcin Owsiany <porridge@debian.org>  Wed, 24 Feb 2010 07:22:11 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Wed, 24 Feb 2010 07:24:07 +0000
 
 ekg2 (20091008+2020-1) experimental; urgency=low
 
