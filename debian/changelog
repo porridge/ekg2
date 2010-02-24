@@ -13,8 +13,10 @@ ekg2 (20100221+1200-1) experimental; urgency=low
   * Use INSTALLDIRS=vendor at build time in an attempt to skip .packlist
     installation and properly follow the Debian Perl Policy. Also remove them
     manually just in case, as this does not seem to work on some systems.
+  * Bumped debian/compat to 7 (no changes needed)
+  * Bumped Standards-Version to 3.8.4 (no changes needed)
 
- -- Marcin Owsiany <porridge@debian.org>  Tue, 23 Feb 2010 12:56:28 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Wed, 24 Feb 2010 07:22:11 +0000
 
 ekg2 (20091008+2020-1) experimental; urgency=low
 
