@@ -1,0 +1,5 @@
+po/*.gmo
+po/stamp-po
+po/ekg2.pot
+plugins/perl/common/Makefile.old
+plugins/perl/irc/Makefile.old
