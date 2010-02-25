@@ -106,7 +106,7 @@ clean-patched:
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_prep
 	dh_installdirs
 	perl_install_args="DESTDIR=$(CURDIR)/debian/tmp INSTALLDIRS=vendor" $(MAKE) install prefix=$(CURDIR)/debian/tmp/usr
 # Apparently INSTALLDIRS=vendor is not enough in some cases. Remove packfiles manually.
