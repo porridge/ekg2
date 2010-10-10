@@ -1,8 +1,10 @@
 ekg2 (20101002+2104-2) experimental; urgency=low
 
   * UNRELEASED
+  * Corrected configuration gnutls option (no impact, as the option was on
+    by default anyway)
 
- -- Marcin Owsiany <porridge@debian.org>  Sun, 10 Oct 2010 11:32:44 +0100
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 10 Oct 2010 11:47:27 +0100
 
 ekg2 (20101002+2104-1) experimental; urgency=low
 
