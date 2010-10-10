@@ -1,3 +1,9 @@
+ekg2 (20101002+2104-2) experimental; urgency=low
+
+  * UNRELEASED
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 10 Oct 2010 11:32:44 +0100
+
 ekg2 (20101002+2104-1) experimental; urgency=low
 
   * New upstream snapshot, based on 0.3.x branch
