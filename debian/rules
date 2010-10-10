@@ -48,7 +48,7 @@ config.status: $(QUILT_STAMPFN) configure
 		--with-libgadu \
 		--with-pthread \
 		--with-openssl \
-		--with-gnutls \
+		--with-libgnutls \
 		--with-expat \
 		--with-ncurses \
 		--with-gtk \

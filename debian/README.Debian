@@ -16,7 +16,7 @@ with at build time:
 		--with-libgadu \
 		--with-pthread \
 		--with-openssl \
-		--with-gnutls \
+		--with-libgnutls \
 		--with-expat \
 		--with-ncurses \
 		--with-gtk \
