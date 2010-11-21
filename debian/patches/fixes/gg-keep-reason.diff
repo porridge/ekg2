@@ -87,4 +87,4 @@ index 63627c3..b33a8df 100644
  		/* dcc */
  		if (gg_config_dcc) {
 -- 
-tg: (afede2b..) fixes/gg-keep-reason (depends on: upstream)
+tg: (c7fa0cb..) fixes/gg-keep-reason (depends on: upstream)
