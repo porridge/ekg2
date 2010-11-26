@@ -19,8 +19,7 @@ Description: instant messenger and IRC client for UNIX systems
  Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
  filesystem-based communication mechanism called "xmsg" is supported.
  .
- The program is being actively developed, and already has many useful features,
- including:
+ The program has many useful features, including:
    - irssi-like ncurses interface, with mouse support
    - experimental GTK+ interface
    - experimental HTTP interface
