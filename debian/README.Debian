@@ -1,0 +1,52 @@
+EKG2 package for Debian
+=======================
+
+For the convenience of the user, here are the flags that ekg2 is configured
+with at build time:
+
+	EKG2_NO_COLOR_CONFIGURE=1 ./autogen.sh \
+		--host=$(DEB_HOST_GNU_TYPE) \
+		--build=$(DEB_BUILD_GNU_TYPE) \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=\$${prefix}/share/man \
+		--infodir=\$${prefix}/share/info \
+		--libexecdir=\$${prefix}/lib/ekg2 \
+		--with-ioctld \
+		--with-libgadu \
+		--with-pthread \
+		--with-openssl \
+		--with-gnutls \
+		--with-expat \
+		--with-ncurses \
+		--with-gtk \
+		--without-libgsm \
+		--with-perl \
+		--with-python \
+		--with-libxosd \
+		--with-sqlite3 \
+		--without-logsoracle \
+		--with-aspell \
+		--without-libjpeg \
+		--without-libungif \
+		--without-libgif \
+		--with-gpm-mouse \
+		--with-gpg \
+		--with-zlib \
+		--without-readline \
+		--enable-remote \
+		--enable-unicode
+
+Please note that the xosd plugin does not handle unicode correctly, due to the
+xosd library using a deprecated X11 interface.
+
+Some features are disabled explicitly, here are the reasons:
+ - readline: legal problems with openssl+readline (not compiled by default,
+   but better safe than sorry)
+ - libgsm: codec support is not implemented in the client [was: libgsm1-dev
+   (>= 1.0.10-11.1)]
+ - logsoracle: no build-deps in debian
+ - gif/ungif/jpeg support: tokens are in GIF format now, but they are not
+   readable when displayed in ascii format, not mentioning their OCR-ability
+
+ -- Marcin Owsiany <porridge@debian.org>,  Sat, 11 Oct 2008 13:25:50 +0100

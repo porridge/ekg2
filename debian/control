@@ -1,0 +1,38 @@
+Source: ekg2
+Section: net
+Priority: optional
+Maintainer: Marcin Owsiany <porridge@debian.org>
+Build-Depends: debhelper (>= 5.0.37.2), libncursesw5-dev, python-dev, python-central (>= 0.5), libperl-dev, libssl-dev, libgnutls-dev, libaspell-dev, libgadu-dev, libexpat1-dev, libgpmg1-dev, libidn11-dev, libxosd-dev (>= 2.2.13), libsqlite3-dev, python, xsltproc, docbook-xsl, doxygen, libgtk2.0-dev, libgpgme11-dev, zlib1g-dev, quilt
+Standards-Version: 3.8.0
+XS-Python-Version: current
+Homepage: http://ekg2.org/
+
+Package: ekg2
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, ${perl:Depends}
+Recommends: perl, ${shlibs:Recommends}
+Suggests: aspell-pl | aspell-dictionary, sms-pl
+XB-Python-Version: ${python:Versions}
+Description: instant messenger and IRC client for UNIX systems
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ The program is being actively developed, and already has many useful features,
+ including:
+   - irssi-like ncurses interface, with mouse support
+   - experimental GTK+ interface
+   - experimental HTTP interface
+   - experimental 'remote' interface
+   - spell checking
+   - "remote control" via pipe or socket
+   - XOSD support
+   - jogger.pl blog update support
+   - a simple CAPTCHA (autoresponder)
+   - Python and Perl scripting
+   - launching shell commands on certain events
+   - encryption support (SIM, GnuPG, ROT13)
+   - logging to SQLite, plain text or XML files
+   - sending SMs (using an external program such as sms-pl)
+   - mail checking

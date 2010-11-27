@@ -1,0 +1,521 @@
+ekg2 (20100221+1200-1) experimental; urgency=low
+
+  * New upstream snapshot
+  * Removed patches - merged upstream in some way
+    - fixes/ekg2-remote-cmdline
+    - fixes/gpgme-lfs
+    - fixes/gtk-clist-deprecated
+    - fixes/txtfiles-syntax
+  * Added a README.source and WORKFLOW files as a starting point for source
+    package documentation.
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 21 Feb 2010 17:42:45 +0000
+
+ekg2 (20091008+2020-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Removed patches - merged upstream
+    - fixes/ekg2book-autoclean
+    - fixes/perl-install
+    - features/autoresponder-sysmsg-note
+    - features/ekg2book-generation
+  * Removed dependencies on autotools
+  * Added patches:
+    - fixes/gpgme-lfs: enable building against libgpgme with LFS support
+    - fixes/txtfiles-syntax: fix text file syntax
+
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 09 Oct 2009 17:49:42 +0100
+
+ekg2 (20090404+0800-1) experimental; urgency=low
+
+  * New snapshot from upstream. Noteworthy changes:
+    - a few mass symbol renames to support C++ plugins
+    - migration from converters to recoders
+    - ekg2-remote merged into the codebase
+    - no_config message is now displayed on first startup, Closes: #506744
+    - more space for password prompt, Closes: #506659
+  * Moved my debianization sandbox into a (top)git repository and replaced
+    dpatch with quilt
+  * New patches:
+    - features/autoresponder-sysmsg-note: a documentation addition
+    - features/ekg2book-generation: improvements for ekg2book generation
+    - fixes/gg-keep-reason: obey keep_reason=0, Closes: #506670
+    - fixes/ekg2book-autoclean: experimental autoclean improvements for
+      ekg2book Makefiles
+    - fixes/ekg2-remote-cmdline: fixes for cmdline parsing
+    - fixes/gtk-clist-deprecated: fix build error with sid's gtk+
+    - fixes/perl-install: Abort perl plugin subdir processing if one directory fails.
+  * Updated copyright changes in the TODO file
+  * Disable colours in configure output, would introduce garbage in
+    autobuilder logs
+  * Added installation of ekg2-remote (binary, manpages, description, menu
+    file)
+  * Improved clean target to clean more cruft
+  * Updated invocation of ekg2book generation/cleanup
+  * Added a private autoclean copy as the patched upstream is not available at
+    certain points where the clean target might be called. Additionally added
+    a command to fail the build in case they differ, to assure they are kept
+    in sync.
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 04 Apr 2009 09:21:44 +0100
+
+ekg2 (20081124+1336-1) experimental; urgency=low
+
+  * New snapshot from upstream
+    - fixes a disconnect after very first connect in GG, Closes: #501918
+    - corrects the description of display_notify, Closes: #501919
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 24 Nov 2008 13:36:12 +0000
+
+ekg2 (20081009+2105-1) experimental; urgency=low
+
+  * New snapshot from upstream
+    - new plugins: rivchat, icq, remote
+    - does not install useless header files
+    - contains some function declaration corrections Closes: #480777
+    - Ruby support disabled (unmaintained, considered too buggy). This happens
+      to get rid of a bug triggered by the ruby plugin: Closes: #490341
+    - improved legacy encoding locale support Closes: #501679
+  * Do not install ekg2-config (removed upstream)
+  * Improved and updated the copyright file a bit. There is still a lot to do
+    on this subject (see debian/TODO)
+  * Standards-Version bumped to 3.8.0
+  * Updated DEB_BUILD_OPTIONS treatment to match current policy, and added
+    parallel=N handling
+  * Removed libjpeg and libungif build-dependancies and disabled the
+    corresponding configure flags. The GG tokens (for reading of which they
+    were needed) are not readable when displayed on an ascii screen any more.
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 11 Oct 2008 13:26:01 +0100
+
+ekg2 (20080511+1713-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * New plugins:
+    - polchat: metioned in description
+    - ruby scripting: added ruby-dev and ruby to build-deps, mentioned in
+      description and installed example scripts
+  * Added doxygen documentation to the build and installation process (added
+    doxygen to build-deps)
+  * Fixed the clean target to only invoke makefiles if they exist, rather than
+    ignoring their exit status completly
+  * Moved homepage from long description to its own new header
+  * Updated menu file to new policy
+  * Bumped Standards-Version to 3.7.3
+  * Removed the debian revision on libxosd-dev build-dep as suggested by
+    lintian
+  * Capitalized scripting language names in long description
+  * Updated doc-base section paths to match new policy
+  * Fixed some spelling mistakes found by lintian: doc-base files
+  * Added dh_perl call and perl:Depends to control file, as we ship a binary
+    perl module
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 11 May 2008 18:24:48 +0100
+
+ekg2 (20070809+1812-1) experimental; urgency=low
+
+  * New snapshot from upstream
+    - added IDN support
+    - rewritten GTK+ frontend
+  * Minor description fixes
+  * Added libidn11-dev to build-deps
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu,  9 Aug 2007 18:23:00 +0100
+
+ekg2 (20070727+1114-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Bumped Standards-Version to 3.7.2 (no changes needed)
+
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 27 Jul 2007 11:15:17 +0100
+
+ekg2 (20070724+1530-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Fixed an error in plugins/ncurses/old.c:ncurses_ui_window_lastlog()
+
+ -- Marcin Owsiany <porridge@debian.org>  Tue, 24 Jul 2007 15:30:31 +0100
+
+ekg2 (20070719+2011-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Built with multibyte character set support (UTF-8 !) Closes: #304986
+    - includes a fix for inifinite loops when optimized binary is used in a
+    single-byte charset terminal
+
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 20 Jul 2007 09:50:54 +0100
+
+ekg2 (20070621+1337-1) experimental; urgency=low
+
+  * New snapshot from upstream
+   - fixed more calls using va_list arg
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 21 Jun 2007 13:38:03 +0100
+
+ekg2 (20070619+1215-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * New plugins: jogger, feed (no configure command line changes necessary),
+    dbus (not enabled even upstream)
+  * Includes upstream changes to calls using va_list args, which potentially
+    mean this upload Closes: #429252
+
+ -- Marcin Owsiany <porridge@debian.org>  Tue, 19 Jun 2007 12:30:24 +0100
+
+ekg2 (20070305+1821-1) experimental; urgency=low
+
+  * New snapshot from upstream
+    - new plugin: logsoracle (disabled - lack of build-deps in Debian)
+    - new plugin: autoresponder (enabled by default - no additional
+    build-deps)
+  * 10_docs_fixes.dpatch: removed from apply list - merged upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Wed,  7 Mar 2007 20:51:46 +0000
+
+ekg2 (20070114+1457-1) experimental; urgency=low
+
+  * New snapshot from upstream
+    - GnuPG encryption support enabled
+  * Changed build-dependancy on gnupg to libgpgme11-dev, as that's what's
+    needed
+  * debian/rules: Removed useless dh_python call
+  * Added a note on GnuPG, http and xmsg support to description
+  * 10_docs_fixes.dpatch: fixed header value in plugins/xmsg/session-en.txt
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 14 Jan 2007 16:30:40 +0000
+
+ekg2 (20061231+1203-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 31 Dec 2006 12:04:51 +0000
+
+ekg2 (20061228+1748-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 28 Dec 2006 17:51:59 +0000
+
+ekg2 (20061113+1853-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 13 Nov 2006 18:53:51 +0000
+
+ekg2 (20060930+1926-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 30 Sep 2006 19:26:23 +0100
+
+ekg2 (20060925+1849-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 25 Sep 2006 18:49:31 +0100
+
+ekg2 (20060919+1334-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * 10_superfluous_casts.dpatch: removed (code changed upstream)
+
+ -- Marcin Owsiany <porridge@debian.org>  Tue, 19 Sep 2006 13:59:07 +0100
+
+ekg2 (20060911+1323-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * This snapshot contains code which tries harder to run in UTF-8 charset
+    environment, which really Closes: #386299
+  * 10_docs_fixes.dpatch: disabled (merged upstream)
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 11 Sep 2006 13:23:40 +0100
+
+ekg2 (20060907+0754-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Contains a message warning about current incapability to run in a UTF-8
+    locale, which Closes: #386299
+  * Switched to a different snapshot making technique, which uses export,
+    which means no more lintian/linda complaining about CVS directories
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu,  7 Sep 2006 07:54:57 +0100
+
+ekg2 (20060906+1817-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Start maintaining patches using dpatch
+    - move the patch to fix double array dereference to
+      debian/patches/10_superfluous_casts.dpatch
+    - added dpatch calls/include to debian/rules
+    - added dpatch to dependancies
+  * New 10_docs_fixes.dpatch: fix indentation in
+    plugins/mail/vars-pl{,-utf}.txt which broke the build
+
+ -- Marcin Owsiany <porridge@debian.org>  Wed,  6 Sep 2006 18:51:30 +0100
+
+ekg2 (20060826+0920-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Made packaging changes necessary for transitioning to the new python
+    policy which Closes: #380785
+  * Removed nonexistant icq plugin from configure.ac for now
+  * Changed CONTRIB_DIRS to CONTRIB_SUBDIRS in configure.ac python stanza,
+    which fixes perl scripts installation
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 26 Aug 2006 11:10:24 +0100
+
+ekg2 (20060723+1442-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Changed build-dependancy on libgnutls11-dev to libgnutls-dev (since the
+    former is about to be removed) which Closes: #379421
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 23 Jul 2006 14:42:38 +0100
+
+ekg2 (20060719+2046-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Enabled gnupg in configure cmdline, added gnupg to build-deps in
+    preparation for future gpg support
+  * Enabled zlib in configure cmdline, added zlib1g-dev to build-deps in
+    preparation for future logs zlib support
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 20 Jul 2006 20:47:40 +0100
+
+ekg2 (20060610+1531-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Disable new libgif support (not in Debian?), explicitly enable libungif
+    support, added to build-deps
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 10 Jun 2006 16:18:31 +0100
+
+ekg2 (20060529+1352-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 29 May 2006 13:52:25 +0100
+
+ekg2 (20060426+2110-1) experimental; urgency=low
+
+  * New snapshot from upstream
+    - contains a fix for crash on user add, which Closes: #361833
+  * For now disabled recently added support for UTF-8 (still too buggy)
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 27 Apr 2006 19:51:28 +0100
+
+ekg2 (20060210+1832-1) experimental; urgency=low
+
+  * New snapshot from upstream
+    - docs now properly mention subject_prefix instead of subject_string,
+      which Closes: #346257
+    - variable ncurses:contacts_size no longer forgotten, which
+      Closes: #352046
+    - syntax fixes to plugins/gg/vars-en.txt merged upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 10 Feb 2006 18:32:31 +0100
+
+ekg2 (20060209+1618-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Added libgtk2.0-dev to build-deps (new plugin)
+  * Applied two syntax fixes to plugins/gg/vars-en.txt
+  * Noted the gtk interface in description
+  * Added --with-gtk to rules and README.Debian
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu,  9 Feb 2006 18:05:33 +0100
+
+ekg2 (20060116+1232-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Fixed the symlinks to .txt files in doc dir Closes: #346232
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 16 Jan 2006 13:39:54 +0100
+
+ekg2 (20051219+2025-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Disabled optimization and stripping unconditionally, to ease debugging,
+    sice ekg2 is still rather unstable.
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 19 Dec 2005 20:36:01 +0100
+
+ekg2 (20051203+1654-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Pass proper installation information to MakeMaker-generated makefile
+    urgency=medium, since it fixes an FTBFS Closes: #338197
+  * Switched from dh_movefiles to dh_install
+  * Install the perl binary stuff and modules
+  * plugins/jabber/commands.txt: fixed an indent
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 14 Nov 2005 10:53:15 +0100
+
+ekg2 (20051106+1657-1) experimental; urgency=low
+
+  * New snapshot from upstream
+    - ltdl support is removed Closes: #332842
+    - added pl and en manpages Closes: #275384
+  * Patched docs/ekgbook*/Makefile to use $(XSLTRANSFORMER) instead of a
+    hardcoded program name
+  * debian/ekg2.files: install include files and ekg2-config
+  * debian/rules:
+    - disabled the gsm plugin (codec support is not implemented in the client)
+    - changed from sqlite0 to sqlite3
+    - install the manpages properly
+    - added --nonet to xsltproc invocation
+  * debian/control: cleanups and updates to the description (listed more
+    features) and (build-)deps:
+    - removed unused libreadline4-dev dep (plugin was never built because of
+      license problems)
+    - removed zlib1g-dev dep (compression support is not implemented in logs
+      plugin)
+    - removed libgsm1-dev since the plugin is disabled
+    - added libperl-dev (for perl scripting plugin)
+    - removed unused libglib1.2-dev (probably left over from ekg 1)
+    - removed libxt-dev dep added in 20041103+1455-1 in favor of adding a
+      version dependancy on a fixed libxosd-dev
+    - changed libsqlite build-dep to 3
+    - updated the suggests of aspell dictionary
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon,  7 Nov 2005 09:47:20 +0100
+
+ekg2 (20050713+2142-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Rebuilt with new gcc 4
+  * Bumped standards-version (no changes)
+
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 15 Jul 2005 00:24:07 +0300
+
+ekg2 (20050524+1740-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Tue, 24 May 2005 17:40:39 +0200
+
+ekg2 (20050427+2251-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Wed, 27 Apr 2005 22:51:34 +0200
+
+ekg2 (20050421+1317-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Fix clean target to really clean the book and not build it, which fixes
+    FTBFS with sudo Closes: #305472
+  * Patched the sheet in en version of the book as pl in previous version.
+  * Install both book versions manually, since the the directories have the
+    same name and would clash when installed with dh_installdocs
+  * Update doc-base accordingly (directories changed)
+  * Don't install txt files removed upstream
+  * Workaround missing files in en version of the book by symlinking for now
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 21 Apr 2005 14:04:01 +0200
+
+ekg2 (20050411+2134-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Added Build-depends on python, xsltproc and docbook-xsl (needed for
+    generating documentation)
+  * Added commands to build and install html documentation
+  * Temporarily patched docs/ekg2book/sheet.xsl to import an existing file.
+    Need to resolve this with upstream.
+  * Added doc-base support
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 11 Apr 2005 22:44:19 +0200
+
+ekg2 (20050221+1921-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Rebuilt against aspell 0.60 to allow smooth transition from << 0.60
+  * Changed Suggests: aspell-pl | aspell-dictionary to
+    aspell-pl | aspell6-dictionary accordingly. Closes: #294599
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 13 Feb 2005 14:33:56 +0100
+
+ekg2 (20050213+0006-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 13 Feb 2005 00:06:43 +0100
+
+ekg2 (20050131+1623-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 31 Jan 2005 16:23:07 +0100
+
+ekg2 (20050130+0219-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 30 Jan 2005 02:20:00 +0100
+
+ekg2 (20050120+1755-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * DEB_BUILD_OPTIONS=noopt,nostrip to ease debugging - ekg2 is still
+    somewhat unstable. This breaks policy, but I feel that benefits
+    outweight the costs, at least until it leaves experimental.
+  * Added libsqlite0-dev to build-depends
+  * Noted python scripting support in Description
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 20 Jan 2005 18:41:07 +0100
+
+ekg2 (20041128+1742-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 28 Nov 2004 17:46:26 +0100
+
+ekg2 (20041105+1915-1) experimental; urgency=low
+
+  * New snapshot from upstream
+
+ -- Marcin Owsiany <porridge@debian.org>  Fri,  5 Nov 2004 19:15:34 +0100
+
+ekg2 (20041103+1455-1) experimental; urgency=low
+
+  * New snapshot from upstream
+  * Added Build-depends on libxosd-dev for xosd support added by upstream
+  * Tidied up cmdline option parsing and --help message
+  * Work-around #279513 by introducing build-dependancy on libxt-dev
+
+ -- Marcin Owsiany <porridge@debian.org>  Wed,  3 Nov 2004 15:36:48 +0100
+
+ekg2 (20041024+1640-1) experimental; urgency=low
+
+  * New snapshot from upstream.
+  * Brought debian/copyright closer to the original terms (no change to
+    DFSG-ness)
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 24 Oct 2004 17:23:15 +0200
+
+ekg2 (20041007+2000-1) experimental; urgency=low
+
+  * New snapshot from upstream.
+  * Removed installation instructions for docs and examples which were removed
+    upstream (this includes stale manpages, which need to be rewritten).
+  * Don't install commands.txt and vars.txt twice, instead symlink from docs
+    to the file installed by upstream Makefiles.
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu,  7 Oct 2004 20:39:29 +0200
+
+ekg2 (20040912+1500-1) experimental; urgency=low
+
+  * New snapshot from upstream.
+  * Added Build-Conflicts: autoconf2.13, automake1.4; call automake and
+    aclocal by their versioned names, as suggested by autotools-dev
+    maintainer.
+  * Added homepage to package description, as suggested by "best practices".
+
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 12 Sep 2004 15:33:27 +0200
+
+ekg2 (20040904-1) experimental; urgency=low
+
+  * Initial release, from upstream CVS
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat,  4 Sep 2004 16:23:24 +0200
+

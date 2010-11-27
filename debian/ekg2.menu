@@ -1,0 +1,11 @@
+?package(ekg2):needs="text" \
+  section="Applications/Network/Communication" \
+  title="EKG2" \
+  command="/usr/bin/ekg2" \
+  longtitle="EKG2 - open source instant messenger"
+
+?package(ekg2):needs="text" \
+  section="Applications/Network/Communication" \
+  title="EKG2 - Remote" \
+  command="/usr/bin/ekg2-remote" \
+  longtitle="Remote Interface for EKG2 instant messenger"
