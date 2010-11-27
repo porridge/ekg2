@@ -1,5 +1,3 @@
-#include "ekg2-config.h"
-
 /*
  *  (C) Copyright XXX
  *
@@ -34,6 +32,8 @@
  * 	- Check if this code works OK.
  */
 
+#include "ekg2-config.h"
+
 #include <errno.h>
 #include <string.h>
 
@@ -48,6 +48,8 @@
 #include "stuff.h"
 #include "windows.h"
 #include "xmalloc.h"
+
+#include "recode_tables.h"
 
 #define EKG_ICONV_BAD (void*) -1
 
@@ -444,19 +446,78 @@ string_t ekg_convert_string_t(string_t s, const char *from, const char *to) {
 	return r;
 }
 
-static char *ekg_convert_string_p_safe(char *ps, void *ptr) {
-	char *out = ekg_convert_string_p(ps, ptr);
-	if (out)
-		xfree(ps);
-	else
-		out = ps;
-	return out;
+struct ekg_recoder {
+	int count;
+	char *(*recode_from_locale)(struct ekg_recoder *, char *);
+	char *(*recode_to_locale)(struct ekg_recoder *, char *);
+	void *conv_in, *conv_out;
+	int in_new_buffer;						/*  set if recode_from_locale() and recode_to_locale() return freshly allocated buffer.
+									  unset if return old buffer
+									 */
+	int is_utf;
+};
+
+static struct ekg_recoder cp_recoder;
+static struct ekg_recoder iso2_recoder;
+static struct ekg_recoder utf8_recoder;
+static struct ekg_recoder dummy_recoder;
+
+static void ekg_recode_init(struct ekg_recoder *rec);
+static void ekg_recode_deinit(struct ekg_recoder *rec);
+
+void changed_console_charset(const char *name) {
+	int all_ok = 1;
+
+	/* reinit, and display */
+#define REINIT_RECODER(strukt, name)	\
+	do {				\
+		int oldcount;		\
+		if ((oldcount = strukt.count)) {						\
+			/* int wasok = (strukt.recode_from_locale && strukt.recode_to_locale); */	\
+			ekg_recode_deinit(&strukt);						\
+			ekg_recode_init(&strukt);						\
+			strukt.count = oldcount;						\
+			if (!strukt.recode_from_locale || !strukt.recode_to_locale)		\
+				all_ok = 0;							\
+		}										\
+	} while (0);
+
+	REINIT_RECODER(iso2_recoder, "ISO-8859-2");
+	REINIT_RECODER(cp_recoder, "CP-1250");
+	REINIT_RECODER(utf8_recoder, "UTF-8");
+
+	if (!all_ok) {
+#ifdef HAVE_ICONV
+		// XXX, iconv_fail
+		print("generic_error", "ekg2 fail to (re)initialize charset conversion between some encodings. Check %Gconsole_charset%n variable, if it won't help inform ekg2 dev team and/or upgrade iconv");
+#else
+		print("generic_error", "ekg2 fail to (re)initialize charset conversion between some encodings. Check %Gconsole_charset%n variable, %rNOTE: console_charset other than: ISO-8859-2 and UTF-8 "
+			"require iconv, go and install some!");
+#endif
+	} else if (!in_autoexec && xstrcasecmp(console_charset, config_console_charset)) 
+		print("console_charset_bad", console_charset, config_console_charset);
 }
 
 int ekg_converters_display(int quiet) {
 #ifdef HAVE_ICONV
 	struct ekg_converter *c;
+#endif
 
+#define DISPLAY_RECODER(strukt, name)	\
+	do {				\
+		if (strukt.count)	\
+			printq( (strukt.recode_from_locale && strukt.recode_to_locale) ? 		\
+				"iconv_list" : "iconv_list_bad",					\
+				config_console_charset, name, itoa(strukt.count), itoa(strukt.count),"");\
+	} while(0);
+
+	DISPLAY_RECODER(iso2_recoder, "ISO-8859-2");
+	DISPLAY_RECODER(cp_recoder, "CP-1250");
+	DISPLAY_RECODER(utf8_recoder, "UTF-8");
+
+#undef DISPLAY_RECODER
+
+#ifdef HAVE_ICONV
 	for (c = ekg_converters; c; c = c->next) {
 		/* cd, rev, from, to, used, rev_used, is_utf */
 
@@ -505,7 +566,7 @@ invalid:
 	return 1;
 }
 
-static char *ekg_from_utf8(char *b, const unsigned short *recode_table) {	/* sizeof(recode_table) MUST BE 0x100 ==> 0x80 items */
+static char *ekg_from_utf8(char *b, const unsigned short *recode_table) {	/* sizeof(recode_table) = 0x100 ==> 0x80 items */
 	unsigned char *buf = (unsigned char *) b;
 
 	char *newbuf;
@@ -544,13 +605,10 @@ static char *ekg_from_utf8(char *b, const unsigned short *recode_table) {	/* siz
 		}
 	}
 	newbuf[j] = '\0';
-
-	xfree(b);
-
 	return newbuf;
 }
 
-static char *ekg_to_utf8(char *b, const unsigned short *recode_table) {
+static char *ekg_to_utf8(char *b, const unsigned short *recode_table) {		/* sizeof(recode_table) = 0x100 ==> 0x80 items */
 	unsigned char *buf = (unsigned char *) b;
 	char *newbuf;
 	int newlen = 0;
@@ -582,235 +640,329 @@ static char *ekg_to_utf8(char *b, const unsigned short *recode_table) {
 		j += count;
 	}
 	newbuf[j] = '\0';
-
-	xfree(b);
 	return newbuf;
 }
 
-/* cp1250 <==> any, use ekg_locale_to_cp() and ekg_cp_to_locale() */
-
-#if (USE_UNICODE || HAVE_GTK)
-static const unsigned short table_cp1250[] = {
-	0x20ac, '?', 0x201a, '?', 0x201e, 0x2026, 0x2020, 0x2021, 		/* 0x80 -      */
-	'?', 0x2030, 0x0160, 0x2039, 0x015a, 0x0164, 0x017d, 0x0179,		/*      - 0x8F */
-	'?', 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014,		/* 0x90 -      */ 
-	'?', 0x2122, 0x0161, 0x203a, 0x015b, 0x0165, 0x017e, 0x017a,		/*      - 0x9F */
-	0x00a0, 0x02c7, 0x02d8, 0x0141, 0x00a4, 0x0104, 0x00a6, 0x00a7,		/* 0xA0 -      */
-	0x00a8, 0x00a9, 0x015e, 0x00ab, 0x00ac, 0x00ad, 0x00ae, 0x017b, 	/*      - 0xAF */
-	0x00b0, 0x00b1, 0x02db, 0x0142, 0x00b4, 0x00b5, 0x00b6, 0x00b7,		/* 0xB0 -      */
-	0x00b8, 0x0105, 0x015f, 0x00bb, 0x013d, 0x02dd, 0x013e, 0x017c, 	/*      - 0xBF */
-	0x0154, 0x00c1, 0x00c2, 0x0102, 0x00c4, 0x0139, 0x0106, 0x00c7,		/* 0xC0 -      */
-	0x010c, 0x00c9, 0x0118, 0x00cb, 0x011a, 0x00cd, 0x00ce, 0x010e, 	/*      - 0xCF */
-	0x0110, 0x0143, 0x0147, 0x00d3, 0x00d4, 0x0150, 0x00d6, 0x00d7,		/* 0xD0 -      */
-	0x0158, 0x016e, 0x00da, 0x0170, 0x00dc, 0x00dd, 0x0162, 0x00df, 	/*      - 0xDF */
-	0x0155, 0x00e1, 0x00e2, 0x0103, 0x00e4, 0x013a, 0x0107, 0x00e7,		/* 0xE0 -      */
-	0x010d, 0x00e9, 0x0119, 0x00eb, 0x011b, 0x00ed, 0x00ee, 0x010f, 	/*      - 0xEF */
-	0x0111, 0x0144, 0x0148, 0x00f3, 0x00f4, 0x0151, 0x00f6, 0x00f7,		/* 0xF0 -      */
-	0x0159, 0x016f, 0x00fa, 0x0171, 0x00fc, 0x00fd, 0x0163, 0x02d9, 	/*      - 0xFF */
-};
-#endif
-
-/* 80..9F = ?; here is A0..BF, C0..FF is the same */
-static const unsigned char iso_to_cp_table[] = {
-	0xa0, 0xa5, 0xa2, 0xa3, 0xa4, 0xbc, 0x8c, 0xa7,
-	0xa8, 0x8a, 0xaa, 0x8d, 0x8f, 0xad, 0x8e, 0xaf,
-	0xb0, 0xb9, 0xb2, 0xb3, 0xb4, 0xbe, 0x9c, 0xa1,
-	0xb8, 0x9a, 0xba, 0x9d, 0x9f, 0xbd, 0x9e, 0xbf,
-};
-
-static const unsigned char cp_to_iso_table[] = {
-	 '?',  '?',  '?',  '?',  '?',  '?',  '?',  '?',
-	 '?',  '?', 0xa9,  '?', 0xa6, 0xab, 0xae, 0xac,
-	 '?',  '?',  '?',  '?',  '?',  '?',  '?',  '?',
-	 '?',  '?', 0xb9,  '?', 0xb6, 0xbb, 0xbe, 0xbc,
-	0xa0, 0xb7, 0xa2, 0xa3, 0xa4, 0xa1,  '?', 0xa7,
-	0xa8,  '?', 0xaa,  '?',  '?', 0xad,  '?', 0xaf,
-	0xb0,  '?', 0xb2, 0xb3, 0xb4,  '?',  '?',  '?',
-	0xb8, 0xb1, 0xba,  '?', 0xa5, 0xbd, 0xb5, 0xbf,
-};
-
-static void *cp_conv_in = EKG_ICONV_BAD;
-static void *cp_conv_out = EKG_ICONV_BAD;
-static int cp_ref;
-
-static char *gg_cp_to_iso(char *b) {
+static char *ekg_change_encoding(char *b, const unsigned char *recode_table) {	/* sizeof(recode_table) = 0x80 ==> 0x80 items */
 	unsigned char *buf = (unsigned char *) b;
 
 	while (*buf) {
-		if (*buf >= 0x80 && *buf < 0xC0)
-			*buf = cp_to_iso_table[*buf - 0x80];
+		if (*buf >= 0x80)
+			*buf = recode_table[*buf - 0x80];
 
 		buf++;
 	}
 	return b;
 }
 
-static char *gg_iso_to_cp(char *b) {
-	unsigned char *buf = (unsigned char *) b;
+static struct ekg_recoder *ekg_recode_get(enum ekg_recode_name enc) {
+	if (enc == EKG_RECODE_CP) 
+		return &cp_recoder;
+	if (enc == EKG_RECODE_ISO2)
+		return &iso2_recoder;
+	if (enc == EKG_RECODE_UTF8)
+		return &utf8_recoder;
+	return &dummy_recoder;
+}
+
+static char *recode_ret(struct ekg_recoder *rec, char *buf) { return buf; }	/* locale => locale */
+
+static char *recode_ansi_helper_from(struct ekg_recoder *rec, char *buf) {	/* locale => encoding */
+	return ekg_change_encoding(buf, rec->conv_out);
+}
+
+static char *recode_ansi_helper_to(struct ekg_recoder *rec, char *buf) {	/* encoding => locale */
+	return ekg_change_encoding(buf, rec->conv_in);
+}
+
+static char *recode_utf8_helper_from(struct ekg_recoder *rec, char *buf) {	/* locale /utf-8/ => encoding */
+	return ekg_from_utf8(buf, rec->conv_out);
+}
+
+static char *recode_utf8_helper_to(struct ekg_recoder *rec, char *buf) {	/* encoding => locale /utf-8/ */
+	return ekg_to_utf8(buf, rec->conv_in);
+}
+
+#ifdef HAVE_ICONV
+static inline char *mutt_convert_string2(char *buf, size_t len, iconv_t cd, int is_utf) {
+	char *repls[] = { "\357\277\275", "?", 0 };
+
+	char *ib;
+	char *res, *ob;
+	size_t ibl, obl;
+	char **inrepls = 0;
+	char *outrepl = 0;
+
+	if ( is_utf == 2 ) /* to utf */
+		outrepl = repls[0]; /* this would be more evil */
+	else if ( is_utf == 1 ) /* from utf */
+		inrepls = repls;
+	else
+		outrepl = "?";
+
+	ib = buf;
+	ibl = len + 1;
+	obl = 16 * ibl;
+	ob = res = xmalloc (obl + 1);
+
+	mutt_iconv (cd, &ib, &ibl, &ob, &obl, inrepls, outrepl);
+	return res;
+}
+
+static char *recode_iconv_helper_from(struct ekg_recoder *rec, char *buf) {	/* locale => iconv */
+	iconv(rec->conv_out, NULL, NULL, NULL, NULL);	/* reset iconv */
+	return mutt_convert_string2(buf, strlen(buf), rec->conv_out, (rec->is_utf == 2 ? 1 : (rec->is_utf == 1 ? 2 : 0)));
+}
+
+static char *recode_iconv_helper_to(struct ekg_recoder *rec, char *buf) {	/* iconv => locale */
+	iconv(rec->conv_in, NULL, NULL, NULL, NULL);	/* reset iconv */
+	return mutt_convert_string2(buf, strlen(buf), rec->conv_in, rec->is_utf);
+}
+#endif
+
+static void ekg_recode_init_iconv(struct ekg_recoder *rec, const char *encoding) {
+#ifdef HAVE_ICONV
+	rec->conv_in	= iconv_open(config_console_charset, encoding);
+	rec->conv_out	= iconv_open(encoding, config_console_charset);
+
+	if (rec->conv_in != (iconv_t) -1)
+		rec->recode_to_locale = recode_iconv_helper_to;
+	if (rec->conv_out != (iconv_t) -1)
+		rec->recode_from_locale = recode_iconv_helper_from;
+
+	if (!xstrcasecmp(encoding, "UTF-8"))
+		rec->is_utf = 2;
+	else if (!xstrcasecmp(config_console_charset, "UTF-8"))
+		rec->is_utf = 1;
+
+	rec->in_new_buffer = 1;
+#endif
+}
+
+static void ekg_recode_init(struct ekg_recoder *rec) {
+	if (!config_console_charset) {
+		/* init not possible. */
+
+	} else if (rec == &cp_recoder) {
+		if (!xstrcasecmp("ISO-8859-2", config_console_charset)) {
+			rec->recode_from_locale = recode_ansi_helper_from;
+			rec->recode_to_locale	= recode_ansi_helper_to;
+			rec->conv_in		= (void *) cp_to_iso_table;
+			rec->conv_out 		= (void *) iso_to_cp_table;
+			rec->in_new_buffer	= 0;
+		} else if (!xstrcasecmp("UTF-8", config_console_charset)) {
+			rec->recode_from_locale = recode_utf8_helper_from;
+			rec->recode_to_locale   = recode_utf8_helper_to;
+			rec->conv_in 		= (void *) table_cp1250;
+			rec->conv_out 		= (void *) table_cp1250;
+			rec->in_new_buffer	= 1;
+		} else {
+			ekg_recode_init_iconv(rec, "WINDOWS-1250");
+		}
+
+	} else if (rec == &iso2_recoder) {
+		if (!xstrcasecmp("ISO-8859-2", config_console_charset)) {
+			rec->recode_from_locale = rec->recode_to_locale = recode_ret;
+			rec->in_new_buffer	= 0;
+		} else if (!xstrcasecmp("UTF-8", config_console_charset)) {
+			rec->recode_from_locale = recode_utf8_helper_from;
+			rec->recode_to_locale	= recode_utf8_helper_to;
+			rec->conv_in 		= (void *) table_iso_8859_2;
+			rec->conv_out 		= (void *) table_iso_8859_2;
+			rec->in_new_buffer	= 1;
+		} else {
+			ekg_recode_init_iconv(rec, "ISO-8859-2");
+		}
+	} else if (rec == &utf8_recoder) {
+		if (!xstrcasecmp("ISO-8859-2", config_console_charset)) {
+			/* note: reversed latin2 <==> utf8 */
+			rec->recode_from_locale = recode_utf8_helper_to;
+			rec->recode_to_locale	= recode_utf8_helper_from;
+			rec->conv_in 		= (void *) table_iso_8859_2;
+			rec->conv_out 		= (void *) table_iso_8859_2;
+			rec->in_new_buffer	= 1;
+		} else if (!xstrcasecmp("UTF-8", config_console_charset)) {
+			rec->recode_from_locale = rec->recode_to_locale = recode_ret;
+			rec->in_new_buffer	= 0;
+		} else {
+			ekg_recode_init_iconv(rec, "UTF-8");
+		}
+	}
+
+	/* if (!rec->recode_from_locale || !rec->recode_to_locale)
+	 * 	warn user
+	 */
+}
+
+static void ekg_recode_deinit(struct ekg_recoder *rec) {
+#ifdef HAVE_ICONV
+	if (rec->recode_to_locale == recode_iconv_helper_to)
+		iconv_close(rec->conv_in);
+
+	if (rec->recode_from_locale == recode_iconv_helper_from)
+		iconv_close(rec->conv_out);
+#endif
+	memset(rec, 0, sizeof(struct ekg_recoder));
+}
+
+void ekg_recode_inc_ref(enum ekg_recode_name enc) {
+	struct ekg_recoder *rec = ekg_recode_get(enc);
+
+	if (rec->count == 0)
+		ekg_recode_init(rec);
+	rec->count++;
+}
+
+void ekg_recode_dec_ref(enum ekg_recode_name enc) {
+	struct ekg_recoder *rec = ekg_recode_get(enc);
+
+	rec->count--;
+	if (rec->count == 0)
+		ekg_recode_deinit(rec);
+}
+
+char *ekg_recode_from_locale(enum ekg_recode_name enc, char *buf) {
+	struct ekg_recoder *rec;
+	
+	if (!buf)
+		return NULL;
+
+	rec = ekg_recode_get(enc);
+	if (rec->recode_from_locale) {
+		char *res = rec->recode_from_locale(rec, buf);
+		if (rec->in_new_buffer)
+			xfree(buf);
+		return res;
+	}
+	// warn user.
+	return buf;
+}
+
+char *ekg_recode_to_locale(enum ekg_recode_name enc, char *buf) {
+	struct ekg_recoder *rec;
+
+	if (!buf)
+		return NULL;
+
+	rec = ekg_recode_get(enc);
+	if (rec->recode_to_locale) {
+		char *res = rec->recode_to_locale(rec, buf);
+		if (rec->in_new_buffer)
+			xfree(buf);
+		return res;
+	}
+	// warn user.
+	return buf;
+}
+
+char *ekg_recode_from_locale_dup(enum ekg_recode_name enc, const char *buf) {
+	struct ekg_recoder *rec;
+	
+	if (!buf)
+		return NULL;
+
+	rec = ekg_recode_get(enc);
+	if (rec->recode_from_locale) {
+		if (!rec->in_new_buffer)
+			buf = xstrdup(buf);
+		return rec->recode_from_locale(rec, (char *) buf);
+	}
+	// warn user.
+	return xstrdup(buf);
+}
+
+char *ekg_recode_to_locale_dup(enum ekg_recode_name enc, const char *buf) {
+	struct ekg_recoder *rec;
+
+	if (!buf)
+		return NULL;
+
+	rec = ekg_recode_get(enc);
+	if (rec->recode_to_locale) {
+		if (!rec->in_new_buffer)
+			buf = xstrdup(buf);
+		return rec->recode_to_locale(rec, (char *) buf);
+	}
+	// warn user.
+	return xstrdup(buf);
+}
+
+const char *ekg_recode_from_locale_use(enum ekg_recode_name enc, const char *buf) {
+	struct ekg_recoder *rec;
+
+	if (!buf)
+		return NULL;
+
+	rec = ekg_recode_get(enc);
+	if (rec->recode_from_locale == recode_ret)
+		return buf;
+
+	/* almost like ekg_recode_from_locale_dup(), but don't strdup() @ error */
+	if (rec->recode_from_locale) {
+		if (!rec->in_new_buffer)
+			buf = xstrdup(buf);
+		return rec->recode_from_locale(rec, (char *) buf);
+	}
+	// warn user.
+	return buf;
+}
+
+const char *ekg_recode_to_locale_use(enum ekg_recode_name enc, const char *buf) {
+	struct ekg_recoder *rec;
+
+	if (!buf)
+		return NULL;
+
+	rec = ekg_recode_get(enc);
+	if (rec->recode_to_locale == recode_ret)
+		return buf;
+
+	/* almost like ekg_recode_to_locale_dup(), but don't strdup() @ error */
+	if (rec->recode_to_locale) {
+		if (!rec->in_new_buffer)
+			buf = xstrdup(buf);
+		return rec->recode_to_locale(rec, (char *) buf);
+	}
+	// warn user.
+	return buf;
+}
+
+/*
+ * iso_to_ascii()
+ *
+ * usuwa polskie litery z tekstu.
+ *
+ *  - c.
+ */
+void iso_to_ascii(unsigned char *buf) {
+#if (USE_UNICODE || HAVE_GTK)
+	if (config_use_unicode) return;
+#endif
+	if (!buf)
+		return;
 
 	while (*buf) {
-		if (*buf >= 0x80 && *buf < 0xA0)
-			*buf = '?';
-		else if (*buf >= 0xA0 && *buf < 0xC0)
-			*buf = iso_to_cp_table[*buf - 0xA0];
+		if (*buf == (unsigned char)'±') *buf = 'a';
+		if (*buf == (unsigned char)'ê') *buf = 'e';
+		if (*buf == (unsigned char)'æ') *buf = 'c';
+		if (*buf == (unsigned char)'³') *buf = 'l';
+		if (*buf == (unsigned char)'ñ') *buf = 'n';
+		if (*buf == (unsigned char)'ó') *buf = 'o';
+		if (*buf == (unsigned char)'¶') *buf = 's';
+		if (*buf == (unsigned char)'¿') *buf = 'z';
+		if (*buf == (unsigned char)'¼') *buf = 'z';
+
+		if (*buf == (unsigned char)'¡') *buf = 'A';
+		if (*buf == (unsigned char)'Ê') *buf = 'E';
+		if (*buf == (unsigned char)'Æ') *buf = 'C';
+		if (*buf == (unsigned char)'£') *buf = 'L';
+		if (*buf == (unsigned char)'Ñ') *buf = 'N';
+		if (*buf == (unsigned char)'Ó') *buf = 'O';
+		if (*buf == (unsigned char)'¦') *buf = 'S';
+		if (*buf == (unsigned char)'¯') *buf = 'Z';
+		if (*buf == (unsigned char)'¬') *buf = 'Z';
 
 		buf++;
 	}
-	return b;
-}
-
-char *ekg_locale_to_cp(char *buf) {
-	if (!buf)
-		return NULL;
-#if (USE_UNICODE || HAVE_GTK)
-	if (config_use_unicode)
-		return ekg_from_utf8(buf, table_cp1250);
-#endif
-	if (cp_conv_out != EKG_ICONV_BAD)
-		return ekg_convert_string_p_safe(buf, cp_conv_out);
-	return gg_iso_to_cp(buf);		/* XXX, assuimg iso, iso bad? */
-}
-
-char *ekg_cp_to_locale(char *buf) {
-	if (!buf)
-		return NULL;
-#if (USE_UNICODE || HAVE_GTK)
-	if (config_use_unicode)
-		return ekg_to_utf8(buf, table_cp1250);
-#endif
-	if (cp_conv_in != EKG_ICONV_BAD) 
-		return ekg_convert_string_p_safe(buf, cp_conv_in);
-	return gg_cp_to_iso(buf);		/* XXX, assuimg iso, is bad? */
-}
-
-void ekg_recode_cp_inc() {
-	if (cp_ref == 0) {
-		if (
-#if (USE_UNICODE || HAVE_GTK)
-				config_use_unicode ||
-#endif
-				!xstrcasecmp(config_console_charset, "ISO-8859-2"))
-			cp_conv_in = cp_conv_out = EKG_ICONV_BAD;
-		else
-			cp_conv_in = ekg_convert_string_init("CP1250", NULL, &cp_conv_out);
-	}
-	cp_ref++;
-}
-
-void ekg_recode_cp_dec() {
-	cp_ref--;
-
-	if (cp_ref == 0 && cp_conv_in != EKG_ICONV_BAD) {
-		ekg_convert_string_destroy(cp_conv_in);
-		ekg_convert_string_destroy(cp_conv_out);
-		cp_conv_in = cp_conv_out = EKG_ICONV_BAD;
-	}
-}
-
-/* ISO-8859-2 <===> any, use ekg_locale_to_latin2() and ekg_latin2_to_locale() */
-
-#if (USE_UNICODE || HAVE_GTK)
-static const unsigned short table_iso_8859_2[] = {
-	'?', '?', '?', '?', '?', '?', '?', '?',					/* 0x80 -      */
-	'?', '?', '?', '?', '?', '?', '?', '?',					/*      - 0x8F */
-	'?', '?', '?', '?', '?', '?', '?', '?',					/* 0x90 -      */
-	'?', '?', '?', '?', '?', '?', '?', '?',					/*      - 0x9F */
-	0x00a0, 0x0104, 0x02d8, 0x0141, 0x00a4, 0x013d, 0x015a, 0x00a7,		/* 0xA0 -      */
-	0x00a8, 0x0160, 0x015e, 0x0164, 0x0179, 0x00ad, 0x017d, 0x017b,		/*      - 0xAF */
-	0x00b0, 0x0105, 0x02db, 0x0142, 0x00b4, 0x013e, 0x015b, 0x02c7,		/* 0xB0 -      */
-	0x00b8, 0x0161, 0x015f, 0x0165, 0x017a, 0x02dd, 0x017e, 0x017c,		/*      - 0xBF */
-	0x0154, 0x00c1, 0x00c2, 0x0102, 0x00c4, 0x0139, 0x0106, 0x00c7,		/* 0xC0 -      */
-	0x010c, 0x00c9, 0x0118, 0x00cb, 0x011a, 0x00cd, 0x00ce, 0x010e,		/*      - 0xCF */
-	0x0110, 0x0143, 0x0147, 0x00d3, 0x00d4, 0x0150, 0x00d6, 0x00d7,		/* 0xD0 -      */
-	0x0158, 0x016e, 0x00da, 0x0170, 0x00dc, 0x00dd, 0x0162, 0x00df,		/*      - 0xDF */
-	0x0155, 0x00e1, 0x00e2, 0x0103, 0x00e4, 0x013a, 0x0107, 0x00e7,		/* 0xE0 -      */
-	0x010d, 0x00e9, 0x0119, 0x00eb, 0x011b, 0x00ed, 0x00ee, 0x010f,		/*      - 0xEF */
-	0x0111, 0x0144, 0x0148, 0x00f3, 0x00f4, 0x0151, 0x00f6, 0x00f7,		/* 0xF0 -      */
-	0x0159, 0x016f, 0x00fa, 0x0171, 0x00fc, 0x00fd, 0x0163, 0x02d9		/*      - 0xFF */
-};
-#endif
-
-static void *latin2_conv_in = EKG_ICONV_BAD;
-static void *latin2_conv_out = EKG_ICONV_BAD;
-static int latin2_ref;
-
-char *ekg_locale_to_latin2(char *buf) {
-	if (!buf)
-		return NULL;
-#if (USE_UNICODE || HAVE_GTK)
-	if (config_use_unicode)
-		return ekg_from_utf8(buf, table_iso_8859_2);
-#endif
-	if (latin2_conv_out != EKG_ICONV_BAD)
-		return ekg_convert_string_p_safe(buf, latin2_conv_out);
-	/* XXX, warn user. */
-	return NULL;
-}
-
-char *ekg_latin2_to_locale(char *buf) {
-	if (!buf)
-		return NULL;
-#if (USE_UNICODE || HAVE_GTK)
-	if (config_use_unicode)
-		return ekg_to_utf8(buf, table_iso_8859_2);
-#endif
-	if (latin2_conv_in != EKG_ICONV_BAD)
-		return ekg_convert_string_p_safe(buf, latin2_conv_in);
-	/* XXX, warn user. */
-	return NULL;
-}
-
-/* UTF-8 <===> any, use ekg_locale_to_utf8() and ekg_utf8_to_locale() */
-
-/* XXX, easier recode in/out to latin2? */
-
-static void *utf8_conv_in = EKG_ICONV_BAD;
-static void *utf8_conv_out = EKG_ICONV_BAD;
-static int utf8_ref;
-
-char *ekg_locale_to_utf8(char *buf) {
-	if (!buf)
-		return NULL;
-
-	if (utf8_conv_out != EKG_ICONV_BAD)
-		return ekg_convert_string_p_safe(buf, utf8_conv_out);
-	/* XXX, warn user. */
-	return NULL;
-}
-
-char *ekg_utf8_to_locale(char *buf) {
-	if (!buf)
-		return NULL;
-	if (utf8_conv_in != EKG_ICONV_BAD)
-		return ekg_convert_string_p_safe(buf, utf8_conv_in);
-	/* XXX, warn user. */
-	return NULL;
-}
-
-void ekg_recode_utf8_inc() {
-	if (utf8_ref == 0)
-		utf8_conv_in = ekg_convert_string_init("UTF-8", NULL, &utf8_conv_out);
-	utf8_ref++;
-}
-
-void ekg_recode_utf8_dec() {
-	utf8_ref--;
-	if (utf8_ref == 0 && utf8_conv_in != EKG_ICONV_BAD) {
-		ekg_convert_string_destroy(utf8_conv_in);
-		ekg_convert_string_destroy(utf8_conv_out);
-		utf8_conv_in = utf8_conv_out = EKG_ICONV_BAD;
-	}
-}
-
-/* XXX any <===> any, use ekg_any_to_locale() and ekg_locale_to_any() */
-
-char *ekg_any_to_locale(char *buf, char *inp) {
-
-
-}
-
-char *ekg_locale_to_any(char *buf, char *inp) {
-
-
 }
 

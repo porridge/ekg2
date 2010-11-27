@@ -150,9 +150,6 @@ static xmlnode_t *xmlnode_find_child_xmlns(xmlnode_t *n, const char *name, const
  */
 
 void jabber_iq_auth_send(session_t *s, const char *username, const char *passwd, const char *stream_id) {
-	extern void *jconv_out; /* misc.c */
-	extern void *tconv_out; /* misc.c */
-
 	jabber_private_t *j = s->priv;
 
 	const char *passwd2 = NULL;			/* if set than jabber_digest() should be done on it. else plaintext_passwd 
@@ -182,7 +179,7 @@ void jabber_iq_auth_send(session_t *s, const char *username, const char *passwd,
 
 
 	authpass = (passwd2) ?
-		saprintf("<digest>%s</digest>", jabber_digest(stream_id, passwd2, j->istlen ? tconv_out : jconv_out)) :	/* hash */
+		saprintf("<digest>%s</digest>", jabber_digest(stream_id, passwd2, j->istlen)) :	/* hash */
 		saprintf("<password>%s</password>", epasswd);				/* plaintext */
 		
 	watch_write(j->send_watch, 
@@ -985,7 +982,7 @@ JABBER_HANDLER(jabber_handle_message) {
 			char *uid2 = (tuid) ? xstrndup(uid, tuid-uid) : xstrdup(uid);		/* muc room */
 			char *nick = (tuid) ? xstrdup(tuid+1) : NULL;				/* nickname */
 			newconference_t *c = newconference_find(s, uid2);
-			int isour = (c && !xstrcmp(c->private, nick)) ? 1 : 0;			/* is our message? */
+			int isour = (c && !xstrcmp(c->priv_data, nick)) ? 1 : 0;			/* is our message? */
 			char *formatted;
 			userlist_t *u;
 

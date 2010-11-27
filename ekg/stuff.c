@@ -1199,45 +1199,6 @@ int mesg_set(int what)
 #endif
 }
 
-/*
- * iso_to_ascii()
- *
- * usuwa polskie litery z tekstu.
- *
- *  - c.
- */
-void iso_to_ascii(unsigned char *buf) {
-#if (USE_UNICODE || HAVE_GTK)
-	if (config_use_unicode) return;
-#endif
-	if (!buf)
-		return;
-
-	while (*buf) {
-		if (*buf == (unsigned char)'±') *buf = 'a';
-		if (*buf == (unsigned char)'ê') *buf = 'e';
-		if (*buf == (unsigned char)'æ') *buf = 'c';
-		if (*buf == (unsigned char)'³') *buf = 'l';
-		if (*buf == (unsigned char)'ñ') *buf = 'n';
-		if (*buf == (unsigned char)'ó') *buf = 'o';
-		if (*buf == (unsigned char)'¶') *buf = 's';
-		if (*buf == (unsigned char)'¿') *buf = 'z';
-		if (*buf == (unsigned char)'¼') *buf = 'z';
-
-		if (*buf == (unsigned char)'¡') *buf = 'A';
-		if (*buf == (unsigned char)'Ê') *buf = 'E';
-		if (*buf == (unsigned char)'Æ') *buf = 'C';
-		if (*buf == (unsigned char)'£') *buf = 'L';
-		if (*buf == (unsigned char)'Ñ') *buf = 'N';
-		if (*buf == (unsigned char)'Ó') *buf = 'O';
-		if (*buf == (unsigned char)'¦') *buf = 'S';
-		if (*buf == (unsigned char)'¯') *buf = 'Z';
-		if (*buf == (unsigned char)'¬') *buf = 'Z';
-
-		buf++;
-	}
-}
-
 /**
  * strip_spaces()
  *
@@ -1307,7 +1268,7 @@ int play_sound(const char *sound_path)
  *
  * 0/-1
  */
-child_t *child_add(plugin_t *plugin, pid_t pid, const char *name, child_handler_t handler, void *private)
+child_t *child_add(plugin_t *plugin, pid_t pid, const char *name, child_handler_t handler, void *priv_data)
 {
 	child_t *c = xmalloc(sizeof(child_t));
 
@@ -1315,7 +1276,7 @@ child_t *child_add(plugin_t *plugin, pid_t pid, const char *name, child_handler_
 	c->pid		= pid;
 	c->name		= xstrdup(name);
 	c->handler	= handler;
-	c->private	= private;
+	c->priv_data	= priv_data;
 	
 	children_add(c);
 	return c;
@@ -1334,37 +1295,54 @@ child_t *child_add(plugin_t *plugin, pid_t pid, const char *name, child_handler_
  *
  * @return Like mkdir() do we return -1 on fail with errno set.
  */
-
 int mkdir_recursive(const char *pathname, int isdir) {
 	char fullname[PATH_MAX+1];
+	struct stat st;
 	int i = 0;
+	char *tmp, *check = NULL;
 
 	if (!pathname) {
 		errno = EFAULT;
 		return -1;
 	}
 
-	do {
-		struct stat st;
-		fullname[i] = pathname[i];
+	if (isdir)
+		check = xstrdup(pathname);
+	 else if ((tmp = xstrrchr(pathname, '/')))
+		check = xstrndup(pathname, (tmp-pathname)+1);
 
+	if (check) {
+		if (stat(check, &st) == 0) {			/* if smth exists with such filename */
+			xfree(check);
+			if (!S_ISDIR(st.st_mode)) {		/* and it's not dir, abort. */
+				errno = ENOTDIR;
+				return -1;
+			}
+			return 0;
+		}
+		xfree(check);
+	}
+
+	do {
 		if (i == PATH_MAX) {
 			errno = ENAMETOOLONG;
 			return -1;
 		}
 
+		fullname[i] = pathname[i];
+
 		if (pathname[i] == '/' || (isdir && pathname[i] == '\0')) {	/* if it's / or it's last char.. */
-			if (!isdir && !xstrchr(&pathname[i], '/'))			/* if it's not dir (e.g filename) we don't want to create the dir.. */
+			if (!isdir && !xstrchr(&pathname[i], '/'))		/* if it's not dir (e.g filename) we don't want to create the dir.. */
 				return 0;
 
 			fullname[i+1] = '\0';
 
-			if (stat(fullname, &st) == 0) {	/* if smth exists with such filename */
+			if (stat(fullname, &st) == 0) {		/* if smth exists with such filename */
 				if (!S_ISDIR(st.st_mode)) {	/* and it's not dir, abort. */
 					errno = ENOTDIR;
 					return -1;
 				}
-			} else {			/* if not, try mkdir() and if fail exit. */
+			} else {				/* if not, try mkdir() and if fail exit. */
 				if
 #ifndef NO_POSIX_SYSTEM
 				(mkdir(fullname, 0700) == -1)
@@ -2706,7 +2684,7 @@ void xstrtr(char *text, char from, char to)
  * meant to be called while busy-looping
  */
 
-void inline ekg_yield_cpu()
+inline void ekg_yield_cpu()
 {
 #ifdef _POSIX_PRIORITY_SCHEDULING
 	sched_yield();

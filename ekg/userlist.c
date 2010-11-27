@@ -74,6 +74,7 @@ struct ignore_label ignore_labels[IGNORE_LABELS_MAX] = {
 	{ IGNORE_DCC, "dcc" },
 	{ IGNORE_EVENTS, "events" },
 	{ IGNORE_XOSD, "xosd" },
+	{ IGNORE_LOG, "log" },
 	{ 0, NULL }
 };
 
@@ -773,6 +774,19 @@ char *get_nickname(session_t *session, const char *text) {
 		return (char *)text;
 
 	return NULL;
+}
+/*
+ * get_user_name()
+ *
+ * returns users first name or nick name or NULL
+ *
+ */
+char *get_user_name(userlist_t *u) {
+	char *name;
+	if (!u)
+		return NULL;
+	name = user_private_item_get(u, "first_name");
+	return (name && *name) ? name : u->nickname;
 }
 
 /*

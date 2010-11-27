@@ -950,6 +950,8 @@ static QUERY(logs_handler) {
 	/* olewamy jesli to irc i ma formatke irssi like, czekajac na irc-protocol-message */
 	if (session_check(s, 0, "irc") && logs_log_format(s) == LOG_FORMAT_IRSSI) 
 		return 0;
+	if (ignored_check(s, uid) & IGNORE_LOG)
+		return 0;
 
 	class &= ~(EKG_NO_THEMEBIT | EKG_MSGCLASS_NOT2US);
 
@@ -1062,9 +1064,13 @@ static QUERY(logs_handler_irc) {
 	char *text	= *(va_arg(ap, char**));
 		int  *UNUSED(isour)	= va_arg(ap, int*);
 		int  *UNUSED(foryou)	= va_arg(ap, int*);
-		int  *UNUSED(private)	= va_arg(ap, int*);
+		int  *UNUSED(priv_data)	= va_arg(ap, int*);
 	char *channame	= *(va_arg(ap, char**));
 	log_window_t *lw;
+	session_t *s = session_find(session);
+
+	if (ignored_check(s, uid) & IGNORE_LOG)
+		return 0;
 
 	if (!(lw = logs_log_find(session, channame, 1)->lw)) {
 		debug_error("[LOGS:%d] logs_handler_irc, shit happen\n", __LINE__);

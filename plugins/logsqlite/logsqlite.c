@@ -431,35 +431,17 @@ sqlite_t * logsqlite_prepare_db(session_t * session, time_t sent, int mode)
 sqlite_t * logsqlite_open_db(session_t * session, time_t sent, char * path)
 {
 	FILE * testFile;
-	struct stat statbuf;
-	char * slash, * dir;
 	sqlite_t * db = NULL;
 #ifdef HAVE_SQLITE3	
 	const 
 #endif	
 		char * errormsg = NULL;
-	int makedir = 1, slash_pos = 0;
 
-
-
-	while (makedir) {
-		if (!(slash = xstrchr(path + slash_pos, '/'))) {
-			makedir = 0;
-			continue;
-		};
-
-		slash_pos = slash - path + 1;
-		dir = xstrndup(path, slash_pos);
-
-		if (stat(dir, &statbuf) != 0 && mkdir(dir, 0700) == -1) {
-			char *bo = saprintf("nie mo¿na %s bo %s", dir, strerror(errno));
-			print("generic",bo);
-			xfree(bo);
-			xfree(dir);
-			return NULL;
-		}
-		xfree(dir);
-	} // while mkdir
+	if (mkdir_recursive(path, 0) == -1) {
+		char *bo = saprintf("cannot %s: %s", path, strerror(errno));
+		print("generic",bo);
+		return NULL;
+	}
 
 	debug("[logsqlite] opening database %s\n", path);
 
@@ -565,6 +547,8 @@ QUERY(logsqlite_msg_handler)
 	int is_sent;
 
 	if (config_logsqlite_log == 0)
+		return 0;
+	else if (ignored_check(s, uid) & IGNORE_LOG)
 		return 0;
 
 	format = NULL;
@@ -777,6 +761,7 @@ static QUERY(logsqlite_newwin_handler) {
 
 	if (!config_logsqlite_last_print_on_open || !w || !w->target || !w->session || w->id == 1000
 			|| !(uid = get_uid_any(w->session, w->target))
+			|| (ignored_check(w->session, uid) & IGNORE_LOG)
 			|| !(db = logsqlite_prepare_db(w->session, time(0), 0)))
 		return 0;
 

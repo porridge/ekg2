@@ -65,11 +65,11 @@ typedef struct child_s {
 	plugin_t	*plugin;	/* obs³uguj±cy plugin */
 	char		*name;		/* nazwa, wy¶wietlana przy /exec */
 	child_handler_t	handler;	/* zak³ad pogrzebowy */
-	void		*private;	/* dane procesu */
+	void		*priv_data;	/* dane procesu */
 } child_t;
 
 #ifndef EKG2_WIN32_NOFUNCTION
-child_t *child_add(plugin_t *plugin, pid_t pid, const char *name, child_handler_t handler, void *private);
+child_t *child_add(plugin_t *plugin, pid_t pid, const char *name, child_handler_t handler, void *priv_data);
 child_t *children_removei(child_t *c);
 void children_destroy(void);
 #endif
@@ -100,7 +100,7 @@ struct timer {
 	char		*name;			/* nazwa timera */
 	plugin_t	*plugin;		/* wtyczka obs³uguj±ca deksryptor */
 	struct timeval	ends;			/* kiedy siê koñczy? */
-	unsigned int	period;			/* ile sekund ma trwaæ czekanie */
+	unsigned int	period;			/* ile milisekund ma trwaæ czekanie */
 	int	(*function)(int, void *);	/* funkcja do wywo³ania */
 	void		*data;			/* dane dla funkcji */
 
@@ -124,7 +124,7 @@ typedef struct newconference {
 	char		*session;
 	char		*name;
 	struct userlist	*participants;
-	void		*private;
+	void		*priv_data;
 } newconference_t;
 
 struct buffer {
@@ -298,7 +298,6 @@ int ekg_hash(const char *name);
 FILE *help_path(char *name, char *plugin);
 
 int mesg_set(int what);
-void iso_to_ascii(unsigned char *buf);
 char *strip_spaces(char *line);
 int strncasecmp_pl(const char * cs,const char * ct,size_t count);
 int strcasecmp_pl(const char *cs, const char *ct);
@@ -369,16 +368,6 @@ char *ekg_convert_string(const char *ps, const char *from, const char *to);
 string_t ekg_convert_string_t_p(string_t s, void *ptr);
 string_t ekg_convert_string_t(string_t s, const char *from, const char *to);
 int ekg_converters_display(int quiet);
-
-char *ekg_locale_to_cp(char *buf);
-char *ekg_cp_to_locale(char *buf);
-char *ekg_locale_to_latin2(char *buf);
-char *ekg_latin2_to_locale(char *buf);
-char *ekg_locale_to_utf8(char *buf);
-char *ekg_utf8_to_locale(char *buf);
-char *ekg_any_to_locale(char *buf, char *inp);
-char *ekg_locale_to_any(char *buf, char *inp);
-
 
 char *password_input(const char *prompt, const char *rprompt, const bool norepeat);
 

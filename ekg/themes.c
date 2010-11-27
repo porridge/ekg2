@@ -32,6 +32,7 @@
 
 #include "dynstuff.h"
 #include "stuff.h"
+#include "recode.h"
 #include "themes.h"
 #include "xmalloc.h"
 #include "windows.h"
@@ -680,7 +681,7 @@ fstring_t *fstring_new_format(const char *format, ...) {
  *
  * Free memory allocated by @a str
  *
- * @todo XXX Think about freeing str->private
+ * @todo XXX Think about freeing str->priv_data
  *
  * @param str - fstring_t * to free.
  */
@@ -691,7 +692,7 @@ void fstring_free(fstring_t *str)
 
 	xfree(str->str.b);
 	xfree(str->attr);
-	xfree(str->private);
+	xfree(str->priv_data);
 	xfree(str);
 }
 

@@ -55,6 +55,7 @@
 #include <ekg/dynstuff.h>
 #include <ekg/net.h>
 #include <ekg/protocol.h>
+#include <ekg/recode.h>
 #include <ekg/sessions.h>
 #include <ekg/stuff.h>
 #include <ekg/userlist.h>
@@ -92,7 +93,7 @@ PLUGIN_DEFINE(jabber, PLUGIN_PROTOCOL, jabber_theme_init);
  * jabber_session_init()
  *
  * Handler for: <i>SESSION_ADDED</i><br>
- * Init private session struct jabber_private_t if @a session is jabber one.
+ * Init priv_data session struct jabber_private_t if @a session is jabber one.
  *
  * @param ap 1st param: <i>(char *) </i><b>session</b> - uid of session
  * @param data NULL
@@ -114,8 +115,10 @@ static QUERY(jabber_session_init) {
 	j->fd = -1;
 	j->istlen = (tolower(s->uid[0]) == 't');	/* mark if this is tlen protocol */
 
-	jabber_convert_string_init(j->istlen);
-
+	if (!j->istlen)
+		ekg_recode_utf8_inc();
+	else
+		ekg_recode_iso2_inc();
 
 #ifdef JABBER_HAVE_GNUTLS
 	gnutls_certificate_allocate_credentials(&(j->xcred));
@@ -156,6 +159,10 @@ static QUERY(jabber_session_deinit) {
 #ifdef JABBER_HAVE_GNUTLS
 	gnutls_certificate_free_credentials(j->xcred);
 #endif
+	if (!j->istlen)
+		ekg_recode_utf8_dec();
+	else
+		ekg_recode_iso2_dec();
 
 	xfree(j->server);
 	xfree(j->resource);
@@ -234,12 +241,12 @@ int jabber_privacy_freeone(jabber_private_t *j, jabber_iq_privacy_t *item) {
 }
 
 static LIST_FREE_ITEM(list_jabber_bookmarks_free, jabber_bookmark_t *) {
-	if (data->type == JABBER_BOOKMARK_URL) { xfree(data->private.url->name); xfree(data->private.url->url); }
+	if (data->type == JABBER_BOOKMARK_URL) { xfree(data->priv_data.url->name); xfree(data->priv_data.url->url); }
 	else if (data->type == JABBER_BOOKMARK_CONFERENCE) { 
-		xfree(data->private.conf->name); xfree(data->private.conf->jid);
-		xfree(data->private.conf->nick); xfree(data->private.conf->pass);
+		xfree(data->priv_data.conf->name); xfree(data->priv_data.conf->jid);
+		xfree(data->priv_data.conf->nick); xfree(data->priv_data.conf->pass);
 	}
-	xfree(data->private.other);
+	xfree(data->priv_data.other);
 	xfree(data);
 }
 
@@ -311,7 +318,7 @@ static QUERY(jabber_window_kill) {
 	if (w && w->id && w->target && session_check(w->session, 1, "xmpp") && (c = newconference_find(w->session, w->target)) &&
 			(j = jabber_private(w->session)) && session_connected_get(w->session)) {
 														/* XXX: check really needed? vv */
-		watch_write(j->send_watch, "<presence to=\"%s/%s\" type=\"unavailable\">%s</presence>", w->target + 5, c->private, status ? status : "");
+		watch_write(j->send_watch, "<presence to=\"%s/%s\" type=\"unavailable\">%s</presence>", w->target + 5, c->priv_data, status ? status : "");
 		newconference_destroy(c, 0);
 	}
 
@@ -1326,7 +1333,7 @@ static int jabber_theme_init() {
 	format_add("jabber_userinfo_adr_country",	_("%g|| || %n	 Country: %T%2"), 1);
 	format_add("jabber_userinfo_adr_end",		_("%g|| %g`+=%G-----"), 1);
 
-	format_add("jabber_userinfo_photourl",		_("%g||\n%g|| %nYou can view attached photo at: %T%2%1"), 1);
+	format_add("jabber_userinfo_photourl",		_("%g||\n%g|| %nYou can view attached photo at: %T%1"), 1);
 	format_add("jabber_userinfo_end",		_("%g`+=%G-----"), 1);
 
 	format_add("jabber_userinfo_error",		_("%! (%1) Error in getting %gvCard%n from %W%2%n: %r%3"), 1);
@@ -1358,7 +1365,7 @@ static int jabber_theme_init() {
 	format_add("jabber_private_list_session",		"%g|| + %n Session: %W%4%n",  1);		/* %4 - uid */
 	format_add("jabber_private_list_plugin",		"%g|| + %n Plugin: %W%4 (%5)%n",  1);	/* %4 - name %5 - prio*/
 	format_add("jabber_private_list_subitem",		"%g||  - %n %4: %W%5%n",  1);		    /* %4 - item %5 - value */
-	format_add("jabber_private_list_footer",	_("%g`+=%G----- End of the private list%n"), 1);
+	format_add("jabber_private_list_footer",	_("%g`+=%G----- End of the priv_data list%n"), 1);
 	format_add("jabber_private_list_empty",		_("%! No list: %T%2/%3%n"), 1);
 	format_add("jabber_private_list_error",		_("%! (%1) Error in request %gjabber:iq:private%n from %W%2%n: %r%3"), 1);
 
@@ -1648,7 +1655,6 @@ EXPORT int jabber_plugin_init(int prio) {
 	query_connect_id(&jabber_plugin, PROTOCOL_IGNORE,	jabber_protocol_ignore, NULL);
 	query_connect_id(&jabber_plugin, CONFIG_POSTINIT,	jabber_dcc_postinit, NULL);
 	query_connect_id(&jabber_plugin, CONFIG_POSTINIT,	jabber_pgp_postinit, NULL);
-	query_connect_id(&jabber_plugin, CONFIG_POSTINIT,	jabber_convert_string_reinit, NULL);
 	query_connect_id(&jabber_plugin, USERLIST_INFO,		jabber_userlist_info, NULL);
 	query_connect_id(&jabber_plugin, USERLIST_PRIVHANDLE,	jabber_userlist_priv_handler, NULL);
 	query_connect_id(&jabber_plugin, PROTOCOL_TYPING_OUT,	jabber_typing_out, NULL);
@@ -1683,7 +1689,6 @@ static int jabber_plugin_destroy() {
 #ifdef JABBER_HAVE_SSL
 	SSL_GLOBAL_DEINIT();
 #endif
-	jabber_convert_string_destroy();
 	plugin_unregister(&jabber_plugin);
 
 	return 0;
