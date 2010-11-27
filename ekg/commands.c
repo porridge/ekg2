@@ -998,9 +998,9 @@ static COMMAND(cmd_help)
 			return 0;
 		}
 
-		if (session && session->uid) {
+		if (session)
 			plen = (int)(xstrchr(session->uid, ':') - session->uid) + 1;
-		} else
+		else
 			plen = 0;
 	
 		for (c = commands; c; c = c->next) {
@@ -1013,7 +1013,10 @@ static COMMAND(cmd_help)
 				return -1;
 			}
 
-			if ((!xstrcasecmp(c->name, p) || !xstrcasecmp(c->name + plen, p)) && !(c->flags & COMMAND_ISALIAS) ) {
+			if (!(c->flags & COMMAND_ISALIAS) && 
+					(!xstrcasecmp(c->name, p) || 
+					(session && !xstrncmp(c->name, session->uid, plen) && !xstrcasecmp(c->name + plen, p))))
+			{
 				FILE *f; 
 				char *line, *params_help = NULL, *params_help_s, *brief = NULL, *tmp = NULL;
 				const char *seeking_name;
@@ -1041,7 +1044,7 @@ static COMMAND(cmd_help)
 					seeking_name = c->name;
 				}
 
-				while ((line = read_file(f, 0))) {
+				while ((line = read_file_iso(f, 0))) {
 					if (!xstrcasecmp(line, seeking_name)) {
 						found = 1;
 						break;
@@ -1054,7 +1057,7 @@ static COMMAND(cmd_help)
 					return -1;
 				}
 
-				line = read_file(f, 0);
+				line = read_file_iso(f, 0);
 
 				if ((tmp = xstrstr(line, (": "))))
 					params_help = xstrdup(tmp + 2);
@@ -1063,7 +1066,7 @@ static COMMAND(cmd_help)
 
 				params_help_s = strip_spaces(params_help);
 
-				line = read_file(f, 0);
+				line = read_file_iso(f, 0);
 
 				if ((tmp = xstrstr(line, (": "))))
 					brief = xstrdup(tmp + 2);
@@ -1090,7 +1093,7 @@ static COMMAND(cmd_help)
 				xfree(tmp);
 
 				s = string_init(NULL);
-				while ((line = read_file(f, 0))) {
+				while ((line = read_file_iso(f, 0))) {
 					if (line[0] != ('\t'))
 						break;
 					
@@ -1146,7 +1149,7 @@ static COMMAND(cmd_help)
 				seeking_name = c->name;
 			}
 
-			while ((line = read_file(f, 0))) {
+			while ((line = read_file_iso(f, 0))) {
 				if (!xstrcasecmp(line, seeking_name)) {
 					found = 1;
 					break;
@@ -1158,7 +1161,7 @@ static COMMAND(cmd_help)
 				continue;
 			}
 
-			line = read_file(f, 0);
+			line = read_file_iso(f, 0);
 		
 			if ((tmp = xstrstr(line, (": "))))
 			       params_help = xstrdup(tmp + 2);
@@ -1167,7 +1170,7 @@ static COMMAND(cmd_help)
 
 			params_help_s = strip_spaces(params_help);	
 
-			line = read_file(f, 0);
+			line = read_file_iso(f, 0);
 
 			if ((tmp = xstrstr(line, (": "))))
 			       brief = xstrdup(tmp + 2);
@@ -2800,15 +2803,19 @@ int command_exec(const char *target, session_t *session, const char *xline, int 
 			}
 
 			if (!res) {
-				window_t *w = window_find_sa(s, target, 0);
+				window_t *w;
+				char *uid;
+				
+				uid = xstrdup(target);
+				w = window_find_sa(s, uid, 0);
 
 				window_lock_inc(w);
-				res = (last_command->function)(last_name, (const char **) par, s, target, (quiet & 1));
-				if (window_find_ptr(w) || (w == window_find_sa(s, target, 0)))
+				res = (last_command->function)(last_name, (const char **) par, s, uid, (quiet & 1));
+				if (window_find_ptr(w) || (w == window_find_sa(s, uid, 0)))
 					window_lock_dec(w);
 				else { 
 					window_t *w;
-					debug("[WINDOW LOCKING] INTERNAL ERROR SETTING ALL WINDOW LOCKS TO 0 [wtarget=%s command=%s]\n", __(target), __(last_name));
+					debug("[WINDOW LOCKING] INTERNAL ERROR SETTING ALL WINDOW LOCKS TO 0 [wtarget=%s command=%s]\n", __(uid), __(last_name));
 					/* may be faultly */
 					for (w=windows; w; w = w->next) {
 						if (!(w->lock)) continue;
@@ -2816,6 +2823,7 @@ int command_exec(const char *target, session_t *session, const char *xline, int 
 					}
 				}
 				query_emit_id(NULL, UI_WINDOW_REFRESH);
+				xfree(uid);
 			}
 			if (last_command->flags & COMMAND_ISALIAS) array_free(last_params);
 			array_free(par);

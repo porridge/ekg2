@@ -1344,18 +1344,13 @@ static void update_header() {
 		
 static int window_printat(WINDOW *w, int x, int y, const char *format, struct format_data *data, int fgcolor, int bold, int bgcolor) {
 	int backup_display_color = config_display_color;
-	char *ftext = NULL;		/* tekst do zwolnienia jesli !config_display_pl_chars */
-	const char *p;			/* parsowanie format lub ftext jesli !config_display_pl_chars */
+	const char *p;			/* temporary format value */
 	int orig_x = x;
 
 	if (!w)
 		return -1;
 	
-	if (!config_display_pl_chars) { /* XXX: oops, we're capable only of iso2 */
-		ftext = xstrdup(format);
-		iso_to_ascii((unsigned char*) ftext);
-		p = ftext;
-	} else	p = format;
+	p = format;
 
 	if (orig_x == 0) {
 		if (config_display_color == 2) 
@@ -1446,13 +1441,7 @@ static int window_printat(WINDOW *w, int x, int y, const char *format, struct fo
 			if (!strncmp(p, data[i].name, len) && p[len] == '}') {
 				int percent_ok = (!xstrcmp(data[i].name, "activity") || !xstrcmp(data[i].name, "time") || !xstrcmp(data[i].name, "irctopic"));	/* XXX */
 				char *text = data[i].text;
-				char *ftext = NULL;
 				
-				if (!config_display_pl_chars) {
-					ftext = text = xstrdup(text);
-					iso_to_ascii((unsigned char*) text);
-				}
-
 				while (*text) {
 					if (config_use_unicode && *text >> 7) {
 						do {
@@ -1507,7 +1496,6 @@ static int window_printat(WINDOW *w, int x, int y, const char *format, struct fo
 //				waddstr(w, text);
 				
 				p += len;
-				xfree(ftext);
 				goto next;
 			}
 		}
@@ -1571,7 +1559,6 @@ next:
 		config_display_color = backup_display_color;
 	}
 
-	if (ftext) xfree(ftext);
 	return x - orig_x;
 }
 
@@ -1662,6 +1649,7 @@ void update_statusbar(int commit)
 
 	query_tmp = (sess && q && q->nickname) ? saprintf("%s/%s", q->nickname, q->uid) : xstrdup(window_current->alias ? window_current->alias : window_current->target);
 	__add_format("query", query_tmp);
+	__add_format("query_nickname", (sess && q && q->nickname) ? xstrdup(q->nickname) : xstrdup(window_current->alias ? window_current->alias : window_current->target));  
 
 	__add_format_emp("debug", (!window_current->id));
 	__add_format_emp("more", (window_current->more));
@@ -2592,15 +2580,12 @@ end:
 			}
 		}
 	} else {
-		if (
-#if USE_UNICODE
-			0 && 
-#endif
-			ch > KEY_MAX) 
-		{
+#if !USE_UNICODE
+		if (ch > KEY_MAX) {
 			debug_error("%s:%d INTERNAL NCURSES/EKG2 FAULT. KEY-PRESSED: %d>%d TO PROTECT FROM SIGSEGV\n", __FILE__, __LINE__, ch, KEY_MAX);
 			goto then;
 		}
+#endif
 
 		if (
 #if USE_UNICODE
@@ -2617,7 +2602,7 @@ end:
 			}
 		} else if (
 #if USE_UNICODE
-				(ch != KEY_MOUSE) &&
+				(ch != KEY_MOUSE && ch != KEY_RESIZE) &&
 #else
 				(ch < 255) && 
 #endif

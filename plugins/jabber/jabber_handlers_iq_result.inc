@@ -36,20 +36,21 @@ JABBER_HANDLER_RESULT(jabber_handle_iq_result_new_mail) {
 
 JABBER_HANDLER_RESULT(jabber_handle_iq_result_disco_info) {
 	const char *wezel = jabber_attr(n->atts, "node");
-	char *uid = jabber_unescape(from);
 	xmlnode_t *node;
+	char *uid;
 
 	if (!session_int_get(s, "__roster_retrieved")) {
 		for (node = n->children; node; node = node->next) {
 			if (!xstrcmp(node->name, "feature") && !xstrcmp(jabber_attr(node->atts, "var"),
-					"http://jabber.org/protocol/disco#info")) {
+					"google:mail:notify")) {
 				/* it's not nice to send such NULLs, but as long as that func doesn't use any other args... */
 				jabber_handle_iq_result_new_mail(s, NULL, NULL, NULL);
 			}
 		}
-
 		return;
 	}
+
+	uid = jabber_unescape(from);
 
 	print((wezel) ? "jabber_transinfo_begin_node" : "jabber_transinfo_begin", session_name(s), uid, wezel);
 

@@ -98,7 +98,6 @@ void variable_init() {
 	variable_add(NULL, ("display_crap"),  VAR_BOOL, 1, &config_display_crap, NULL, NULL, NULL);
 	variable_add(NULL, ("display_day_changed"), VAR_BOOL, 1, &config_display_day_changed, NULL, NULL , NULL);
 	variable_add(NULL, ("display_notify"), VAR_MAP, 1, &config_display_notify, NULL, variable_map(4, 0, 0, "none", 1, 2, "all", 2, 1, "significant", 4, 0, "unknown_too"), NULL);
-	variable_add(NULL, ("display_pl_chars"), VAR_BOOL, 1, &config_display_pl_chars, NULL, NULL, NULL);
 	variable_add(NULL, ("display_sent"), VAR_BOOL, 1, &config_display_sent, NULL, NULL, NULL);
 	variable_add(NULL, ("display_welcome"), VAR_BOOL, 1, &config_display_welcome, NULL, NULL, NULL);
 	variable_add(NULL, ("emoticons"), VAR_BOOL, 1, &config_emoticons, NULL, NULL, NULL);
@@ -551,7 +550,7 @@ void variable_help(const char *name) {
 		seeking_name = name;
 	}
 
-	while ((line = read_file(f, 0))) {
+	while ((line = read_file_iso(f, 0))) {
 		if (!xstrcasecmp(line, seeking_name)) {
 			found = 1;
 			break;
@@ -564,14 +563,14 @@ void variable_help(const char *name) {
 		return;
 	}
 
-	line = read_file(f, 0);
+	line = read_file_iso(f, 0);
 	
 	if ((tmp = xstrstr(line, (": "))))
 		type = xstrdup(tmp + 2);
 	else
 		type = xstrdup(("?"));
 	
-	line = read_file(f, 0);
+	line = read_file_iso(f, 0);
 	if ((tmp = xstrstr(line, (": "))))
 		def = xstrdup(tmp + 2);
 	else
@@ -583,9 +582,9 @@ void variable_help(const char *name) {
 	xfree(def);
 
 	if (tmp)		/* je¶li nie jest to ukryta zmienna... */
-		read_file(f, 0);	/* ... pomijamy liniê */
+		read_file_iso(f, 0);	/* ... pomijamy liniê */
 	s = string_init(NULL);
-	while ((line = read_file(f, 0))) {
+	while ((line = read_file_iso(f, 0))) {
 		if (line[0] != '\t')
 			break;
 

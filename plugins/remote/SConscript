@@ -1,16 +1,13 @@
 
 Import('*')
 
-try:
-	env
-except NameError:
-	pass
-else:
+if 'env' in globals():
 	plugin	= {
 		'type':			'ui',
 		'state':		'experimental',
 		'depends':		[],
-		'optdepends':	[]
+		'optdepends':	[],
+		'noremote':		True
 		}
 
 	Return('plugin')
