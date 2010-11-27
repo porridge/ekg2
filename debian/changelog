@@ -1,6 +1,16 @@
+ekg2 (1:0.3.0~rc4~pre+20101127+0508-1) experimental; urgency=low
+
+  * New upstream snapshot
+    - now disables strict aliasing rules
+  * Enabled compiler optimization
+  * Migrated to using "dh" and version 3.0 (quilt).
+  * Bumped Standards-Version to 3.9.1.
+  * Slightly tweaked description
+
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 26 Nov 2010 21:08:56 -0800
+
 ekg2 (1:0.3.0~rc1+20101120+2232-1) experimental; urgency=low
 
-  * UNRELEASED
   * New upstream snapshot
   * Corrected configuration gnutls option (no impact, as the option was on
     by default anyway)
