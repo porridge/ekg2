@@ -1,17 +1,17 @@
-From: Marcin Owsiany <porridge@debian.org>
+From: Marcin Owsiany <marcin@owsiany.pl>
 Subject: [PATCH] fixes/gg-keep-reason
 
 Try and fix http://bugs.ekg2.org/ticket/21
 Base patch provided by pinochet.
 
-Signed-off-by: Marcin Owsiany <porridge@debian.org>
+Signed-off-by: Marcin Owsiany <marcin@owsiany.pl>
 
 ---
  plugins/gg/commands.c |   46 +++++++++++++++++++++++++++++++++++-----------
  1 files changed, 35 insertions(+), 11 deletions(-)
 
 diff --git a/plugins/gg/commands.c b/plugins/gg/commands.c
-index 63627c3..b33a8df 100644
+index 6987972..03d5787 100644
 --- a/plugins/gg/commands.c
 +++ b/plugins/gg/commands.c
 @@ -86,6 +86,32 @@
@@ -87,4 +87,4 @@ index 63627c3..b33a8df 100644
  		/* dcc */
  		if (gg_config_dcc) {
 -- 
-tg: (c7fa0cb..) fixes/gg-keep-reason (depends on: upstream)
+tg: (da86cc9..) fixes/gg-keep-reason (depends on: 0.3.x)
