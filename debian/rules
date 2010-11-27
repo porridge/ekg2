@@ -1,19 +1,18 @@
 #!/usr/bin/make -f
-# Sample debian/rules that uses debhelper.
-# GNU copyright 1997 to 1999 by Joey Hess.
-# Adapted for ekg2 package by Marcin Owsiany.
-# GNU copyright 2002-2006
-
-#export DH_VERBOSE=1
+# ekg2 package rules file
+# Copyright 2002-2010 Marcin Owsiany <porridge@debian.org>
 
 # Help cross-compiling
+# These are set automatically by dpkg-buildpackage, but we cannot depend on
+# them being available, because caller might not be using dpkg-buildpackage
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-# This is to ease debugging, until ekg2 stabilizes
-DEB_BUILD_OPTIONS=nostrip noopt
+# This is to ease debugging, until ekg2 stabilizes: #379162
+DEB_BUILD_OPTIONS=nostrip
 export DEB_BUILD_OPTIONS
 
+# TODO: this might not be necessary with dh.
 CFLAGS += -g
 ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
   CFLAGS += -O0
@@ -24,18 +23,19 @@ export CFLAGS
 
 # dh_strip will take care of nostrip
 
+# TODO: this might not be necessary with dh either.
 ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
    NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
    MAKEFLAGS += -j$(NUMJOBS)
 endif
 
-include /usr/share/quilt/quilt.make
 -include /usr/share/topgit/tg2quilt.mk
-QUILT_STAMPFN = debian/stamp-patched
 
-config.status: $(QUILT_STAMPFN) configure
-	dh_testdir
+%:
+	dh --with quilt,python-central $@
+
 # Remember to update README.Debian as well...
+override_dh_auto_configure:
 	EKG2_NO_COLOR_CONFIGURE=1 ./configure \
 		--host=$(DEB_HOST_GNU_TYPE) \
 		--build=$(DEB_BUILD_GNU_TYPE) \
@@ -72,85 +72,36 @@ config.status: $(QUILT_STAMPFN) configure
 # Reasons for disabling some features are in README.Debian
 # Remember to update README.Debian as well...
 
-
-build: build-stamp
-build-stamp:  config.status
+override_dh_auto_build:
 	@echo 'Building with MAKEFLAGS=$(MAKEFLAGS) and CFLAGS=$(CFLAGS)'
-	dh_testdir
 	$(MAKE) PERL_MM_OPT=INSTALLDIRS=vendor
 	cd docs/ && XSLTRANSFORMER='xsltproc --nonet' sh generate-ekg2book.sh pl generate
 	cd docs/ && XSLTRANSFORMER='xsltproc --nonet' sh generate-ekg2book.sh en generate
 	cd docs/ && ./generate-doc.sh
-	touch build-stamp
+# dh_installman gets confused with the ".en" part and either chooses wrong directory or extension
+	cp docs/ekg2.en.1 docs/ekg2.1
+	cp docs/ekg2-remote.en.1 docs/ekg2-remote.1
 
-clean: clean-patched unpatch
-
-clean-patched:
-	dh_testdir
-	dh_testroot
-	rm -f build-stamp 
-	set -e; if [ -e ./docs/generate-ekg2book.sh ] ; then \
-	  cd docs ; \
-	  sh generate-ekg2book.sh pl clean; \
-	  sh generate-ekg2book.sh en clean; \
-	fi
+override_dh_auto_clean:
+	cd docs && sh generate-ekg2book.sh pl clean
+	cd docs && sh generate-ekg2book.sh en clean
 	rm -rf docs/doxygen
 	if [ -e Makefile ] ; then $(MAKE) distclean ; fi
-	rm -f docs/ekg2.1
-	-test -r /usr/share/misc/config.sub && \
-	  cp -f /usr/share/misc/config.sub config.sub
-	-test -r /usr/share/misc/config.guess && \
-	  cp -f /usr/share/misc/config.guess config.guess
-	dh_clean
+	rm -f docs/ekg2.1 docs/ekg2-remote.1
+# Copy config.{sub,guess} if they are available and differ.
+	for ext in sub guess; do \
+	 if test -r /usr/share/misc/config.$$ext && ! cmp --quiet /usr/share/misc/config.$$ext config.$$ext ; then \
+	  cp -fv /usr/share/misc/config.$$ext config.$ext ; \
+	 fi ; \
+	done
 
-install: build
-	dh_testdir
-	dh_testroot
-	dh_prep
-	dh_installdirs
-	perl_install_args="DESTDIR=$(CURDIR)/debian/tmp INSTALLDIRS=vendor" $(MAKE) install prefix=$(CURDIR)/debian/tmp/usr
+override_dh_auto_install:
+	perl_install_args="DESTDIR=$(CURDIR)/debian/ekg2 INSTALLDIRS=vendor" $(MAKE) install prefix=$(CURDIR)/debian/ekg2/usr
 # Apparently INSTALLDIRS=vendor is not enough in some cases. Remove packfiles manually.
-	find debian/tmp -type f -name .packlist | xargs -r rm -f
-#	install -m 0644 contrib/ruby/*.rb $(CURDIR)/debian/tmp/usr/share/ekg2/scripts/
+	find debian/ekg2 -type f -name .packlist | xargs -r rm -f
 
-binary-indep: build install
-# We have nothing to do.
-
-binary-arch: build install
-	dh_testdir
-	dh_testroot
-	# Fail the build as a precaution if our private copy of autoclean.sh
-	# differs from the (at this time certainly) patched upstream version.
-	set -e; if [ -e debian/autoclean.sh ] ; then diff -u autoclean.sh debian/autoclean.sh ; fi
-	dh_install --sourcedir=debian/tmp --list-missing
+override_dh_installdocs:
 	dh_installdocs
 	cp -a docs/ekg2book/book    $(CURDIR)/debian/ekg2/usr/share/doc/ekg2/book-pl
 	cp -a docs/ekg2book-en/book $(CURDIR)/debian/ekg2/usr/share/doc/ekg2/book-en
 	cp -a docs/doxygen          $(CURDIR)/debian/ekg2/usr/share/doc/ekg2/
-	dh_installmenu
-	dh_installdirs
-	cp docs/ekg2.en.1 docs/ekg2.1
-	cp docs/ekg2-remote.en.1 docs/ekg2-remote.1
-	dh_installman docs/ekg2.pl.1 docs/ekg2.1 docs/ekg2-remote.pl.1 docs/ekg2-remote.1
-	rm -f docs/ekg2.1 docs/ekg2-remote.1
-	dh_installchangelogs # ChangeLog
-	dh_link
-	dh_perl
-	dh_pycentral
-	dh_strip
-	dh_compress
-	dh_fixperms
-	dh_installdeb
-	dh_shlibdeps # -X debian/ekg/usr/bin/ekglogs -L libgadu3 -l debian/libgadu3/usr/lib
-# A hack to downgrade ekglogs dependancies to recommedations
-# This is a leftover from ekg 1 package, but may be useful for tuning plugins' deps
-#	dpkg-shlibdeps -Tdebian/ekg.substvars.tmp -dRecommends debian/ekg/usr/bin/ekglogs
-#	cat debian/ekg.substvars.tmp >> debian/ekg.substvars
-#	rm -f debian/ekg.substvars.tmp
-# Endhack :-)
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
-
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install 

@@ -40,22 +40,23 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/expat.m4 \
 	$(top_srcdir)/m4/gcc_fvisibility.m4 \
-	$(top_srcdir)/m4/gcc_std.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gpgme.m4 $(top_srcdir)/m4/gtk2.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libgadu.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libgsm.m4 $(top_srcdir)/m4/libidn.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxosd.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/ncurses.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/openssl.m4 $(top_srcdir)/m4/oracle.m4 \
-	$(top_srcdir)/m4/perl.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/m4/python.m4 \
-	$(top_srcdir)/m4/readline.m4 $(top_srcdir)/m4/sqlite.m4 \
-	$(top_srcdir)/m4/sqlite3.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/gcc_std.m4 \
+	$(top_srcdir)/m4/gcc_strict_aliasing.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gpgme.m4 \
+	$(top_srcdir)/m4/gtk2.m4 $(top_srcdir)/m4/iconv.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libgadu.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libgsm.m4 \
+	$(top_srcdir)/m4/libidn.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/libxosd.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/ncurses.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/openssl.m4 \
+	$(top_srcdir)/m4/oracle.m4 $(top_srcdir)/m4/perl.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/python.m4 $(top_srcdir)/m4/readline.m4 \
+	$(top_srcdir)/m4/sqlite.m4 $(top_srcdir)/m4/sqlite3.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -113,6 +114,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_CFLAGS = @AM_CFLAGS@
 AR = @AR@
 ASPELL_LIBS = @ASPELL_LIBS@
 AUTOCONF = @AUTOCONF@
@@ -130,6 +132,7 @@ CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 C_FVISIBILITY = @C_FVISIBILITY@
 C_STD = @C_STD@
+C_STRICT_ALIASING = @C_STRICT_ALIASING@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLIB = @DLLIB@
@@ -299,8 +302,8 @@ lib_LTLIBRARIES = readline.la
 readline_la_SOURCES = main.c ui-readline.c ui-readline.h readline-completion.c
 readline_la_LDFLAGS = -module -avoid-version
 readline_la_LIBADD = $(READLINE_LIBS)
-readline_la_CPPFLAGS = $(C_FVISIBILITY) $(READLINE_CPPFLAGS)
-readline_la_CFLAGS = $(C_FVISIBILITY) $(READLINE_CFLAGS)
+readline_la_CPPFLAGS = $(READLINE_CPPFLAGS) $(AM_CPPFLAGS)
+readline_la_CFLAGS = $(C_FVISIBILITY) $(READLINE_CFLAGS) $(AM_CFLAGS)
 INCLUDES = -DDATADIR=\"$(datadir)/ekg\" 
 all: all-am
 

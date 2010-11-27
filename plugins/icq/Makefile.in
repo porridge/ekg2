@@ -40,22 +40,23 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/expat.m4 \
 	$(top_srcdir)/m4/gcc_fvisibility.m4 \
-	$(top_srcdir)/m4/gcc_std.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gpgme.m4 $(top_srcdir)/m4/gtk2.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libgadu.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libgsm.m4 $(top_srcdir)/m4/libidn.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxosd.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/ncurses.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/openssl.m4 $(top_srcdir)/m4/oracle.m4 \
-	$(top_srcdir)/m4/perl.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/m4/python.m4 \
-	$(top_srcdir)/m4/readline.m4 $(top_srcdir)/m4/sqlite.m4 \
-	$(top_srcdir)/m4/sqlite3.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/gcc_std.m4 \
+	$(top_srcdir)/m4/gcc_strict_aliasing.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gpgme.m4 \
+	$(top_srcdir)/m4/gtk2.m4 $(top_srcdir)/m4/iconv.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libgadu.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libgsm.m4 \
+	$(top_srcdir)/m4/libidn.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/libxosd.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/ncurses.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/openssl.m4 \
+	$(top_srcdir)/m4/oracle.m4 $(top_srcdir)/m4/perl.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/python.m4 $(top_srcdir)/m4/readline.m4 \
+	$(top_srcdir)/m4/sqlite.m4 $(top_srcdir)/m4/sqlite3.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -101,8 +102,8 @@ am_icq_la_OBJECTS = icq_la-icq.lo icq_la-icq_caps.lo \
 	icq_la-misc.lo
 icq_la_OBJECTS = $(am_icq_la_OBJECTS)
 icq_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(icq_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	--mode=link $(CCLD) $(icq_la_CFLAGS) $(CFLAGS) \
+	$(icq_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -123,6 +124,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_CFLAGS = @AM_CFLAGS@
 AR = @AR@
 ASPELL_LIBS = @ASPELL_LIBS@
 AUTOCONF = @AUTOCONF@
@@ -140,6 +142,7 @@ CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 C_FVISIBILITY = @C_FVISIBILITY@
 C_STD = @C_STD@
+C_STRICT_ALIASING = @C_STRICT_ALIASING@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLIB = @DLLIB@
@@ -309,7 +312,8 @@ ICQ_DEFS = -UDBG_CAPHTML -DDBG_CAPMTN -DDBG_CAPXTRAZ -UDBG_CAPXTRAZ_MUC -DDBG_NE
 lib_LTLIBRARIES = icq.la
 icq_la_SOURCES = icq.c icq.h icq_caps.c icq_caps.h icq_const.h icq_flap_handlers.c icq_flap_handlers.h icq_snac_handlers.c icq_snac_handlers.h icq_snac_handlers_01service.c icq_snac_handlers_02location.c icq_snac_handlers_03buddy.c icq_snac_handlers_04message.c icq_snac_handlers_09bos.c icq_snac_handlers_0Alookup.c icq_snac_handlers_0Bstatus.c icq_snac_handlers_13userlist.c icq_snac_handlers_15extension.c icq_snac_handlers_17sigon.c digest.c misc.c misc.h miscicq.h
 icq_la_LDFLAGS = -module -avoid-version
-icq_la_CPPFLAGS = $(C_FVISIBILITY) $(ICQ_DEFS)
+icq_la_CPPFLAGS = $(ICQ_DEFS) $(AM_CPPFLAGS)
+icq_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -423,116 +427,116 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 icq_la-icq.lo: icq.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq.lo -MD -MP -MF $(DEPDIR)/icq_la-icq.Tpo -c -o icq_la-icq.lo `test -f 'icq.c' || echo '$(srcdir)/'`icq.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq.lo -MD -MP -MF $(DEPDIR)/icq_la-icq.Tpo -c -o icq_la-icq.lo `test -f 'icq.c' || echo '$(srcdir)/'`icq.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq.Tpo $(DEPDIR)/icq_la-icq.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq.c' object='icq_la-icq.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq.lo `test -f 'icq.c' || echo '$(srcdir)/'`icq.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq.lo `test -f 'icq.c' || echo '$(srcdir)/'`icq.c
 
 icq_la-icq_caps.lo: icq_caps.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_caps.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_caps.Tpo -c -o icq_la-icq_caps.lo `test -f 'icq_caps.c' || echo '$(srcdir)/'`icq_caps.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_caps.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_caps.Tpo -c -o icq_la-icq_caps.lo `test -f 'icq_caps.c' || echo '$(srcdir)/'`icq_caps.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_caps.Tpo $(DEPDIR)/icq_la-icq_caps.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_caps.c' object='icq_la-icq_caps.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_caps.lo `test -f 'icq_caps.c' || echo '$(srcdir)/'`icq_caps.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_caps.lo `test -f 'icq_caps.c' || echo '$(srcdir)/'`icq_caps.c
 
 icq_la-icq_flap_handlers.lo: icq_flap_handlers.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_flap_handlers.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_flap_handlers.Tpo -c -o icq_la-icq_flap_handlers.lo `test -f 'icq_flap_handlers.c' || echo '$(srcdir)/'`icq_flap_handlers.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_flap_handlers.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_flap_handlers.Tpo -c -o icq_la-icq_flap_handlers.lo `test -f 'icq_flap_handlers.c' || echo '$(srcdir)/'`icq_flap_handlers.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_flap_handlers.Tpo $(DEPDIR)/icq_la-icq_flap_handlers.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_flap_handlers.c' object='icq_la-icq_flap_handlers.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_flap_handlers.lo `test -f 'icq_flap_handlers.c' || echo '$(srcdir)/'`icq_flap_handlers.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_flap_handlers.lo `test -f 'icq_flap_handlers.c' || echo '$(srcdir)/'`icq_flap_handlers.c
 
 icq_la-icq_snac_handlers.lo: icq_snac_handlers.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers.Tpo -c -o icq_la-icq_snac_handlers.lo `test -f 'icq_snac_handlers.c' || echo '$(srcdir)/'`icq_snac_handlers.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers.Tpo -c -o icq_la-icq_snac_handlers.lo `test -f 'icq_snac_handlers.c' || echo '$(srcdir)/'`icq_snac_handlers.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers.Tpo $(DEPDIR)/icq_la-icq_snac_handlers.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers.c' object='icq_la-icq_snac_handlers.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers.lo `test -f 'icq_snac_handlers.c' || echo '$(srcdir)/'`icq_snac_handlers.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers.lo `test -f 'icq_snac_handlers.c' || echo '$(srcdir)/'`icq_snac_handlers.c
 
 icq_la-icq_snac_handlers_01service.lo: icq_snac_handlers_01service.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_01service.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_01service.Tpo -c -o icq_la-icq_snac_handlers_01service.lo `test -f 'icq_snac_handlers_01service.c' || echo '$(srcdir)/'`icq_snac_handlers_01service.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_01service.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_01service.Tpo -c -o icq_la-icq_snac_handlers_01service.lo `test -f 'icq_snac_handlers_01service.c' || echo '$(srcdir)/'`icq_snac_handlers_01service.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_01service.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_01service.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_01service.c' object='icq_la-icq_snac_handlers_01service.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_01service.lo `test -f 'icq_snac_handlers_01service.c' || echo '$(srcdir)/'`icq_snac_handlers_01service.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_01service.lo `test -f 'icq_snac_handlers_01service.c' || echo '$(srcdir)/'`icq_snac_handlers_01service.c
 
 icq_la-icq_snac_handlers_02location.lo: icq_snac_handlers_02location.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_02location.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_02location.Tpo -c -o icq_la-icq_snac_handlers_02location.lo `test -f 'icq_snac_handlers_02location.c' || echo '$(srcdir)/'`icq_snac_handlers_02location.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_02location.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_02location.Tpo -c -o icq_la-icq_snac_handlers_02location.lo `test -f 'icq_snac_handlers_02location.c' || echo '$(srcdir)/'`icq_snac_handlers_02location.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_02location.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_02location.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_02location.c' object='icq_la-icq_snac_handlers_02location.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_02location.lo `test -f 'icq_snac_handlers_02location.c' || echo '$(srcdir)/'`icq_snac_handlers_02location.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_02location.lo `test -f 'icq_snac_handlers_02location.c' || echo '$(srcdir)/'`icq_snac_handlers_02location.c
 
 icq_la-icq_snac_handlers_03buddy.lo: icq_snac_handlers_03buddy.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_03buddy.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_03buddy.Tpo -c -o icq_la-icq_snac_handlers_03buddy.lo `test -f 'icq_snac_handlers_03buddy.c' || echo '$(srcdir)/'`icq_snac_handlers_03buddy.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_03buddy.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_03buddy.Tpo -c -o icq_la-icq_snac_handlers_03buddy.lo `test -f 'icq_snac_handlers_03buddy.c' || echo '$(srcdir)/'`icq_snac_handlers_03buddy.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_03buddy.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_03buddy.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_03buddy.c' object='icq_la-icq_snac_handlers_03buddy.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_03buddy.lo `test -f 'icq_snac_handlers_03buddy.c' || echo '$(srcdir)/'`icq_snac_handlers_03buddy.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_03buddy.lo `test -f 'icq_snac_handlers_03buddy.c' || echo '$(srcdir)/'`icq_snac_handlers_03buddy.c
 
 icq_la-icq_snac_handlers_04message.lo: icq_snac_handlers_04message.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_04message.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_04message.Tpo -c -o icq_la-icq_snac_handlers_04message.lo `test -f 'icq_snac_handlers_04message.c' || echo '$(srcdir)/'`icq_snac_handlers_04message.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_04message.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_04message.Tpo -c -o icq_la-icq_snac_handlers_04message.lo `test -f 'icq_snac_handlers_04message.c' || echo '$(srcdir)/'`icq_snac_handlers_04message.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_04message.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_04message.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_04message.c' object='icq_la-icq_snac_handlers_04message.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_04message.lo `test -f 'icq_snac_handlers_04message.c' || echo '$(srcdir)/'`icq_snac_handlers_04message.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_04message.lo `test -f 'icq_snac_handlers_04message.c' || echo '$(srcdir)/'`icq_snac_handlers_04message.c
 
 icq_la-icq_snac_handlers_09bos.lo: icq_snac_handlers_09bos.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_09bos.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_09bos.Tpo -c -o icq_la-icq_snac_handlers_09bos.lo `test -f 'icq_snac_handlers_09bos.c' || echo '$(srcdir)/'`icq_snac_handlers_09bos.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_09bos.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_09bos.Tpo -c -o icq_la-icq_snac_handlers_09bos.lo `test -f 'icq_snac_handlers_09bos.c' || echo '$(srcdir)/'`icq_snac_handlers_09bos.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_09bos.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_09bos.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_09bos.c' object='icq_la-icq_snac_handlers_09bos.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_09bos.lo `test -f 'icq_snac_handlers_09bos.c' || echo '$(srcdir)/'`icq_snac_handlers_09bos.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_09bos.lo `test -f 'icq_snac_handlers_09bos.c' || echo '$(srcdir)/'`icq_snac_handlers_09bos.c
 
 icq_la-icq_snac_handlers_0Alookup.lo: icq_snac_handlers_0Alookup.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_0Alookup.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_0Alookup.Tpo -c -o icq_la-icq_snac_handlers_0Alookup.lo `test -f 'icq_snac_handlers_0Alookup.c' || echo '$(srcdir)/'`icq_snac_handlers_0Alookup.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_0Alookup.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_0Alookup.Tpo -c -o icq_la-icq_snac_handlers_0Alookup.lo `test -f 'icq_snac_handlers_0Alookup.c' || echo '$(srcdir)/'`icq_snac_handlers_0Alookup.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_0Alookup.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_0Alookup.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_0Alookup.c' object='icq_la-icq_snac_handlers_0Alookup.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_0Alookup.lo `test -f 'icq_snac_handlers_0Alookup.c' || echo '$(srcdir)/'`icq_snac_handlers_0Alookup.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_0Alookup.lo `test -f 'icq_snac_handlers_0Alookup.c' || echo '$(srcdir)/'`icq_snac_handlers_0Alookup.c
 
 icq_la-icq_snac_handlers_0Bstatus.lo: icq_snac_handlers_0Bstatus.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_0Bstatus.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_0Bstatus.Tpo -c -o icq_la-icq_snac_handlers_0Bstatus.lo `test -f 'icq_snac_handlers_0Bstatus.c' || echo '$(srcdir)/'`icq_snac_handlers_0Bstatus.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_0Bstatus.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_0Bstatus.Tpo -c -o icq_la-icq_snac_handlers_0Bstatus.lo `test -f 'icq_snac_handlers_0Bstatus.c' || echo '$(srcdir)/'`icq_snac_handlers_0Bstatus.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_0Bstatus.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_0Bstatus.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_0Bstatus.c' object='icq_la-icq_snac_handlers_0Bstatus.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_0Bstatus.lo `test -f 'icq_snac_handlers_0Bstatus.c' || echo '$(srcdir)/'`icq_snac_handlers_0Bstatus.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_0Bstatus.lo `test -f 'icq_snac_handlers_0Bstatus.c' || echo '$(srcdir)/'`icq_snac_handlers_0Bstatus.c
 
 icq_la-icq_snac_handlers_13userlist.lo: icq_snac_handlers_13userlist.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_13userlist.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_13userlist.Tpo -c -o icq_la-icq_snac_handlers_13userlist.lo `test -f 'icq_snac_handlers_13userlist.c' || echo '$(srcdir)/'`icq_snac_handlers_13userlist.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_13userlist.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_13userlist.Tpo -c -o icq_la-icq_snac_handlers_13userlist.lo `test -f 'icq_snac_handlers_13userlist.c' || echo '$(srcdir)/'`icq_snac_handlers_13userlist.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_13userlist.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_13userlist.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_13userlist.c' object='icq_la-icq_snac_handlers_13userlist.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_13userlist.lo `test -f 'icq_snac_handlers_13userlist.c' || echo '$(srcdir)/'`icq_snac_handlers_13userlist.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_13userlist.lo `test -f 'icq_snac_handlers_13userlist.c' || echo '$(srcdir)/'`icq_snac_handlers_13userlist.c
 
 icq_la-icq_snac_handlers_15extension.lo: icq_snac_handlers_15extension.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_15extension.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_15extension.Tpo -c -o icq_la-icq_snac_handlers_15extension.lo `test -f 'icq_snac_handlers_15extension.c' || echo '$(srcdir)/'`icq_snac_handlers_15extension.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_15extension.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_15extension.Tpo -c -o icq_la-icq_snac_handlers_15extension.lo `test -f 'icq_snac_handlers_15extension.c' || echo '$(srcdir)/'`icq_snac_handlers_15extension.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_15extension.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_15extension.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_15extension.c' object='icq_la-icq_snac_handlers_15extension.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_15extension.lo `test -f 'icq_snac_handlers_15extension.c' || echo '$(srcdir)/'`icq_snac_handlers_15extension.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_15extension.lo `test -f 'icq_snac_handlers_15extension.c' || echo '$(srcdir)/'`icq_snac_handlers_15extension.c
 
 icq_la-icq_snac_handlers_17sigon.lo: icq_snac_handlers_17sigon.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_17sigon.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_17sigon.Tpo -c -o icq_la-icq_snac_handlers_17sigon.lo `test -f 'icq_snac_handlers_17sigon.c' || echo '$(srcdir)/'`icq_snac_handlers_17sigon.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-icq_snac_handlers_17sigon.lo -MD -MP -MF $(DEPDIR)/icq_la-icq_snac_handlers_17sigon.Tpo -c -o icq_la-icq_snac_handlers_17sigon.lo `test -f 'icq_snac_handlers_17sigon.c' || echo '$(srcdir)/'`icq_snac_handlers_17sigon.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-icq_snac_handlers_17sigon.Tpo $(DEPDIR)/icq_la-icq_snac_handlers_17sigon.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icq_snac_handlers_17sigon.c' object='icq_la-icq_snac_handlers_17sigon.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_17sigon.lo `test -f 'icq_snac_handlers_17sigon.c' || echo '$(srcdir)/'`icq_snac_handlers_17sigon.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-icq_snac_handlers_17sigon.lo `test -f 'icq_snac_handlers_17sigon.c' || echo '$(srcdir)/'`icq_snac_handlers_17sigon.c
 
 icq_la-digest.lo: digest.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-digest.lo -MD -MP -MF $(DEPDIR)/icq_la-digest.Tpo -c -o icq_la-digest.lo `test -f 'digest.c' || echo '$(srcdir)/'`digest.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-digest.lo -MD -MP -MF $(DEPDIR)/icq_la-digest.Tpo -c -o icq_la-digest.lo `test -f 'digest.c' || echo '$(srcdir)/'`digest.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-digest.Tpo $(DEPDIR)/icq_la-digest.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='digest.c' object='icq_la-digest.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-digest.lo `test -f 'digest.c' || echo '$(srcdir)/'`digest.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-digest.lo `test -f 'digest.c' || echo '$(srcdir)/'`digest.c
 
 icq_la-misc.lo: misc.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT icq_la-misc.lo -MD -MP -MF $(DEPDIR)/icq_la-misc.Tpo -c -o icq_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -MT icq_la-misc.lo -MD -MP -MF $(DEPDIR)/icq_la-misc.Tpo -c -o icq_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/icq_la-misc.Tpo $(DEPDIR)/icq_la-misc.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='misc.c' object='icq_la-misc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icq_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icq_la_CPPFLAGS) $(CPPFLAGS) $(icq_la_CFLAGS) $(CFLAGS) -c -o icq_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

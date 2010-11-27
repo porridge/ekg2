@@ -40,22 +40,23 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/expat.m4 \
 	$(top_srcdir)/m4/gcc_fvisibility.m4 \
-	$(top_srcdir)/m4/gcc_std.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gpgme.m4 $(top_srcdir)/m4/gtk2.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libgadu.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libgsm.m4 $(top_srcdir)/m4/libidn.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxosd.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/ncurses.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/openssl.m4 $(top_srcdir)/m4/oracle.m4 \
-	$(top_srcdir)/m4/perl.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/m4/python.m4 \
-	$(top_srcdir)/m4/readline.m4 $(top_srcdir)/m4/sqlite.m4 \
-	$(top_srcdir)/m4/sqlite3.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/gcc_std.m4 \
+	$(top_srcdir)/m4/gcc_strict_aliasing.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gpgme.m4 \
+	$(top_srcdir)/m4/gtk2.m4 $(top_srcdir)/m4/iconv.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libgadu.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libgsm.m4 \
+	$(top_srcdir)/m4/libidn.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/libxosd.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/ncurses.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/openssl.m4 \
+	$(top_srcdir)/m4/oracle.m4 $(top_srcdir)/m4/perl.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/python.m4 $(top_srcdir)/m4/readline.m4 \
+	$(top_srcdir)/m4/sqlite.m4 $(top_srcdir)/m4/sqlite3.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -93,8 +94,8 @@ am_gtk_la_OBJECTS = gtk_la-main.lo gtk_la-maingui.lo gtk_la-xtext.lo \
 	gtk_la-userlistgui.lo
 gtk_la_OBJECTS = $(am_gtk_la_OBJECTS)
 gtk_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(gtk_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	--mode=link $(CCLD) $(gtk_la_CFLAGS) $(CFLAGS) \
+	$(gtk_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -115,6 +116,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_CFLAGS = @AM_CFLAGS@
 AR = @AR@
 ASPELL_LIBS = @ASPELL_LIBS@
 AUTOCONF = @AUTOCONF@
@@ -132,6 +134,7 @@ CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 C_FVISIBILITY = @C_FVISIBILITY@
 C_STD = @C_STD@
+C_STRICT_ALIASING = @C_STRICT_ALIASING@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLIB = @DLLIB@
@@ -304,7 +307,7 @@ lib_LTLIBRARIES = gtk.la
 gtk_la_SOURCES = main.c main.h maingui.c maingui.h xtext.c xtext.h gtkutil.c gtkutil.h palette.c palette.h menu.c menu.h chanview.c chanview.h bindings.c bindings.h completion.c completion.h userlistgui.c userlistgui.h
 gtk_la_LDFLAGS = -module -avoid-version
 gtk_la_LIBADD = $(GTK_LIBS)
-gtk_la_CPPFLAGS = $(C_FVISIBILITY) $(GTK_CFLAGS) 
+gtk_la_CFLAGS = $(C_FVISIBILITY) $(GTK_CFLAGS) $(AM_CFLAGS)
 BUILT_SOURCES = inline_pngs_gg.h inline_pngs_icq.h inline_pngs.h
 INCLUDES = -DDATADIR=\"$(datadir)/ekg2\" 
 CLEANFILES = inline_pngs_gg.h inline_pngs_icq.h inline_pngs.h
@@ -416,74 +419,74 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 gtk_la-main.lo: main.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-main.lo -MD -MP -MF $(DEPDIR)/gtk_la-main.Tpo -c -o gtk_la-main.lo `test -f 'main.c' || echo '$(srcdir)/'`main.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-main.lo -MD -MP -MF $(DEPDIR)/gtk_la-main.Tpo -c -o gtk_la-main.lo `test -f 'main.c' || echo '$(srcdir)/'`main.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-main.Tpo $(DEPDIR)/gtk_la-main.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='gtk_la-main.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-main.lo `test -f 'main.c' || echo '$(srcdir)/'`main.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-main.lo `test -f 'main.c' || echo '$(srcdir)/'`main.c
 
 gtk_la-maingui.lo: maingui.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-maingui.lo -MD -MP -MF $(DEPDIR)/gtk_la-maingui.Tpo -c -o gtk_la-maingui.lo `test -f 'maingui.c' || echo '$(srcdir)/'`maingui.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-maingui.lo -MD -MP -MF $(DEPDIR)/gtk_la-maingui.Tpo -c -o gtk_la-maingui.lo `test -f 'maingui.c' || echo '$(srcdir)/'`maingui.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-maingui.Tpo $(DEPDIR)/gtk_la-maingui.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='maingui.c' object='gtk_la-maingui.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-maingui.lo `test -f 'maingui.c' || echo '$(srcdir)/'`maingui.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-maingui.lo `test -f 'maingui.c' || echo '$(srcdir)/'`maingui.c
 
 gtk_la-xtext.lo: xtext.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-xtext.lo -MD -MP -MF $(DEPDIR)/gtk_la-xtext.Tpo -c -o gtk_la-xtext.lo `test -f 'xtext.c' || echo '$(srcdir)/'`xtext.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-xtext.lo -MD -MP -MF $(DEPDIR)/gtk_la-xtext.Tpo -c -o gtk_la-xtext.lo `test -f 'xtext.c' || echo '$(srcdir)/'`xtext.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-xtext.Tpo $(DEPDIR)/gtk_la-xtext.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='xtext.c' object='gtk_la-xtext.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-xtext.lo `test -f 'xtext.c' || echo '$(srcdir)/'`xtext.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-xtext.lo `test -f 'xtext.c' || echo '$(srcdir)/'`xtext.c
 
 gtk_la-gtkutil.lo: gtkutil.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-gtkutil.lo -MD -MP -MF $(DEPDIR)/gtk_la-gtkutil.Tpo -c -o gtk_la-gtkutil.lo `test -f 'gtkutil.c' || echo '$(srcdir)/'`gtkutil.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-gtkutil.lo -MD -MP -MF $(DEPDIR)/gtk_la-gtkutil.Tpo -c -o gtk_la-gtkutil.lo `test -f 'gtkutil.c' || echo '$(srcdir)/'`gtkutil.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-gtkutil.Tpo $(DEPDIR)/gtk_la-gtkutil.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gtkutil.c' object='gtk_la-gtkutil.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-gtkutil.lo `test -f 'gtkutil.c' || echo '$(srcdir)/'`gtkutil.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-gtkutil.lo `test -f 'gtkutil.c' || echo '$(srcdir)/'`gtkutil.c
 
 gtk_la-palette.lo: palette.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-palette.lo -MD -MP -MF $(DEPDIR)/gtk_la-palette.Tpo -c -o gtk_la-palette.lo `test -f 'palette.c' || echo '$(srcdir)/'`palette.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-palette.lo -MD -MP -MF $(DEPDIR)/gtk_la-palette.Tpo -c -o gtk_la-palette.lo `test -f 'palette.c' || echo '$(srcdir)/'`palette.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-palette.Tpo $(DEPDIR)/gtk_la-palette.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='palette.c' object='gtk_la-palette.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-palette.lo `test -f 'palette.c' || echo '$(srcdir)/'`palette.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-palette.lo `test -f 'palette.c' || echo '$(srcdir)/'`palette.c
 
 gtk_la-menu.lo: menu.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-menu.lo -MD -MP -MF $(DEPDIR)/gtk_la-menu.Tpo -c -o gtk_la-menu.lo `test -f 'menu.c' || echo '$(srcdir)/'`menu.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-menu.lo -MD -MP -MF $(DEPDIR)/gtk_la-menu.Tpo -c -o gtk_la-menu.lo `test -f 'menu.c' || echo '$(srcdir)/'`menu.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-menu.Tpo $(DEPDIR)/gtk_la-menu.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='menu.c' object='gtk_la-menu.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-menu.lo `test -f 'menu.c' || echo '$(srcdir)/'`menu.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-menu.lo `test -f 'menu.c' || echo '$(srcdir)/'`menu.c
 
 gtk_la-chanview.lo: chanview.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-chanview.lo -MD -MP -MF $(DEPDIR)/gtk_la-chanview.Tpo -c -o gtk_la-chanview.lo `test -f 'chanview.c' || echo '$(srcdir)/'`chanview.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-chanview.lo -MD -MP -MF $(DEPDIR)/gtk_la-chanview.Tpo -c -o gtk_la-chanview.lo `test -f 'chanview.c' || echo '$(srcdir)/'`chanview.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-chanview.Tpo $(DEPDIR)/gtk_la-chanview.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='chanview.c' object='gtk_la-chanview.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-chanview.lo `test -f 'chanview.c' || echo '$(srcdir)/'`chanview.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-chanview.lo `test -f 'chanview.c' || echo '$(srcdir)/'`chanview.c
 
 gtk_la-bindings.lo: bindings.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-bindings.lo -MD -MP -MF $(DEPDIR)/gtk_la-bindings.Tpo -c -o gtk_la-bindings.lo `test -f 'bindings.c' || echo '$(srcdir)/'`bindings.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-bindings.lo -MD -MP -MF $(DEPDIR)/gtk_la-bindings.Tpo -c -o gtk_la-bindings.lo `test -f 'bindings.c' || echo '$(srcdir)/'`bindings.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-bindings.Tpo $(DEPDIR)/gtk_la-bindings.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='bindings.c' object='gtk_la-bindings.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-bindings.lo `test -f 'bindings.c' || echo '$(srcdir)/'`bindings.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-bindings.lo `test -f 'bindings.c' || echo '$(srcdir)/'`bindings.c
 
 gtk_la-completion.lo: completion.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-completion.lo -MD -MP -MF $(DEPDIR)/gtk_la-completion.Tpo -c -o gtk_la-completion.lo `test -f 'completion.c' || echo '$(srcdir)/'`completion.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-completion.lo -MD -MP -MF $(DEPDIR)/gtk_la-completion.Tpo -c -o gtk_la-completion.lo `test -f 'completion.c' || echo '$(srcdir)/'`completion.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-completion.Tpo $(DEPDIR)/gtk_la-completion.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='completion.c' object='gtk_la-completion.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-completion.lo `test -f 'completion.c' || echo '$(srcdir)/'`completion.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-completion.lo `test -f 'completion.c' || echo '$(srcdir)/'`completion.c
 
 gtk_la-userlistgui.lo: userlistgui.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gtk_la-userlistgui.lo -MD -MP -MF $(DEPDIR)/gtk_la-userlistgui.Tpo -c -o gtk_la-userlistgui.lo `test -f 'userlistgui.c' || echo '$(srcdir)/'`userlistgui.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -MT gtk_la-userlistgui.lo -MD -MP -MF $(DEPDIR)/gtk_la-userlistgui.Tpo -c -o gtk_la-userlistgui.lo `test -f 'userlistgui.c' || echo '$(srcdir)/'`userlistgui.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gtk_la-userlistgui.Tpo $(DEPDIR)/gtk_la-userlistgui.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='userlistgui.c' object='gtk_la-userlistgui.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gtk_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gtk_la-userlistgui.lo `test -f 'userlistgui.c' || echo '$(srcdir)/'`userlistgui.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_la_CFLAGS) $(CFLAGS) -c -o gtk_la-userlistgui.lo `test -f 'userlistgui.c' || echo '$(srcdir)/'`userlistgui.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

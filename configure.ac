@@ -4,7 +4,7 @@ AC_INIT(ekg/ekg.c)
 AC_PREREQ(2.50)
 AC_CONFIG_HEADERS(ekg2-config.h)
 
-AM_INIT_AUTOMAKE(ekg2, 0.3.0-rc2-pre)
+AM_INIT_AUTOMAKE(ekg2, 0.3.0-rc4-pre)
 
 dnl we don't use neither fortran neither cxx ... set it to no for disable checking for it..
 F77="no"
@@ -109,9 +109,13 @@ AM_LANGINFO_CODESET
 CFLAGS="$CFLAGS -Wall"
 
 AC_PROG_C_STD
+AC_PROG_C_STRICT_ALIASING
 
-if test "x$C_STD" = "xyes"; then
-	CFLAGS="$CFLAGS -std=c99"
+AM_CFLAGS="$C_STRICT_ALIASING"
+AC_SUBST([AM_CFLAGS])
+
+if test "x$C_STD" != "x"; then
+	CFLAGS="$CFLAGS -std=$C_STD"
 fi
 
 AC_PROG_C_FVISIBILITY

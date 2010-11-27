@@ -2,8 +2,8 @@ Source: ekg2
 Section: net
 Priority: optional
 Maintainer: Marcin Owsiany <porridge@debian.org>
-Build-Depends: debhelper (>= 7), libncursesw5-dev, python-dev, python-central (>= 0.5), libperl-dev, libssl-dev, libgnutls-dev, libaspell-dev, libgadu-dev, libexpat1-dev, libgpmg1-dev, libidn11-dev, libxosd-dev (>= 2.2.13), libsqlite3-dev, python, xsltproc, docbook-xsl, doxygen, libgtk2.0-dev, libgpgme11-dev, zlib1g-dev, quilt
-Standards-Version: 3.8.4
+Build-Depends: debhelper (>= 7.0.50~) , libncursesw5-dev, python-dev, python-central (>= 0.5), libperl-dev, libssl-dev, libgnutls-dev, libaspell-dev, libgadu-dev, libexpat1-dev, libgpmg1-dev, libidn11-dev, libxosd-dev (>= 2.2.13), libsqlite3-dev, python, xsltproc, docbook-xsl, doxygen, libgtk2.0-dev, libgpgme11-dev, zlib1g-dev, quilt (>= 0.46-7~)
+Standards-Version: 3.9.1
 XS-Python-Version: current
 Homepage: http://ekg2.org/
 
@@ -19,8 +19,7 @@ Description: instant messenger and IRC client for UNIX systems
  Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
  filesystem-based communication mechanism called "xmsg" is supported.
  .
- The program is being actively developed, and already has many useful features,
- including:
+ The program has many useful features, including:
    - irssi-like ncurses interface, with mouse support
    - experimental GTK+ interface
    - experimental HTTP interface
