@@ -1,3 +1,11 @@
+ekg2 (20101002+2104-1) experimental; urgency=low
+
+  * New upstream snapshot, based on 0.3.x branch
+  * Incorporated improvements to the fixes/gg-keep-reason patch from upstream
+    BTS.
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 02 Oct 2010 22:17:10 +0100
+
 ekg2 (20100221+1200-1) experimental; urgency=low
 
   * New upstream snapshot

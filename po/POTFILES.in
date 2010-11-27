@@ -12,6 +12,7 @@ plugins/gtk/maingui.c
 plugins/gtk/menu.c
 plugins/gtk/userlistgui.c
 plugins/icq/icq.c
+plugins/icq/icq_snac_handlers_15extension.c
 plugins/irc/irc.c
 plugins/jabber/jabber.c
 plugins/jogger/jogger.c

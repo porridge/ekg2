@@ -424,12 +424,12 @@ static COMMAND(gg_command_away) {
 
 	if (params0) {
 		char *tmp = locale_to_gg_dup(session, params0);
-		if (xstrlen(tmp) > GG_STATUS_DESCR_MAXSIZE && config_reason_limit) {
+		if (xstrlen(tmp) > GG_STATUS_DESCR_MAXSIZE) {
 			if (!timeout) {
-				char *descr_poss = xstrndup(params0, GG_STATUS_DESCR_MAXSIZE);
-				char *descr_not_poss = xstrdup(params0 + GG_STATUS_DESCR_MAXSIZE);
+				char *descr_poss = utf8ndup(params0, GG_STATUS_DESCR_MAXSIZE);
+				char *descr_not_poss = xstrdup(params0 + xstrlen(descr_poss));
 
-				printq("descr_too_long", itoa(xstrlen(tmp) - GG_STATUS_DESCR_MAXSIZE), descr_poss, descr_not_poss);
+				printq("descr_too_long", itoa(xstrlen(descr_not_poss)), descr_poss, descr_not_poss); /* XXX add new function utf8len() */
 				g->scroll_op = 0;
 
 				xfree(tmp);
@@ -454,7 +454,7 @@ static COMMAND(gg_command_away) {
 		}
 	}
 
-	reason_changed = 1;
+	ekg2_reason_changed = 1;
 	if (!session_descr_get(session))
 		autoscroll = timeout = 0;
 
@@ -629,22 +629,22 @@ static COMMAND(gg_command_msg) {
 		return 0;
 	}
 
-	if (gg_config_split_messages && xstrlen(params[1]) > 1989) {
+	if (gg_config_split_messages && xstrlen(params[1]) > GG_MSG_MAXSIZE) {
 		int i, len = xstrlen(params[1]);
 		
-		for (i = 1; i * 1989 <= len; i++) {
-			char *tmp = (i != len) ? xstrndup(params[1] + (i - 1) * 1989, 1989) : xstrdup(params[1] + (i - 1) * 1989);
+		for (i = 1; i * GG_MSG_MAXSIZE <= len; i++) {
+			char *tmp = (i != len) ? xstrndup(params[1] + (i - 1) * GG_MSG_MAXSIZE, GG_MSG_MAXSIZE) : xstrdup(params[1] + (i - 1) * GG_MSG_MAXSIZE);
 			command_exec_format(target, session, 0, ("/%s %s %s"), name, target, tmp);
 			xfree(tmp);
 		}
 	
 		return 0;
 
-	} else if (xstrlen(params[1]) > 1989) {
+	} else if (xstrlen(params[1]) > GG_MSG_MAXSIZE) {
 	      printq("message_too_long");
 	}
 
-	msg = (unsigned char *) xstrmid(params[1], 0, 1989);
+	msg = (unsigned char *) xstrmid(params[1], 0, GG_MSG_MAXSIZE);
 	ekg_format = ekg_sent_message_format((char *) msg);
 
 	/* analize tekstu zrobimy w osobnym bloku dla porzdku */

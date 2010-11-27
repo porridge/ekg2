@@ -127,7 +127,7 @@ static COMMAND(jabber_command_connect)
 		j->using_ssl = 0;
 #endif
 
-		if (j->istlen && realserver == TLEN_HUB)
+		if (j->istlen && !xstrcmp(realserver, TLEN_HUB))
 			j->port = 80;
 		else
 #ifdef JABBER_HAVE_SSL
@@ -472,7 +472,7 @@ static COMMAND(jabber_command_away)
 	
 	if (params[0]) {
 		session_descr_set(session, (!xstrcmp(params[0], "-")) ? NULL : params[0]);
-		reason_changed = 1;
+		ekg2_reason_changed = 1;
 	} 
 	if (!xstrcmp(name, ("_autoback"))) {
 		format = "auto_back";
@@ -1518,7 +1518,7 @@ static COMMAND(jabber_command_private) {
 			
 			splitted = jabber_params_split(params[1], 1);
 
-			if (bookmark_sync && (!splitted && params[1])) {
+			if (!splitted) {
 				printq("invalid_params", name);
 				return -1;
 			}
@@ -1584,7 +1584,7 @@ static COMMAND(jabber_command_private) {
 			return 1;
 		}
 
-		watch_write(j->send_watch, "<iq type=\"get\" id=\"%s\"><query xmlns=\"jabber:iq:private \"><%s/></query></iq>", id, namespace);
+		watch_write(j->send_watch, "<iq type=\"get\" id=\"%s\"><query xmlns=\"jabber:iq:private\"><%s/></query></iq>", id, namespace);
 		return 0;
 	}
 
@@ -1602,7 +1602,7 @@ static COMMAND(jabber_command_private) {
 
 /* Synchronize config (?) */
 		if (config) {
-			plugin_t *p;
+			plugin_t *p, *last_p = NULL;
 			session_t *s;
 
 			for (p = plugins; p; p = p->next) {
@@ -1638,9 +1638,12 @@ back:
 				if (p) {
 					watch_write(j->send_watch, "</plugin>");
 					if (!p->next) { /* if last plugin, then jump back and write core vars */
+						last_p = p;
 						p = NULL;
 						goto back;
 					}
+				} else {
+					p = last_p;
 				}
 			}
 			for (s = sessions; s; s = s->next) {
@@ -1654,10 +1657,14 @@ back:
 
 				watch_write(j->send_watch, "<session xmlns=\"ekg2:session\" uid=\"%s\" password=\"%s\">", s->uid, s->password);
 
-				/* XXX, escape? */
+				/* XXX, alias, descr, status */
 				for (i = 0; (pl->params[i].key /* && p->params[i].id != -1 */); i++) {
-					if (s->values[i])	watch_write(j->send_watch, "<%s>%s</%s>", pl->params[i].key, s->values[i], pl->params[i].key);
-					else			watch_write(j->send_watch, "<%s/>", pl->params[i].key);
+					if (s->values[i]) {
+						char *esc = jabber_escape(s->values[i]);
+						watch_write(j->send_watch, "<%s>%s</%s>", pl->params[i].key, esc, pl->params[i].key);
+						xfree(esc);
+					} else
+						watch_write(j->send_watch, "<%s/>", pl->params[i].key);
 				}
 
 				watch_write(j->send_watch, "</session>");
@@ -1674,15 +1681,25 @@ back:
 
 				switch (book->type) {
 					case (JABBER_BOOKMARK_URL):
-						watch_write(j->send_watch, "<url name=\"%s\" url=\"%s\"/>", book->priv_data.url->name, book->priv_data.url->url);
+					{
+						char *esc_name = jabber_escape(book->priv_data.url->name);
+						watch_write(j->send_watch, "<url name=\"%s\" url=\"%s\"/>", esc_name, book->priv_data.url->url);
+						xfree(esc_name);
 						break;
+					}
 					case (JABBER_BOOKMARK_CONFERENCE):
-						watch_write(j->send_watch, "<conference name=\"%s\" autojoin=\"%s\" jid=\"%s\">", book->priv_data.conf->name, 
+					{
+						char *esc_name = jabber_escape(book->priv_data.conf->name);
+						char *esc_nick = jabber_escape(book->priv_data.conf->nick);
+						watch_write(j->send_watch, "<conference name=\"%s\" autojoin=\"%s\" jid=\"%s\">", esc_name, 
 							book->priv_data.conf->autojoin ? "true" : "false", book->priv_data.conf->jid);
-						if (book->priv_data.conf->nick) watch_write(j->send_watch, "<nick>%s</nick>", book->priv_data.conf->nick);
+						if (book->priv_data.conf->nick) watch_write(j->send_watch, "<nick>%s</nick>", esc_nick);
 						if (book->priv_data.conf->pass) watch_write(j->send_watch, "<password>%s</password>", book->priv_data.conf->pass);
 						watch_write(j->send_watch, "</conference>");
+						xfree(esc_nick);
+						xfree(esc_name);
 						break;
+					}
 					default:
 						debug("[JABBER, BOOKMARK] while syncing j->bookmarks... book->type = %d wtf?\n", book->type);
 				}
@@ -1904,8 +1921,10 @@ static COMMAND(jabber_muc_command_join) {
 	}
 #endif
 		
+	tmp = jabber_escape(username);
 	watch_write(j->send_watch, "<presence to='%s/%s'><x xmlns='http://jabber.org/protocol/muc'>%s</x></presence>", 
-			target, username, password ? password : "");
+			target, tmp, password ? password : "");
+	xfree(tmp);
 
 
 	conf = newconference_create(session, mucuid, 1);

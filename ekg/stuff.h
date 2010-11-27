@@ -160,7 +160,7 @@ extern struct buffer_info buffer_speech;
 extern time_t last_save;
 extern char *config_profile;
 extern int config_changed;
-extern int reason_changed;
+extern int ekg2_reason_changed;
 
 extern pid_t speech_pid;
 
@@ -206,7 +206,6 @@ extern int config_mesg;
 extern int config_query_commands;
 extern int config_slash_messages;
 extern char *config_quit_reason;
-extern int config_reason_limit;
 extern int config_save_password;
 extern int config_save_quit;
 extern char *config_session_default;
@@ -371,6 +370,8 @@ string_t ekg_convert_string_t(string_t s, const char *from, const char *to);
 int ekg_converters_display(int quiet);
 
 char *password_input(const char *prompt, const char *rprompt, const bool norepeat);
+int is_utf8_string(const char *txt);
+
 
 /* funkcje poza stuff.c */
 void ekg_exit();
