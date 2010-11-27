@@ -105,6 +105,7 @@ static LIST_FREE_ITEM(userlist_free_item, userlist_t *) {
 	userlist_private_free(data);
 	private_items_destroy(&data->priv_list);
 	xfree(data->uid); xfree(data->nickname); xfree(data->descr); xfree(data->foreign); xfree(data->last_descr);
+	xfree(data->descr1line);
 	ekg_groups_destroy(&(data->groups));
 	ekg_resources_destroy(&(data->resources));
 }
@@ -580,7 +581,7 @@ userlist_t *userlist_find_u(userlist_t **userlist, const char *uid) {
 
 		/* porównujemy resource; if (len > 0) */
 
-		if (!(tmp = xstrchr(uid, '/')) || (xstrncmp(uid, "xmpp:", 5)))
+		if (!(tmp = xstrchr(uid, '/')) || (xstrncmp(uid, "tlen:", 5) && xstrncmp(uid, "xmpp:", 5)) )
 			continue;
 
 		len = (int)(tmp - uid);

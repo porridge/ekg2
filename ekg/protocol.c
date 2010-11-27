@@ -472,13 +472,17 @@ notify_plugins:
 			r->descr = xstrdup(descr);
 		}
 
-		if (u->resources) {	/* get highest prio descr */
-			xfree(u->descr);
-			u->descr = xstrdup(u->resources->descr);
-		} else {
-			xfree(u->descr);
-			u->descr = xstrdup(descr);
+		xfree(u->descr);
+		u->descr = xstrdup(u->resources ? u->resources->descr : descr);	/* get highest prio descr */
+
+		de = xstrdup(u->descr);
+		if (de) {
+			char *p;
+			while ((p=xstrstr(de, "\r\n"))) memmove(p, p+1, xstrlen(p));	/* dos2unix */
+			while ((p=xstrchr(de,'\n'))) *p = ' ';				/* all in 1 line */
 		}
+		xfree(u->descr1line);
+		u->descr1line = de;
 
 		if (!u->resources || u->resources == r) 
 			u->status_time = when ? when : time(NULL);
@@ -613,6 +617,10 @@ char *message_print(const char *session, const char *sender, const char **rcpts,
 				string_append_c(s, '%');
 				string_append_c(s, attr);
 			}
+
+			if ((text[i] == '/') && (text[i+1] == '|'))	/* /| set margin */
+				if ((i == 0) || (text[i-1] != '/'))
+					string_append_c(s, '/');
 
 			if (text[i] == '%')
 				string_append_c(s, '%');

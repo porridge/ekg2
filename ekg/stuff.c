@@ -182,7 +182,6 @@ int config_window_session_allow = 0;
 int config_windows_save = 0;
 char *config_windows_layout = NULL;
 char *config_profile = NULL;
-int config_reason_limit = 1;
 int config_debug = 1;
 int config_lastlog_noitems = 0;
 int config_lastlog_case = 0;
@@ -197,7 +196,7 @@ char *last_search_last_name = NULL;
 char *last_search_nickname = NULL;
 char *last_search_uid = 0;
 
-int reason_changed = 0;
+int ekg2_reason_changed = 0;
 
 /*
  * windows_save()
@@ -279,11 +278,12 @@ DYNSTUFF_LIST_DECLARE(aliases, alias_t, list_alias_free,
  */
 int alias_add(const char *string, int quiet, int append)
 {
-	char *cmd;
+	char *cmd, *aname, *tmp;
 	command_t *c;
 	alias_t *a;
 	char **params = NULL;
 	char *array;
+	int i;
 
 	if (!string || !(cmd = xstrchr(string, ' ')))
 		return -1;
@@ -314,17 +314,35 @@ int alias_add(const char *string, int quiet, int append)
 		}
 	}
 
-	for (c = commands; c; c = c->next) {
-		char *tmp = ((*cmd == '/') ? cmd + 1 : cmd);
 
-		if (!xstrcasecmp(string, c->name) && !(c->flags & COMMAND_ISALIAS)) {
-			printq("aliases_command", string);
-			return -1;
+	aname = xstrdup((*cmd == '/') ? cmd + 1 : cmd);
+	if ((tmp = xstrchr(aname, ' ')))
+		*tmp = 0;
+
+	for (i=0; i<2; i++) {
+		for (c = commands; c && !params; c = c->next) {
+			const char *cname = c->name;
+			if (i) {
+				if ((tmp = xstrchr(cname, ':')))
+					cname = tmp+1;
+				else  
+					continue;
+			}
+
+			if (!xstrcasecmp(string, cname) && !(c->flags & COMMAND_ISALIAS)) {
+				printq("aliases_command", string);
+				xfree(aname);
+				return -1;
+			}
+
+			if (!xstrcasecmp(aname, cname)) {
+				params = c->params;
+				break;
+			}
 		}
-
-		if (!xstrcasecmp(tmp, c->name))
-			params = c->params;
 	}
+	xfree(aname);
+
 	a = xmalloc(sizeof(struct alias));
 	a->name = xstrdup(string);
 	a->commands = NULL;
@@ -2811,6 +2829,35 @@ char *password_input(const char *prompt, const char *rprompt, const bool norepea
 	}
 
 	return pass;
+}
+
+int is_utf8_string(const char *txt) {
+	const char *p;
+	int mask, n;
+
+	if (!txt) return 0;
+
+	for (p = txt; *p; p++) {
+		//	0xxxxxxx	continue
+		//	10xxxxxx 	n=0; return 0
+		//	110xxxxx	n=1
+		//	1110xxxx	n=2
+		//	11110xxx	n=3
+		//	111110xx	n=4
+		//	1111110x	n=5
+		//	1111111x	n>5; return 0
+
+		if (!(*p & 0x80)) continue;
+
+		for (n = 0, mask = 0x40; (*p & mask); n++, mask >>= 1);
+
+		if (!n || (n>5)) return 0;
+
+		for (; n; n--)
+			if ((*++p & 0xc0) != 0x80) return 0;
+	}
+
+	return 1;
 }
 
 /*
