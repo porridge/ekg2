@@ -40,22 +40,23 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/expat.m4 \
 	$(top_srcdir)/m4/gcc_fvisibility.m4 \
-	$(top_srcdir)/m4/gcc_std.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gpgme.m4 $(top_srcdir)/m4/gtk2.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libgadu.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libgsm.m4 $(top_srcdir)/m4/libidn.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxosd.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/ncurses.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/openssl.m4 $(top_srcdir)/m4/oracle.m4 \
-	$(top_srcdir)/m4/perl.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/m4/python.m4 \
-	$(top_srcdir)/m4/readline.m4 $(top_srcdir)/m4/sqlite.m4 \
-	$(top_srcdir)/m4/sqlite3.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/gcc_std.m4 \
+	$(top_srcdir)/m4/gcc_strict_aliasing.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gpgme.m4 \
+	$(top_srcdir)/m4/gtk2.m4 $(top_srcdir)/m4/iconv.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libgadu.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libgsm.m4 \
+	$(top_srcdir)/m4/libidn.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/libxosd.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/ncurses.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/openssl.m4 \
+	$(top_srcdir)/m4/oracle.m4 $(top_srcdir)/m4/perl.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/python.m4 $(top_srcdir)/m4/readline.m4 \
+	$(top_srcdir)/m4/sqlite.m4 $(top_srcdir)/m4/sqlite3.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -93,7 +94,7 @@ am_gg_la_OBJECTS = gg_la-commands.lo gg_la-dcc.lo gg_la-gg.lo \
 	gg_la-pubdir50.lo
 gg_la_OBJECTS = $(am_gg_la_OBJECTS)
 gg_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(gg_la_LDFLAGS) \
+	--mode=link $(CCLD) $(gg_la_CFLAGS) $(CFLAGS) $(gg_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -115,6 +116,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_CFLAGS = @AM_CFLAGS@
 AR = @AR@
 ASPELL_LIBS = @ASPELL_LIBS@
 AUTOCONF = @AUTOCONF@
@@ -132,6 +134,7 @@ CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 C_FVISIBILITY = @C_FVISIBILITY@
 C_STD = @C_STD@
+C_STRICT_ALIASING = @C_STRICT_ALIASING@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLIB = @DLLIB@
@@ -303,7 +306,8 @@ gg_la_SOURCES = commands.c dcc.c gg.c images.c misc.c pubdir.c pubdir50.c \
 
 gg_la_LDFLAGS = -module -avoid-version
 gg_la_LIBADD = $(LIBGADU_LIBS) $(LIBJPEG_LIBS) $(GG_TOKENGIF_LIBS)
-gg_la_CPPFLAGS = $(LIBGADU_CPPFLAGS) $(C_FVISIBILITY)
+gg_la_CPPFLAGS = $(LIBGADU_CPPFLAGS) $(AM_CPPFLAGS)
+gg_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -408,53 +412,53 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 gg_la-commands.lo: commands.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gg_la-commands.lo -MD -MP -MF $(DEPDIR)/gg_la-commands.Tpo -c -o gg_la-commands.lo `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -MT gg_la-commands.lo -MD -MP -MF $(DEPDIR)/gg_la-commands.Tpo -c -o gg_la-commands.lo `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gg_la-commands.Tpo $(DEPDIR)/gg_la-commands.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='commands.c' object='gg_la-commands.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gg_la-commands.lo `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -c -o gg_la-commands.lo `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
 
 gg_la-dcc.lo: dcc.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gg_la-dcc.lo -MD -MP -MF $(DEPDIR)/gg_la-dcc.Tpo -c -o gg_la-dcc.lo `test -f 'dcc.c' || echo '$(srcdir)/'`dcc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -MT gg_la-dcc.lo -MD -MP -MF $(DEPDIR)/gg_la-dcc.Tpo -c -o gg_la-dcc.lo `test -f 'dcc.c' || echo '$(srcdir)/'`dcc.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gg_la-dcc.Tpo $(DEPDIR)/gg_la-dcc.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='dcc.c' object='gg_la-dcc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gg_la-dcc.lo `test -f 'dcc.c' || echo '$(srcdir)/'`dcc.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -c -o gg_la-dcc.lo `test -f 'dcc.c' || echo '$(srcdir)/'`dcc.c
 
 gg_la-gg.lo: gg.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gg_la-gg.lo -MD -MP -MF $(DEPDIR)/gg_la-gg.Tpo -c -o gg_la-gg.lo `test -f 'gg.c' || echo '$(srcdir)/'`gg.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -MT gg_la-gg.lo -MD -MP -MF $(DEPDIR)/gg_la-gg.Tpo -c -o gg_la-gg.lo `test -f 'gg.c' || echo '$(srcdir)/'`gg.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gg_la-gg.Tpo $(DEPDIR)/gg_la-gg.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gg.c' object='gg_la-gg.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gg_la-gg.lo `test -f 'gg.c' || echo '$(srcdir)/'`gg.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -c -o gg_la-gg.lo `test -f 'gg.c' || echo '$(srcdir)/'`gg.c
 
 gg_la-images.lo: images.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gg_la-images.lo -MD -MP -MF $(DEPDIR)/gg_la-images.Tpo -c -o gg_la-images.lo `test -f 'images.c' || echo '$(srcdir)/'`images.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -MT gg_la-images.lo -MD -MP -MF $(DEPDIR)/gg_la-images.Tpo -c -o gg_la-images.lo `test -f 'images.c' || echo '$(srcdir)/'`images.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gg_la-images.Tpo $(DEPDIR)/gg_la-images.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='images.c' object='gg_la-images.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gg_la-images.lo `test -f 'images.c' || echo '$(srcdir)/'`images.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -c -o gg_la-images.lo `test -f 'images.c' || echo '$(srcdir)/'`images.c
 
 gg_la-misc.lo: misc.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gg_la-misc.lo -MD -MP -MF $(DEPDIR)/gg_la-misc.Tpo -c -o gg_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -MT gg_la-misc.lo -MD -MP -MF $(DEPDIR)/gg_la-misc.Tpo -c -o gg_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gg_la-misc.Tpo $(DEPDIR)/gg_la-misc.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='misc.c' object='gg_la-misc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gg_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -c -o gg_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
 
 gg_la-pubdir.lo: pubdir.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gg_la-pubdir.lo -MD -MP -MF $(DEPDIR)/gg_la-pubdir.Tpo -c -o gg_la-pubdir.lo `test -f 'pubdir.c' || echo '$(srcdir)/'`pubdir.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -MT gg_la-pubdir.lo -MD -MP -MF $(DEPDIR)/gg_la-pubdir.Tpo -c -o gg_la-pubdir.lo `test -f 'pubdir.c' || echo '$(srcdir)/'`pubdir.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gg_la-pubdir.Tpo $(DEPDIR)/gg_la-pubdir.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='pubdir.c' object='gg_la-pubdir.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gg_la-pubdir.lo `test -f 'pubdir.c' || echo '$(srcdir)/'`pubdir.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -c -o gg_la-pubdir.lo `test -f 'pubdir.c' || echo '$(srcdir)/'`pubdir.c
 
 gg_la-pubdir50.lo: pubdir50.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gg_la-pubdir50.lo -MD -MP -MF $(DEPDIR)/gg_la-pubdir50.Tpo -c -o gg_la-pubdir50.lo `test -f 'pubdir50.c' || echo '$(srcdir)/'`pubdir50.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -MT gg_la-pubdir50.lo -MD -MP -MF $(DEPDIR)/gg_la-pubdir50.Tpo -c -o gg_la-pubdir50.lo `test -f 'pubdir50.c' || echo '$(srcdir)/'`pubdir50.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/gg_la-pubdir50.Tpo $(DEPDIR)/gg_la-pubdir50.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='pubdir50.c' object='gg_la-pubdir50.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gg_la-pubdir50.lo `test -f 'pubdir50.c' || echo '$(srcdir)/'`pubdir50.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gg_la_CPPFLAGS) $(CPPFLAGS) $(gg_la_CFLAGS) $(CFLAGS) -c -o gg_la-pubdir50.lo `test -f 'pubdir50.c' || echo '$(srcdir)/'`pubdir50.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

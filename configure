@@ -795,6 +795,8 @@ acx_pthread_config
 LIBGPM_LIBS
 PKGCONFIG
 C_FVISIBILITY
+AM_CFLAGS
+C_STRICT_ALIASING
 C_STD
 PLUGINS
 DLLIB
@@ -3039,7 +3041,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=ekg2
- VERSION=0.3.0-rc2-pre
+ VERSION=0.3.0-rc4-pre
 
 
 cat >>confdefs.h <<_ACEOF
@@ -4999,13 +5001,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5002: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5004: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5005: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5007: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5008: output\"" >&5)
+  (eval echo "\"\$as_me:5010: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6210,7 +6212,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6213 "configure"' > conftest.$ac_ext
+  echo '#line 6215 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7571,11 +7573,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7574: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7576: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7578: \$? = $ac_status" >&5
+   echo "$as_me:7580: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7910,11 +7912,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7913: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7915: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7917: \$? = $ac_status" >&5
+   echo "$as_me:7919: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8015,11 +8017,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8018: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8020: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8022: \$? = $ac_status" >&5
+   echo "$as_me:8024: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8070,11 +8072,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8073: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8075: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8077: \$? = $ac_status" >&5
+   echo "$as_me:8079: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10454,7 +10456,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10457 "configure"
+#line 10459 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10550,7 +10552,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10553 "configure"
+#line 10555 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13471,11 +13473,50 @@ CFLAGS="$CFLAGS -Wall"
 
 
 	ac_save_CFLAGS=$CFLAGS
-        CFLAGS="-std=c99"
+	C_STD=""
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts -std" >&5
-$as_echo_n "checking whether $CC accepts -std... " >&6; }
-if test "${C_STD+set}" = set; then :
+	for std_val in gnu99 c99
+	do
+	        CFLAGS="-std=$std_val"
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts -std=$std_val" >&5
+$as_echo_n "checking whether $CC accepts -std=$std_val... " >&6; }
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  answer=yes
+else
+  answer=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $answer" >&5
+$as_echo "$answer" >&6; }
+		if test "$answer" = "yes" ; then
+			C_STD="$std_val"
+			break
+		fi
+	done
+
+	CFLAGS=$ac_save_CFLAGS
+
+
+
+
+	ac_save_CFLAGS=$CFLAGS
+        CFLAGS="-fno-strict-aliasing"
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts ${CFLAGS}" >&5
+$as_echo_n "checking whether $CC accepts ${CFLAGS}... " >&6; }
+if test "${C_STRICT_ALIASING+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -13490,20 +13531,23 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  C_STD=yes
+  C_STRICT_ALIASING="-fno-strict-aliasing"
 else
-  C_STD=no
+  C_STRICT_ALIASING=""
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $C_STD" >&5
-$as_echo "$C_STD" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $C_STRICT_ALIASING" >&5
+$as_echo "$C_STRICT_ALIASING" >&6; }
 
 	CFLAGS=$ac_save_CFLAGS
 
 
-if test "x$C_STD" = "xyes"; then
-	CFLAGS="$CFLAGS -std=c99"
+AM_CFLAGS="$C_STRICT_ALIASING"
+
+
+if test "x$C_STD" != "x"; then
+	CFLAGS="$CFLAGS -std=$C_STD"
 fi
 
 

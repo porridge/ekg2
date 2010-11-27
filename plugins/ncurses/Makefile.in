@@ -40,22 +40,23 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/expat.m4 \
 	$(top_srcdir)/m4/gcc_fvisibility.m4 \
-	$(top_srcdir)/m4/gcc_std.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gpgme.m4 $(top_srcdir)/m4/gtk2.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libgadu.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libgsm.m4 $(top_srcdir)/m4/libidn.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxosd.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/ncurses.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/openssl.m4 $(top_srcdir)/m4/oracle.m4 \
-	$(top_srcdir)/m4/perl.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/m4/python.m4 \
-	$(top_srcdir)/m4/readline.m4 $(top_srcdir)/m4/sqlite.m4 \
-	$(top_srcdir)/m4/sqlite3.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/gcc_std.m4 \
+	$(top_srcdir)/m4/gcc_strict_aliasing.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gpgme.m4 \
+	$(top_srcdir)/m4/gtk2.m4 $(top_srcdir)/m4/iconv.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libgadu.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libgsm.m4 \
+	$(top_srcdir)/m4/libidn.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/libxosd.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/ncurses.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/openssl.m4 \
+	$(top_srcdir)/m4/oracle.m4 $(top_srcdir)/m4/perl.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/python.m4 $(top_srcdir)/m4/readline.m4 \
+	$(top_srcdir)/m4/sqlite.m4 $(top_srcdir)/m4/sqlite3.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -93,8 +94,8 @@ am_ncurses_la_OBJECTS = ncurses_la-main.lo ncurses_la-old.lo \
 	ncurses_la-contacts.lo ncurses_la-mouse.lo
 ncurses_la_OBJECTS = $(am_ncurses_la_OBJECTS)
 ncurses_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(ncurses_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(ncurses_la_CFLAGS) \
+	$(CFLAGS) $(ncurses_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -115,6 +116,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_CFLAGS = @AM_CFLAGS@
 AR = @AR@
 ASPELL_LIBS = @ASPELL_LIBS@
 AUTOCONF = @AUTOCONF@
@@ -132,6 +134,7 @@ CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 C_FVISIBILITY = @C_FVISIBILITY@
 C_STD = @C_STD@
+C_STRICT_ALIASING = @C_STRICT_ALIASING@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLIB = @DLLIB@
@@ -303,8 +306,9 @@ ncurses_la_SOURCES = main.c old.c completion.c bindings.c contacts.c mouse.c\
 
 ncurses_la_LDFLAGS = -module -avoid-version
 ncurses_la_LIBADD = $(NCURSES_LIBS) $(ASPELL_LIBS) $(LIBGPM_LIBS)
-ncurses_la_CPPFLAGS = $(C_FVISIBILITY) $(NCURSES_CPPFLAGS) 
-INCLUDES = -DDATADIR=\"$(datadir)/ekg\" 
+ncurses_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
+ncurses_la_CPPFLAGS = $(NCURSES_CPPFLAGS) $(AM_CPPFLAGS)
+INCLUDES = -DDATADIR=\"$(datadir)/ekg\"
 all: all-am
 
 .SUFFIXES:
@@ -408,46 +412,46 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 ncurses_la-main.lo: main.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ncurses_la-main.lo -MD -MP -MF $(DEPDIR)/ncurses_la-main.Tpo -c -o ncurses_la-main.lo `test -f 'main.c' || echo '$(srcdir)/'`main.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -MT ncurses_la-main.lo -MD -MP -MF $(DEPDIR)/ncurses_la-main.Tpo -c -o ncurses_la-main.lo `test -f 'main.c' || echo '$(srcdir)/'`main.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ncurses_la-main.Tpo $(DEPDIR)/ncurses_la-main.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='ncurses_la-main.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ncurses_la-main.lo `test -f 'main.c' || echo '$(srcdir)/'`main.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -c -o ncurses_la-main.lo `test -f 'main.c' || echo '$(srcdir)/'`main.c
 
 ncurses_la-old.lo: old.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ncurses_la-old.lo -MD -MP -MF $(DEPDIR)/ncurses_la-old.Tpo -c -o ncurses_la-old.lo `test -f 'old.c' || echo '$(srcdir)/'`old.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -MT ncurses_la-old.lo -MD -MP -MF $(DEPDIR)/ncurses_la-old.Tpo -c -o ncurses_la-old.lo `test -f 'old.c' || echo '$(srcdir)/'`old.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ncurses_la-old.Tpo $(DEPDIR)/ncurses_la-old.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='old.c' object='ncurses_la-old.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ncurses_la-old.lo `test -f 'old.c' || echo '$(srcdir)/'`old.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -c -o ncurses_la-old.lo `test -f 'old.c' || echo '$(srcdir)/'`old.c
 
 ncurses_la-completion.lo: completion.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ncurses_la-completion.lo -MD -MP -MF $(DEPDIR)/ncurses_la-completion.Tpo -c -o ncurses_la-completion.lo `test -f 'completion.c' || echo '$(srcdir)/'`completion.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -MT ncurses_la-completion.lo -MD -MP -MF $(DEPDIR)/ncurses_la-completion.Tpo -c -o ncurses_la-completion.lo `test -f 'completion.c' || echo '$(srcdir)/'`completion.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ncurses_la-completion.Tpo $(DEPDIR)/ncurses_la-completion.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='completion.c' object='ncurses_la-completion.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ncurses_la-completion.lo `test -f 'completion.c' || echo '$(srcdir)/'`completion.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -c -o ncurses_la-completion.lo `test -f 'completion.c' || echo '$(srcdir)/'`completion.c
 
 ncurses_la-bindings.lo: bindings.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ncurses_la-bindings.lo -MD -MP -MF $(DEPDIR)/ncurses_la-bindings.Tpo -c -o ncurses_la-bindings.lo `test -f 'bindings.c' || echo '$(srcdir)/'`bindings.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -MT ncurses_la-bindings.lo -MD -MP -MF $(DEPDIR)/ncurses_la-bindings.Tpo -c -o ncurses_la-bindings.lo `test -f 'bindings.c' || echo '$(srcdir)/'`bindings.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ncurses_la-bindings.Tpo $(DEPDIR)/ncurses_la-bindings.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='bindings.c' object='ncurses_la-bindings.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ncurses_la-bindings.lo `test -f 'bindings.c' || echo '$(srcdir)/'`bindings.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -c -o ncurses_la-bindings.lo `test -f 'bindings.c' || echo '$(srcdir)/'`bindings.c
 
 ncurses_la-contacts.lo: contacts.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ncurses_la-contacts.lo -MD -MP -MF $(DEPDIR)/ncurses_la-contacts.Tpo -c -o ncurses_la-contacts.lo `test -f 'contacts.c' || echo '$(srcdir)/'`contacts.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -MT ncurses_la-contacts.lo -MD -MP -MF $(DEPDIR)/ncurses_la-contacts.Tpo -c -o ncurses_la-contacts.lo `test -f 'contacts.c' || echo '$(srcdir)/'`contacts.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ncurses_la-contacts.Tpo $(DEPDIR)/ncurses_la-contacts.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='contacts.c' object='ncurses_la-contacts.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ncurses_la-contacts.lo `test -f 'contacts.c' || echo '$(srcdir)/'`contacts.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -c -o ncurses_la-contacts.lo `test -f 'contacts.c' || echo '$(srcdir)/'`contacts.c
 
 ncurses_la-mouse.lo: mouse.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ncurses_la-mouse.lo -MD -MP -MF $(DEPDIR)/ncurses_la-mouse.Tpo -c -o ncurses_la-mouse.lo `test -f 'mouse.c' || echo '$(srcdir)/'`mouse.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -MT ncurses_la-mouse.lo -MD -MP -MF $(DEPDIR)/ncurses_la-mouse.Tpo -c -o ncurses_la-mouse.lo `test -f 'mouse.c' || echo '$(srcdir)/'`mouse.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ncurses_la-mouse.Tpo $(DEPDIR)/ncurses_la-mouse.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mouse.c' object='ncurses_la-mouse.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ncurses_la-mouse.lo `test -f 'mouse.c' || echo '$(srcdir)/'`mouse.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncurses_la_CPPFLAGS) $(CPPFLAGS) $(ncurses_la_CFLAGS) $(CFLAGS) -c -o ncurses_la-mouse.lo `test -f 'mouse.c' || echo '$(srcdir)/'`mouse.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

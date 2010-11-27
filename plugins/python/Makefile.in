@@ -40,22 +40,23 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/expat.m4 \
 	$(top_srcdir)/m4/gcc_fvisibility.m4 \
-	$(top_srcdir)/m4/gcc_std.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gpgme.m4 $(top_srcdir)/m4/gtk2.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libgadu.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libgsm.m4 $(top_srcdir)/m4/libidn.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxosd.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/ncurses.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/openssl.m4 $(top_srcdir)/m4/oracle.m4 \
-	$(top_srcdir)/m4/perl.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/m4/python.m4 \
-	$(top_srcdir)/m4/readline.m4 $(top_srcdir)/m4/sqlite.m4 \
-	$(top_srcdir)/m4/sqlite3.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/gcc_std.m4 \
+	$(top_srcdir)/m4/gcc_strict_aliasing.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gpgme.m4 \
+	$(top_srcdir)/m4/gtk2.m4 $(top_srcdir)/m4/iconv.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libgadu.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libgsm.m4 \
+	$(top_srcdir)/m4/libidn.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/libxosd.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/ncurses.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/openssl.m4 \
+	$(top_srcdir)/m4/oracle.m4 $(top_srcdir)/m4/perl.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/python.m4 $(top_srcdir)/m4/readline.m4 \
+	$(top_srcdir)/m4/sqlite.m4 $(top_srcdir)/m4/sqlite3.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -93,8 +94,8 @@ am_python_la_OBJECTS = python_la-python-config.lo \
 	python_la-python-ekg.lo python_la-python.lo
 python_la_OBJECTS = $(am_python_la_OBJECTS)
 python_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(python_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(python_la_CFLAGS) \
+	$(CFLAGS) $(python_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -115,6 +116,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_CFLAGS = @AM_CFLAGS@
 AR = @AR@
 ASPELL_LIBS = @ASPELL_LIBS@
 AUTOCONF = @AUTOCONF@
@@ -132,6 +134,7 @@ CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 C_FVISIBILITY = @C_FVISIBILITY@
 C_STD = @C_STD@
+C_STRICT_ALIASING = @C_STRICT_ALIASING@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLIB = @DLLIB@
@@ -296,7 +299,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = 
+EXTRA_DIST = commands-en.txt commands-pl.txt
 lib_LTLIBRARIES = python.la
 python_la_SOURCES = python-config.c python-config.h \
 		    python-user.c python-user.h \
@@ -308,7 +311,7 @@ python_la_SOURCES = python-config.c python-config.h \
 
 python_la_LDFLAGS = -module -avoid-version
 python_la_LIBADD = $(PYTHON_LIBS)
-python_la_CPPFLAGS = $(PYTHON_CFLAGS) 
+python_la_CFLAGS = $(PYTHON_CFLAGS) $(AM_CFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -413,53 +416,53 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 python_la-python-config.lo: python-config.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT python_la-python-config.lo -MD -MP -MF $(DEPDIR)/python_la-python-config.Tpo -c -o python_la-python-config.lo `test -f 'python-config.c' || echo '$(srcdir)/'`python-config.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -MT python_la-python-config.lo -MD -MP -MF $(DEPDIR)/python_la-python-config.Tpo -c -o python_la-python-config.lo `test -f 'python-config.c' || echo '$(srcdir)/'`python-config.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/python_la-python-config.Tpo $(DEPDIR)/python_la-python-config.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='python-config.c' object='python_la-python-config.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o python_la-python-config.lo `test -f 'python-config.c' || echo '$(srcdir)/'`python-config.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -c -o python_la-python-config.lo `test -f 'python-config.c' || echo '$(srcdir)/'`python-config.c
 
 python_la-python-user.lo: python-user.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT python_la-python-user.lo -MD -MP -MF $(DEPDIR)/python_la-python-user.Tpo -c -o python_la-python-user.lo `test -f 'python-user.c' || echo '$(srcdir)/'`python-user.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -MT python_la-python-user.lo -MD -MP -MF $(DEPDIR)/python_la-python-user.Tpo -c -o python_la-python-user.lo `test -f 'python-user.c' || echo '$(srcdir)/'`python-user.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/python_la-python-user.Tpo $(DEPDIR)/python_la-python-user.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='python-user.c' object='python_la-python-user.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o python_la-python-user.lo `test -f 'python-user.c' || echo '$(srcdir)/'`python-user.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -c -o python_la-python-user.lo `test -f 'python-user.c' || echo '$(srcdir)/'`python-user.c
 
 python_la-python-session.lo: python-session.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT python_la-python-session.lo -MD -MP -MF $(DEPDIR)/python_la-python-session.Tpo -c -o python_la-python-session.lo `test -f 'python-session.c' || echo '$(srcdir)/'`python-session.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -MT python_la-python-session.lo -MD -MP -MF $(DEPDIR)/python_la-python-session.Tpo -c -o python_la-python-session.lo `test -f 'python-session.c' || echo '$(srcdir)/'`python-session.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/python_la-python-session.Tpo $(DEPDIR)/python_la-python-session.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='python-session.c' object='python_la-python-session.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o python_la-python-session.lo `test -f 'python-session.c' || echo '$(srcdir)/'`python-session.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -c -o python_la-python-session.lo `test -f 'python-session.c' || echo '$(srcdir)/'`python-session.c
 
 python_la-python-plugin.lo: python-plugin.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT python_la-python-plugin.lo -MD -MP -MF $(DEPDIR)/python_la-python-plugin.Tpo -c -o python_la-python-plugin.lo `test -f 'python-plugin.c' || echo '$(srcdir)/'`python-plugin.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -MT python_la-python-plugin.lo -MD -MP -MF $(DEPDIR)/python_la-python-plugin.Tpo -c -o python_la-python-plugin.lo `test -f 'python-plugin.c' || echo '$(srcdir)/'`python-plugin.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/python_la-python-plugin.Tpo $(DEPDIR)/python_la-python-plugin.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='python-plugin.c' object='python_la-python-plugin.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o python_la-python-plugin.lo `test -f 'python-plugin.c' || echo '$(srcdir)/'`python-plugin.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -c -o python_la-python-plugin.lo `test -f 'python-plugin.c' || echo '$(srcdir)/'`python-plugin.c
 
 python_la-python-window.lo: python-window.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT python_la-python-window.lo -MD -MP -MF $(DEPDIR)/python_la-python-window.Tpo -c -o python_la-python-window.lo `test -f 'python-window.c' || echo '$(srcdir)/'`python-window.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -MT python_la-python-window.lo -MD -MP -MF $(DEPDIR)/python_la-python-window.Tpo -c -o python_la-python-window.lo `test -f 'python-window.c' || echo '$(srcdir)/'`python-window.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/python_la-python-window.Tpo $(DEPDIR)/python_la-python-window.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='python-window.c' object='python_la-python-window.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o python_la-python-window.lo `test -f 'python-window.c' || echo '$(srcdir)/'`python-window.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -c -o python_la-python-window.lo `test -f 'python-window.c' || echo '$(srcdir)/'`python-window.c
 
 python_la-python-ekg.lo: python-ekg.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT python_la-python-ekg.lo -MD -MP -MF $(DEPDIR)/python_la-python-ekg.Tpo -c -o python_la-python-ekg.lo `test -f 'python-ekg.c' || echo '$(srcdir)/'`python-ekg.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -MT python_la-python-ekg.lo -MD -MP -MF $(DEPDIR)/python_la-python-ekg.Tpo -c -o python_la-python-ekg.lo `test -f 'python-ekg.c' || echo '$(srcdir)/'`python-ekg.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/python_la-python-ekg.Tpo $(DEPDIR)/python_la-python-ekg.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='python-ekg.c' object='python_la-python-ekg.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o python_la-python-ekg.lo `test -f 'python-ekg.c' || echo '$(srcdir)/'`python-ekg.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -c -o python_la-python-ekg.lo `test -f 'python-ekg.c' || echo '$(srcdir)/'`python-ekg.c
 
 python_la-python.lo: python.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT python_la-python.lo -MD -MP -MF $(DEPDIR)/python_la-python.Tpo -c -o python_la-python.lo `test -f 'python.c' || echo '$(srcdir)/'`python.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -MT python_la-python.lo -MD -MP -MF $(DEPDIR)/python_la-python.Tpo -c -o python_la-python.lo `test -f 'python.c' || echo '$(srcdir)/'`python.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/python_la-python.Tpo $(DEPDIR)/python_la-python.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='python.c' object='python_la-python.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(python_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o python_la-python.lo `test -f 'python.c' || echo '$(srcdir)/'`python.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(python_la_CFLAGS) $(CFLAGS) -c -o python_la-python.lo `test -f 'python.c' || echo '$(srcdir)/'`python.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -604,8 +607,6 @@ info: info-am
 
 info-am:
 
-install-data-am:
-
 install-dvi: install-dvi-am
 
 install-dvi-am:
@@ -668,8 +669,13 @@ uninstall-am: uninstall-libLTLIBRARIES
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES
 
+# TODO: add $(C_FVISIBILITY) to *_CFLAGS or comment why this plugin should not be using it.
 
 override libdir = $(plugindir)
+
+install-data-am:
+	mkdir -p $(DESTDIR)$(pkgdatadir)/plugins/python/
+	$(INSTALL) -m 644 $(EXTRA_DIST) $(DESTDIR)$(pkgdatadir)/plugins/python/
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

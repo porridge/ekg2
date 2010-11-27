@@ -40,22 +40,23 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/expat.m4 \
 	$(top_srcdir)/m4/gcc_fvisibility.m4 \
-	$(top_srcdir)/m4/gcc_std.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gpgme.m4 $(top_srcdir)/m4/gtk2.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libgadu.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libgsm.m4 $(top_srcdir)/m4/libidn.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxosd.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/ncurses.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/openssl.m4 $(top_srcdir)/m4/oracle.m4 \
-	$(top_srcdir)/m4/perl.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/m4/python.m4 \
-	$(top_srcdir)/m4/readline.m4 $(top_srcdir)/m4/sqlite.m4 \
-	$(top_srcdir)/m4/sqlite3.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/gcc_std.m4 \
+	$(top_srcdir)/m4/gcc_strict_aliasing.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gpgme.m4 \
+	$(top_srcdir)/m4/gtk2.m4 $(top_srcdir)/m4/iconv.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libgadu.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libgsm.m4 \
+	$(top_srcdir)/m4/libidn.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/libxosd.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/ncurses.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/openssl.m4 \
+	$(top_srcdir)/m4/oracle.m4 $(top_srcdir)/m4/perl.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/python.m4 $(top_srcdir)/m4/readline.m4 \
+	$(top_srcdir)/m4/sqlite.m4 $(top_srcdir)/m4/sqlite3.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -93,8 +94,8 @@ am_jabber_la_OBJECTS = jabber_la-jabber.lo jabber_la-commands.lo \
 	jabber_la-jabber_dcc.lo jabber_la-jabber_handlers.lo
 jabber_la_OBJECTS = $(am_jabber_la_OBJECTS)
 jabber_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(jabber_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(jabber_la_CFLAGS) \
+	$(CFLAGS) $(jabber_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -115,6 +116,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_CFLAGS = @AM_CFLAGS@
 AR = @AR@
 ASPELL_LIBS = @ASPELL_LIBS@
 AUTOCONF = @AUTOCONF@
@@ -132,6 +134,7 @@ CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 C_FVISIBILITY = @C_FVISIBILITY@
 C_STD = @C_STD@
+C_STRICT_ALIASING = @C_STRICT_ALIASING@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLIB = @DLLIB@
@@ -302,7 +305,8 @@ lib_LTLIBRARIES = jabber.la
 jabber_la_SOURCES = jabber.c commands.c misc.c digest.c xmlnode.c jabber_dcc.c jabber_handlers.c jabber.h jabber_dcc.h jabber-ssl.h
 jabber_la_LDFLAGS = -module -avoid-version
 jabber_la_LIBADD = $(EXPAT_LIBS) $(JABBER_SSL_LIBS) $(ZLIB_LIBS)
-jabber_la_CPPFLAGS = $(C_FVISIBILITY) $(EXPAT_CPPFLAGS) $(JABBER_SSL_CPPFLAGS)
+jabber_la_CPPFLAGS = $(EXPAT_CPPFLAGS) $(JABBER_SSL_CPPFLAGS) $(AM_CPPFLAGS)
+jabber_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -407,53 +411,53 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 jabber_la-jabber.lo: jabber.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT jabber_la-jabber.lo -MD -MP -MF $(DEPDIR)/jabber_la-jabber.Tpo -c -o jabber_la-jabber.lo `test -f 'jabber.c' || echo '$(srcdir)/'`jabber.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -MT jabber_la-jabber.lo -MD -MP -MF $(DEPDIR)/jabber_la-jabber.Tpo -c -o jabber_la-jabber.lo `test -f 'jabber.c' || echo '$(srcdir)/'`jabber.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/jabber_la-jabber.Tpo $(DEPDIR)/jabber_la-jabber.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='jabber.c' object='jabber_la-jabber.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o jabber_la-jabber.lo `test -f 'jabber.c' || echo '$(srcdir)/'`jabber.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -c -o jabber_la-jabber.lo `test -f 'jabber.c' || echo '$(srcdir)/'`jabber.c
 
 jabber_la-commands.lo: commands.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT jabber_la-commands.lo -MD -MP -MF $(DEPDIR)/jabber_la-commands.Tpo -c -o jabber_la-commands.lo `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -MT jabber_la-commands.lo -MD -MP -MF $(DEPDIR)/jabber_la-commands.Tpo -c -o jabber_la-commands.lo `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/jabber_la-commands.Tpo $(DEPDIR)/jabber_la-commands.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='commands.c' object='jabber_la-commands.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o jabber_la-commands.lo `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -c -o jabber_la-commands.lo `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
 
 jabber_la-misc.lo: misc.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT jabber_la-misc.lo -MD -MP -MF $(DEPDIR)/jabber_la-misc.Tpo -c -o jabber_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -MT jabber_la-misc.lo -MD -MP -MF $(DEPDIR)/jabber_la-misc.Tpo -c -o jabber_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/jabber_la-misc.Tpo $(DEPDIR)/jabber_la-misc.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='misc.c' object='jabber_la-misc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o jabber_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -c -o jabber_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
 
 jabber_la-digest.lo: digest.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT jabber_la-digest.lo -MD -MP -MF $(DEPDIR)/jabber_la-digest.Tpo -c -o jabber_la-digest.lo `test -f 'digest.c' || echo '$(srcdir)/'`digest.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -MT jabber_la-digest.lo -MD -MP -MF $(DEPDIR)/jabber_la-digest.Tpo -c -o jabber_la-digest.lo `test -f 'digest.c' || echo '$(srcdir)/'`digest.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/jabber_la-digest.Tpo $(DEPDIR)/jabber_la-digest.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='digest.c' object='jabber_la-digest.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o jabber_la-digest.lo `test -f 'digest.c' || echo '$(srcdir)/'`digest.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -c -o jabber_la-digest.lo `test -f 'digest.c' || echo '$(srcdir)/'`digest.c
 
 jabber_la-xmlnode.lo: xmlnode.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT jabber_la-xmlnode.lo -MD -MP -MF $(DEPDIR)/jabber_la-xmlnode.Tpo -c -o jabber_la-xmlnode.lo `test -f 'xmlnode.c' || echo '$(srcdir)/'`xmlnode.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -MT jabber_la-xmlnode.lo -MD -MP -MF $(DEPDIR)/jabber_la-xmlnode.Tpo -c -o jabber_la-xmlnode.lo `test -f 'xmlnode.c' || echo '$(srcdir)/'`xmlnode.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/jabber_la-xmlnode.Tpo $(DEPDIR)/jabber_la-xmlnode.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='xmlnode.c' object='jabber_la-xmlnode.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o jabber_la-xmlnode.lo `test -f 'xmlnode.c' || echo '$(srcdir)/'`xmlnode.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -c -o jabber_la-xmlnode.lo `test -f 'xmlnode.c' || echo '$(srcdir)/'`xmlnode.c
 
 jabber_la-jabber_dcc.lo: jabber_dcc.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT jabber_la-jabber_dcc.lo -MD -MP -MF $(DEPDIR)/jabber_la-jabber_dcc.Tpo -c -o jabber_la-jabber_dcc.lo `test -f 'jabber_dcc.c' || echo '$(srcdir)/'`jabber_dcc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -MT jabber_la-jabber_dcc.lo -MD -MP -MF $(DEPDIR)/jabber_la-jabber_dcc.Tpo -c -o jabber_la-jabber_dcc.lo `test -f 'jabber_dcc.c' || echo '$(srcdir)/'`jabber_dcc.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/jabber_la-jabber_dcc.Tpo $(DEPDIR)/jabber_la-jabber_dcc.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='jabber_dcc.c' object='jabber_la-jabber_dcc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o jabber_la-jabber_dcc.lo `test -f 'jabber_dcc.c' || echo '$(srcdir)/'`jabber_dcc.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -c -o jabber_la-jabber_dcc.lo `test -f 'jabber_dcc.c' || echo '$(srcdir)/'`jabber_dcc.c
 
 jabber_la-jabber_handlers.lo: jabber_handlers.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT jabber_la-jabber_handlers.lo -MD -MP -MF $(DEPDIR)/jabber_la-jabber_handlers.Tpo -c -o jabber_la-jabber_handlers.lo `test -f 'jabber_handlers.c' || echo '$(srcdir)/'`jabber_handlers.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -MT jabber_la-jabber_handlers.lo -MD -MP -MF $(DEPDIR)/jabber_la-jabber_handlers.Tpo -c -o jabber_la-jabber_handlers.lo `test -f 'jabber_handlers.c' || echo '$(srcdir)/'`jabber_handlers.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/jabber_la-jabber_handlers.Tpo $(DEPDIR)/jabber_la-jabber_handlers.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='jabber_handlers.c' object='jabber_la-jabber_handlers.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o jabber_la-jabber_handlers.lo `test -f 'jabber_handlers.c' || echo '$(srcdir)/'`jabber_handlers.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(jabber_la_CPPFLAGS) $(CPPFLAGS) $(jabber_la_CFLAGS) $(CFLAGS) -c -o jabber_la-jabber_handlers.lo `test -f 'jabber_handlers.c' || echo '$(srcdir)/'`jabber_handlers.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
