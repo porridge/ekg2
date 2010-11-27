@@ -1710,8 +1710,7 @@ static COMMAND(cmd_set)
 
 		for (v = variables; v; v = v->next) {
 			if ((!arg || !xstrcasecmp(arg, v->name)) && (v->display != 2 || xstrcmp(name, ("set")))) {
-				char *string = *(char**)(v->ptr);
-				int value = *(int*)(v->ptr);
+				int value;
 
 				if (!show_all && !arg && v->dyndisplay && !((v->dyndisplay)(v->name)))
 					continue;
@@ -1723,6 +1722,7 @@ static COMMAND(cmd_set)
 				}
 
 				if (v->type == VAR_STR || v->type == VAR_FILE || v->type == VAR_DIR || v->type == VAR_THEME) {
+					char *string = *(char**)(v->ptr);
 					char *tmp = (string) ? saprintf(("\"%s\""), string) : ("(none)");
 
 					printq("variable", v->name, tmp);
@@ -1730,6 +1730,12 @@ static COMMAND(cmd_set)
 					if (string)
 						xfree(tmp);
 				}
+
+				/* We delay variable initialization until the
+				 * type is known to be such that is properly
+				 * aligned for reading an int.
+				 */
+				value = *(int*)(v->ptr);
 
 				if (v->type == VAR_BOOL)
 					printq("variable", v->name, (value) ? ("1 (on)") : ("0 (off)"));
@@ -2666,7 +2672,6 @@ int command_exec(const char *target, session_t *session, const char *xline, int 
 			tmp++;
 		p = (*tmp) ? tmp + 1 : tmp;
 		*tmp = 0;
-		p = strip_spaces(p);
 	}
 	cmdlen = xstrlen(cmd);
 
@@ -2770,7 +2775,12 @@ int command_exec(const char *target, session_t *session, const char *xline, int 
 		if (!res) {
 			char **last_params = (last_command->flags & COMMAND_ISALIAS) ? array_make(("?"), (" "), 0, 1, 1) : last_command->params;
 			int parcount = array_count(last_params);
-			char **par = array_make(p, (" \t"), parcount, 1, 1);
+			char **par = NULL;
+
+			if (last_command->flags & COMMAND_PASS_UNCHANGED)
+				array_add(&par, xstrdup(p));
+			else
+				par = array_make(strip_spaces(p), (" \t"), parcount, 1, 1);
 
 			if ((last_command->flags & COMMAND_PARAMASTARGET) && par[0]) {
 /*				debug("[command_exec] oldtarget = %s newtarget = %s\n", target, par[0]); */
