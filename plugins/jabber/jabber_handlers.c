@@ -978,7 +978,7 @@ JABBER_HANDLER(jabber_handle_message) {
 
 		debug_function("[jabber,message] type = %s\n", __(type));
 		if (!xstrcmp(type, "groupchat")) {
-			char *tuid = xstrrchr(uid, '/');				/* temporary */
+			char *tuid = xstrchr(uid, '/');				/* temporary */
 			char *uid2 = (tuid) ? xstrndup(uid, tuid-uid) : xstrdup(uid);		/* muc room */
 			char *nick = (tuid) ? xstrdup(tuid+1) : NULL;				/* nickname */
 			newconference_t *c = newconference_find(s, uid2);
@@ -1007,7 +1007,10 @@ JABBER_HANDLER(jabber_handle_message) {
 					else						attr[0] = ' ';
 
 
-				} else debug_error("[MUC, MESSAGE] userlist_find_u(%s) failed\n", nick);
+				} else {
+					debug_error("[MUC, MESSAGE] userlist_find_u(%s) failed\n", nick);
+					return;
+				}
 
 				formatted = format_string(format_find(
 							is_me ? ( isour ? "jabber_muc_me_sent" : "jabber_muc_me" )
@@ -1387,10 +1390,7 @@ JABBER_HANDLER(jabber_handle_iq) {
 }
 
 static inline int jabber_status_int(int tlen, const char *text) {
-	if (!tlen && !xstrcasecmp(text, "online"))
-		return EKG_STATUS_AVAIL;
-
-	if (tlen && !xstrcasecmp(text, "available"))
+	if (!xstrcasecmp(text, "online") || !xstrcasecmp(text, "available"))
 		return EKG_STATUS_AVAIL;
 
 	return ekg_status_int(text);
@@ -1612,7 +1612,6 @@ JABBER_HANDLER(jabber_handle_presence) {
 			else
 				status = EKG_STATUS_ERROR;
 			na = 1;
-
 			if (istlen) { /* we need to get&fix the UID - userlist entry is sent with @tlen.pl, but error with user-given host */
 				char *tmp	= tlenjabber_unescape(jabber_attr(n->atts, "to"));
 				char *atsign	= xstrchr(tmp, '@');

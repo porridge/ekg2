@@ -151,6 +151,7 @@ static QUERY(ncurses_ui_is_initialized) {
 static QUERY(ncurses_ui_window_switch) {
 	window_t *w	= *(va_arg(ap, window_t **));
 	window_t *wc;
+	char *p;
 
 	ncurses_window_t *n = w->priv_data;
 
@@ -177,8 +178,9 @@ static QUERY(ncurses_ui_window_switch) {
 			ncurses_window_gone(w);
 	}
 
+	p = w->alias ? w->alias : (w->target ? w->target : NULL);
 	if (ncurses_settitle)
-		printf(ncurses_settitle_formats[ncurses_settitle], w->target ? w->target : "", w->target ? " - " : "", "EKG2");
+		printf(ncurses_settitle_formats[ncurses_settitle], p ? p : "", p ? " - " : "", "EKG2");
 
 	return 0;
 }
@@ -269,11 +271,12 @@ static QUERY(ncurses_ui_window_target_changed)
 {
 	window_t *w = *(va_arg(ap, window_t **));
 	ncurses_window_t *n = w->priv_data;
-	char *tmp;
+	char *tmp, *p;
 
 	xfree(n->prompt);
 
-	tmp = format_string(format_find((w->target) ? "ncurses_prompt_query" : "ncurses_prompt_none"), w->target);
+	p = w->alias ? w->alias : (w->target ? w->target : NULL);
+	tmp = format_string(format_find((p) ? "ncurses_prompt_query" : "ncurses_prompt_none"), p);
 	n->prompt = tmp; 
 	n->prompt_len = xstrlen(tmp);
 
@@ -541,7 +544,7 @@ static QUERY(ncurses_setvar_default)
 static void ncurses_display_transparent_changed(const char *var)
 {
 	int background;
-	if (in_autoexec) return;	/* stuff already inited @ ncurses_init() */
+	if (in_autoexec && config_display_transparent) return;	/* stuff already inited @ ncurses_init() */
 
 	if (config_display_transparent) {
 		background = COLOR_DEFAULT;

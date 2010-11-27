@@ -1,6 +1,7 @@
 /*
  *  (C) Copyright 2004-2005 Michal 'GiM' Spadlinski <gim at skrzynka dot pl>
  *			Jakub 'darkjames' Zawadzki <darkjames@darkjames.ath.cx>
+ *			Wies³aw Ochmiñski <wiechu@wiechu.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License Version 2 as
@@ -63,6 +64,7 @@
 #include <ekg/log.h>
 #include <ekg/net.h>
 #include <ekg/protocol.h>
+#include <ekg/recode.h>
 #include <ekg/sessions.h>
 #include <ekg/stuff.h>
 #include <ekg/themes.h>
@@ -178,6 +180,8 @@ static QUERY(irc_session_init) {
 		return 1;
 
 	userlist_read(s);
+
+	ekg_recode_utf8_inc();
 
 	j = xmalloc(sizeof(irc_private_t));
 	j->fd = -1;
@@ -1674,7 +1678,7 @@ static COMMAND(irc_command_names) {
 	char *sort_modes = xstrchr(SOP(_005_PREFIX), ')')+1;
 
 	int smlen = xstrlen(sort_modes)+1;
-	char **mp, *channame;
+	char **mp, *channame, *cchn;
 
 	channel_t *chan;
 	string_t buf;
@@ -1689,10 +1693,12 @@ static COMMAND(irc_command_names) {
 		return -1;
 	}
 
+	cchn = clean_channel_names(session, channame+4);
+
 	if (chan->longest_nick > atoi(SOP(_005_NICKLEN)))
 		debug_error("[irc, names] funny %d vs %s\n", chan->longest_nick, SOP(_005_NICKLEN));
 
-	print_info(channame, session, "IRC_NAMES_NAME", session_name(session), channame+4);
+	print_info(channame, session, "IRC_NAMES_NAME", session_name(session), cchn);
 	buf = string_init(NULL);
 
 	for (lvl = 0; lvl < smlen; ++lvl, ++sort_modes) {
@@ -1737,9 +1743,10 @@ static COMMAND(irc_command_names) {
 	print_info(channame, session, "none2", "");
 #define plvl(x) lvl_total[x] ? itoa(lvl_total[x]) : "0"
 	if (smlen > 3) /* has halfops */
-		print_info(channame, session, "IRC_NAMES_TOTAL_H", session_name(session), channame+4, itoa(count), plvl(0), plvl(1), plvl(2), plvl(3), plvl(4));
+		print_info(channame, session, "IRC_NAMES_TOTAL_H", session_name(session), cchn, itoa(count), plvl(0), plvl(1), plvl(2), plvl(3), plvl(4));
 	else
-		print_info(channame, session, "IRC_NAMES_TOTAL", session_name(session), channame+4, itoa(count), plvl(0), plvl(1), plvl(2));
+		print_info(channame, session, "IRC_NAMES_TOTAL", session_name(session), cchn, itoa(count), plvl(0), plvl(1), plvl(2));
+	xfree(cchn);
 	debug("[IRC_NAMES] levelcounts = %d %d %d %d\n",
 			lvl_total[0], lvl_total[1], lvl_total[2], lvl_total[3]);
 #undef plvl
