@@ -386,7 +386,7 @@ and the prefix.
 		while (' ' != *p && i<len) { p++; i++; }
 		/* GiM: omit spaces 'by one (or more) ASCII...' */
 		while (' ' == *p && i<len) { p++; i++; }
-		if (c<20 && i<len) { 
+		if (c<19 && i<len) { 
 			q[c]=p; c++;
 			p--; *p++='\0';
 		}
@@ -407,7 +407,8 @@ and the prefix.
 		if(!gatoi(q[1], &ecode)) {
 			/* for scripts */
 			char *emitname = saprintf(("irc-protocol-numeric %s"), q[1]);
-			if (query_emit(NULL, emitname, &s->uid, &(q[2])) == -1) { xfree(emitname); return -1; }
+			char **pq = &(q[2]);
+			if (query_emit(NULL, emitname, &s->uid, &pq) == -1) { xfree(emitname); return -1; }
 			xfree(emitname);
 			
 			c=0;

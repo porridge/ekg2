@@ -1,3 +1,13 @@
+ekg2 (1:0.3.0~rc1+20101120+2232-1) experimental; urgency=low
+
+  * UNRELEASED
+  * New upstream snapshot
+  * Corrected configuration gnutls option (no impact, as the option was on
+    by default anyway)
+  * Added newly translated docs/ui-ncurses-en.txt to debian/ekg2.docs
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 20 Nov 2010 23:09:35 -0800
+
 ekg2 (20101002+2104-1) experimental; urgency=low
 
   * New upstream snapshot, based on 0.3.x branch
