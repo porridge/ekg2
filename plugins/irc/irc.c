@@ -1740,8 +1740,8 @@ static COMMAND(irc_command_names) {
 		print_info(channame, session, "IRC_NAMES_TOTAL_H", session_name(session), channame+4, itoa(count), plvl(0), plvl(1), plvl(2), plvl(3), plvl(4));
 	else
 		print_info(channame, session, "IRC_NAMES_TOTAL", session_name(session), channame+4, itoa(count), plvl(0), plvl(1), plvl(2));
-	debug("[IRC_NAMES] levelcounts = %d %d %d %d %d\n",
-			lvl_total[0], lvl_total[1], lvl_total[2], lvl_total[3], lvl_total[4], lvl_total[5]);
+	debug("[IRC_NAMES] levelcounts = %d %d %d %d\n",
+			lvl_total[0], lvl_total[1], lvl_total[2], lvl_total[3]);
 #undef plvl
 
 	array_free(mp);
@@ -2430,7 +2430,7 @@ EXPORT int irc_plugin_init(int prio)
 #define IRC_ONLY		SESSION_MUSTBELONG | SESSION_MUSTHASPRIVATE
 #define IRC_FLAGS		IRC_ONLY | SESSION_MUSTBECONNECTED
 #define IRC_FLAGS_TARGET	IRC_FLAGS | COMMAND_ENABLEREQPARAMS | COMMAND_PARAMASTARGET
-	command_add(&irc_plugin, ("irc:"), "?",		irc_command_inline_msg, IRC_FLAGS, NULL);
+	command_add(&irc_plugin, ("irc:"), "?",		irc_command_inline_msg, IRC_FLAGS | COMMAND_PASS_UNCHANGED, NULL);
 	command_add(&irc_plugin, ("irc:_autoaway"), NULL,	irc_command_away,	IRC_FLAGS, NULL);
 	command_add(&irc_plugin, ("irc:_autoback"), NULL,	irc_command_away,	IRC_FLAGS, NULL);
 	command_add(&irc_plugin, ("irc:_conntest"), "?",	irc_command_test,	IRC_ONLY, NULL);
