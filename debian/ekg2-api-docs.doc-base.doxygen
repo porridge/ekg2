@@ -1,9 +1,9 @@
-Document: ekg2-doxygen
+Document: ekg2-api-docs-doxygen
 Title: ekg2 development documentation
 Author: ekg2 developers
 Abstract: Internal ekg2 API documentation
 Section: Network/Communication
 
 Format: html
-Index: /usr/share/doc/ekg2/doxygen/index.html
-Files: /usr/share/doc/ekg2/doxygen/*.html
+Index: /usr/share/doc/ekg2-api-docs/doxygen/index.html
+Files: /usr/share/doc/ekg2-api-docs/doxygen/*.html

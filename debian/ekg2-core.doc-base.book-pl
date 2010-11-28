@@ -5,5 +5,5 @@ Abstract: Podrecznik ekg2 dla uzytkownikow i rozwijajacych
 Section: Network/Communication
 
 Format: html
-Index: /usr/share/doc/ekg2/book-pl/index.html
-Files: /usr/share/doc/ekg2/book-pl/*.html
+Index: /usr/share/doc/ekg2-core/book-pl/index.html
+Files: /usr/share/doc/ekg2-core/book-pl/*.html

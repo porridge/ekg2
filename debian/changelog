@@ -1,3 +1,16 @@
+ekg2 (1:0.3.0~rc4~pre+20101127+0508-2) experimental; urgency=low
+
+  * Split the package, Closes: #386998
+    - put rationale in README.Debian
+    - install files in debian/tmp and then use debian/*.install files with
+      dh_install to sort them into packages
+    - lots of little debhelper debian/*.* files renaming and munging
+  * Optimization is now on, and symbols are stripped, Closes: #379162
+  * Cleaned up some stuff in debian/rules - partly obsoleted by the awesomeness
+    of "dh" and parly just old cruft
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 27 Nov 2010 23:03:32 -0800
+
 ekg2 (1:0.3.0~rc4~pre+20101127+0508-1) experimental; urgency=low
 
   * New upstream snapshot

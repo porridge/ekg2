@@ -1,5 +1,70 @@
-EKG2 package for Debian
-=======================
+EKG2 packages for Debian
+========================
+
+Multiple binary packages
+------------------------
+
+One of the goals behind the modularization of ekg2 is to allow the users to
+only install and run the features they want - there are multiple plugins, with
+diverse sets of dependencies.  In Debian, when splitting ekg2 across multiple
+binary packages, we need to balance between the flexibility that this gives to
+the user, and the load on Debian infrastructure and package selection tools.
+
+Therefore I have chosen NOT to have a separate binary package for EACH AND
+EVERY plugin, but only where this is warranted by its footprint (difference of
+the installed size of the package and its dependencies), or a noticeable gain
+to the Debian infrastructure.  Thus a component is in a separate package if,
+all things being equal, at least one of the following applies:
+
+ - uninstalling it lets user decrease the footprint by more than 1MB, on a base
+   system. This might seem small but keep in mind that in a certain
+   distribution of packages, when the rule is applied consistenly, bumping this
+   threshold by a couple of MB would inflate the core package footprint by a
+   dozen or so megabytes.
+
+ - it is usable on a machine without the core package,
+
+ - it may be made into an architecture: all binary package larger than 4MB
+
+
+The current package split was determined by analyzing the installed size of
+dependencies of each ELF file on i386 architecture, using the following
+commands:
+
+  # In the build directory:
+  find debian/ekg2/ -type f|xargs file|grep ELF|cut -d: -f 1| while read file;do
+    basename=`basename $file`
+    dpkg-shlibdeps --warnings=0 -O $file|cut -d= -f 2-|
+      sed 's,([^)]*),,g;s/,/ /g'|sed "s,^,$basename:,"
+  done | sed 's,libc6,,;s, \+, ,g;s, $,,;s,: ,:,' | grep -v ':$' > pkgs
+  # Then, in a clean base-only chroot:
+  cat pkgs | while read l;do
+    file=$(echo $l|cut -d: -f 1)
+    deps=$(echo $l|cut -d: -f 2)
+    echo -n "$file "
+    LANG=C aptitude install -syDZq $deps < /dev/null | grep 'After unpacking' |
+      sed 's,.*unpacking \(.*\) will.*,\1,'
+  done
+
+Which yielded:
+
+  gtk.so          103000 kB
+  python.so        19400 kB
+  ncurses.so        5321 kB
+  xosd.so           4096 kB
+  jabber.so         2634 kB
+  ekg2-remote       2257 kB
+  perl.so           1421 kB
+  gpg.so            1139 kB
+  feed.so            377 kB
+  ekg2               377 kB
+  gg.so              205 kB
+
+
+
+
+Build-time configuration
+------------------------
 
 For the convenience of the user, here are the flags that ekg2 is configured
 with at build time:
@@ -50,4 +115,4 @@ Some features are disabled explicitly, here are the reasons:
  - gif/ungif/jpeg support: tokens are in GIF format now, but they are not
    readable when displayed in ascii format, not mentioning their OCR-ability
 
- -- Marcin Owsiany <porridge@debian.org>,  Sat, 11 Oct 2008 13:25:50 +0100
+ -- Marcin Owsiany <porridge@debian.org>,  Sat, 27 Nov 2010 18:13:04 -0800

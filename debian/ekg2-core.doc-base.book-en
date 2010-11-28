@@ -5,5 +5,5 @@ Abstract: The ekg2 user and developer manual in English.
 Section: Network/Communication
 
 Format: html
-Index: /usr/share/doc/ekg2/book-en/index.html
-Files: /usr/share/doc/ekg2/book-en/*.html
+Index: /usr/share/doc/ekg2-core/book-en/index.html
+Files: /usr/share/doc/ekg2-core/book-en/*.html
