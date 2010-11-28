@@ -7,31 +7,170 @@ Standards-Version: 3.9.1
 XS-Python-Version: current
 Homepage: http://ekg2.org/
 
+Package: ekg2-core
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: ekg2
+Suggests: sms-pl
+Description: instant messenger and IRC client for UNIX systems - main program
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the main program those plugins which do not have
+ large dependencies. It does NOT contain the text or graphical user interface
+ plugins.
+
 Package: ekg2
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, ${perl:Depends}
-Recommends: perl, ${shlibs:Recommends}
-Suggests: aspell-pl | aspell-dictionary, sms-pl
-XB-Python-Version: ${python:Versions}
+Depends: ekg2-core (= ${binary:Version}), ekg2-ui-ncurses (= ${binary:Version}), ekg2-jabber (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Recommends: ekg2-dbg
+Suggests: ekg2-gnupg, ekg2-scripting-python, ekg2-scripting-perl, ekg2-ui-gtk, ekg2-xosd
 Description: instant messenger and IRC client for UNIX systems
  EKG2 is an open source instant messenger program for UNIX systems. The program
  has a plugin-based structure, and supports multiple protocols, currently
  Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
  filesystem-based communication mechanism called "xmsg" is supported.
  .
- The program has many useful features, including:
-   - irssi-like ncurses interface, with mouse support
-   - experimental GTK+ interface
+ The program has many useful features. Here is a list - unless specified they
+ are included in the ekg2-core package.
+   - irssi-like ncurses interface, with mouse support [ekg2-ui-ncurses]
+   - experimental GTK+ interface [ekg2-ui-gtk]
    - experimental HTTP interface
-   - experimental 'remote' interface
-   - spell checking
+   - experimental 'remote' interface [ekg2-remote]
+   - spell checking [ekg2-ui-ncurses]
    - "remote control" via pipe or socket
-   - XOSD support
+   - XOSD support [ekg2-xosd]
    - jogger.pl blog update support
    - a simple CAPTCHA (autoresponder)
-   - Python and Perl scripting
+   - Python and Perl scripting [ekg2-scripting-python, ekg2-scripting-perl]
    - launching shell commands on certain events
-   - encryption support (SIM, GnuPG, ROT13)
+   - encryption support (SIM, GnuPG, ROT13) [ekg2-core, ekg2-gnupg]
    - logging to SQLite, plain text or XML files
    - sending SMs (using an external program such as sms-pl)
    - mail checking
+ .
+ This is a meta-package which depends on a set of commonly used EKG2 packages.
+
+Package: ekg2-api-docs
+Architecture: all
+Section: doc
+Depends: ${misc:Depends}
+Description: instant messenger and IRC client for UNIX systems - API documentation
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the API documentation, useful for developers who want to
+ create or improve plugins.
+
+Package: ekg2-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends: ekg2-core (= ${binary:Version}) | ekg2-remote (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: instant messenger and IRC client for UNIX systems - debugging symbols
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the debugging symbols for executable code.
+
+Package: ekg2-gnupg
+Architecture: any
+Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: instant messenger and IRC client for UNIX systems - GnuPG
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the plugin which uses GnuPG to provide encrypted
+ communication.
+
+Package: ekg2-jabber
+Architecture: any
+Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: instant messenger and IRC client for UNIX systems - Jabber/XMPP
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the plugin which lets you communicate on the Jabber or
+ XMPP IM networks.
+
+Package: ekg2-remote
+Architecture: any
+Depends: ekg2-ui-ncurses (= ${binary:Version}) | ekg2-ui-gtk (= ${binary:Version}) | ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: instant messenger and IRC client for UNIX systems - remote interface
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the remote control program, which lets you use an
+ instance of the main ekg2 program which runs on a different machine.
+
+Package: ekg2-scripting-python
+Architecture: any
+Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+XB-Python-Version: ${python:Versions}
+Description: instant messenger and IRC client for UNIX systems - Python scripting
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the plugin which embeds a Python interpreter inside
+ EKG2.
+
+Package: ekg2-scripting-perl
+Architecture: any
+Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}
+Description: instant messenger and IRC client for UNIX systems - Perl scripting
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the plugin which embeds a Perl interpreter inside
+ EKG2.
+
+Package: ekg2-ui-gtk
+Architecture: any
+Depends: ekg2-core (= ${binary:Version}) | ekg2-remote (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: instant messenger and IRC client for UNIX systems - GTK+ interface
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the graphical GTK+ user interface plugin.
+
+Package: ekg2-ui-ncurses
+Architecture: any
+Depends: ekg2-core (= ${binary:Version}) | ekg2-remote (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Suggests: aspell-dictionary
+Description: instant messenger and IRC client for UNIX systems - ncurses interface
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the text-based ncurses user interface plugin.
+
+Package: ekg2-xosd
+Architecture: any
+Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: instant messenger and IRC client for UNIX systems - X OSD
+ EKG2 is an open source instant messenger program for UNIX systems. The program
+ has a plugin-based structure, and supports multiple protocols, currently
+ Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
+ filesystem-based communication mechanism called "xmsg" is supported.
+ .
+ This package contains the plugin which uses X On-Screen-Display library to
+ notify about events by showing them on an X Window display.
