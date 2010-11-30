@@ -304,7 +304,7 @@ readline_la_LDFLAGS = -module -avoid-version
 readline_la_LIBADD = $(READLINE_LIBS)
 readline_la_CPPFLAGS = $(READLINE_CPPFLAGS) $(AM_CPPFLAGS)
 readline_la_CFLAGS = $(C_FVISIBILITY) $(READLINE_CFLAGS) $(AM_CFLAGS)
-INCLUDES = -DDATADIR=\"$(datadir)/ekg\" 
+INCLUDES = -DDATADIR=\"$(datadir)/ekg\" -I$(top_srcdir)
 all: all-am
 
 .SUFFIXES:
@@ -629,7 +629,6 @@ uninstall-am: uninstall-libLTLIBRARIES
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES
-
 
 override libdir = $(plugindir)
 

@@ -300,6 +300,7 @@ lib_LTLIBRARIES = rc.la
 rc_la_SOURCES = main.c inputs.c rc.h
 rc_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
 rc_la_LDFLAGS = -module -avoid-version
+INCLUDES = -I$(top_srcdir)
 all: all-am
 
 .SUFFIXES:
@@ -616,7 +617,6 @@ uninstall-am: uninstall-libLTLIBRARIES
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES
-
 
 override libdir = $(plugindir)
 

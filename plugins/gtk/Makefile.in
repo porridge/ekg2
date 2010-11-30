@@ -309,7 +309,7 @@ gtk_la_LDFLAGS = -module -avoid-version
 gtk_la_LIBADD = $(GTK_LIBS)
 gtk_la_CFLAGS = $(C_FVISIBILITY) $(GTK_CFLAGS) $(AM_CFLAGS)
 BUILT_SOURCES = inline_pngs_gg.h inline_pngs_icq.h inline_pngs.h
-INCLUDES = -DDATADIR=\"$(datadir)/ekg2\" 
+INCLUDES = -DDATADIR=\"$(datadir)/ekg2\" -I$(top_srcdir)
 CLEANFILES = inline_pngs_gg.h inline_pngs_icq.h inline_pngs.h
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am

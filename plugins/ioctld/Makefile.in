@@ -308,7 +308,7 @@ ioctld_la_LDFLAGS = -module -avoid-version
 ioctld_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
 ioctld_CPPFLAGS = -DIOCTLD_BUILD=1 $(AM_CPPFLAGS)
 ioctld_SOURCES = ioctld.c ioctld.h
-INCLUDES = -DIOCTLD_PATH=\"$(libexecdir)/ioctld\" 
+INCLUDES = -DIOCTLD_PATH=\"$(libexecdir)/ioctld\" -I$(top_srcdir)
 all: all-am
 
 .SUFFIXES:
