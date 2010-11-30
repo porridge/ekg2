@@ -184,10 +184,10 @@ void jabber_iq_auth_send(session_t *s, const char *username, const char *passwd,
 	authpass = (passwd2) ?
 		saprintf("<digest>%s</digest>", jabber_digest(stream_id, passwd2, j->istlen)) :	/* hash */
 		saprintf("<password>%s</password>", epasswd);				/* plaintext */
-		
+
 	watch_write(j->send_watch, 
 			"<iq type=\"set\" id=\"auth\" to=\"%s\"><query xmlns=\"jabber:iq:auth\">%s<username>%s</username>%s<resource>%s</resource></query></iq>",
-			host, j->server, username, authpass, resource);
+			j->server, host, username, authpass, resource);
 	xfree(authpass);
 
 	xfree(epasswd);
@@ -396,7 +396,7 @@ JABBER_HANDLER(jabber_handle_stream_features) {
 				else if (!xstrcmp(mech_node->data, "PLAIN")) {
 					if ((session_int_get(s, "plaintext_passwd"))) {
 						auth_type = JABBER_SASL_AUTH_PLAIN;
-						break;	/* jesli plaintext jest prefered wychodzimy */
+						break;	/* jesli plaintext jest preferred - wychodzimy */
 					}
 					/* ustaw tylko wtedy gdy nie ma ustawionego, wolimy MD5 */
 					if (auth_type == JABBER_SASL_AUTH_UNKNOWN) auth_type = JABBER_SASL_AUTH_PLAIN;

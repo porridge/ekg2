@@ -299,6 +299,7 @@ lib_LTLIBRARIES = pcm.la
 pcm_la_SOURCES = main.c
 pcm_la_LDFLAGS = -module -avoid-version
 pcm_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
+INCLUDES = -I$(top_srcdir)
 all: all-am
 
 .SUFFIXES:
@@ -609,7 +610,6 @@ uninstall-am: uninstall-libLTLIBRARIES
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES
-
 
 override libdir = $(plugindir)
 

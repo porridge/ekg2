@@ -300,6 +300,7 @@ lib_LTLIBRARIES = polchat.la
 polchat_la_SOURCES = polchat.c
 polchat_la_LDFLAGS = -module -avoid-version
 polchat_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
+INCLUDES = -I$(top_srcdir)
 all: all-am
 
 .SUFFIXES:
@@ -610,7 +611,6 @@ uninstall-am: uninstall-libLTLIBRARIES
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES
-
 
 override libdir = $(plugindir)
 

@@ -34,7 +34,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = .
-DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/ekg2-config.h.in \
 	$(top_srcdir)/configure ABOUT-NLS AUTHORS COPYING INSTALL NEWS \
 	config.guess config.rpath config.sub depcomp install-sh \
@@ -309,7 +309,8 @@ top_srcdir = @top_srcdir@
 EXTRA_DIST = config.rpath mkinstalldirs  m4 gettext.h
 SUBDIRS = plugins compat ekg $(REMOTE_SUBDIR) docs contrib po 
 ACLOCAL_AMFLAGS = -I m4
-INCLUDES = $(top_builddir) $(LTDLINCL)
+# XXX: What is the point below? This seems not to affect anything.
+INCLUDES = -I$(top_srcdir) $(LTDLINCL)
 all: ekg2-config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

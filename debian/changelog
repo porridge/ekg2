@@ -1,3 +1,20 @@
+ekg2 (1:0.3.0~rc4~pre+20101130+0614-1) experimental; urgency=low
+
+  * New upstream snapshot
+  * Split the package, Closes: #386998
+    - put rationale in README.Debian
+    - install files in debian/tmp and then use debian/*.install files with
+      dh_install to sort them into packages
+    - lots of little debhelper debian/*.* files renaming and munging
+  * Optimization is now on, and symbols are stripped, Closes: #379162
+  * Cleaned up some stuff in debian/rules - partly obsoleted by the awesomeness
+    of "dh" and parly just old cruft
+  * Removed fixes/gg-keep-reason - merged upstream
+  * Install vars-en.txt
+  * Link in docs to all {vars,session,commands}*-??.txt files in usr/share/ekg2
+
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 29 Nov 2010 22:23:44 -0800
+
 ekg2 (1:0.3.0~rc4~pre+20101127+0508-1) experimental; urgency=low
 
   * New upstream snapshot

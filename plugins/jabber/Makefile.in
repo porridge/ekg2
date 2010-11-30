@@ -307,6 +307,7 @@ jabber_la_LDFLAGS = -module -avoid-version
 jabber_la_LIBADD = $(EXPAT_LIBS) $(JABBER_SSL_LIBS) $(ZLIB_LIBS)
 jabber_la_CPPFLAGS = $(EXPAT_CPPFLAGS) $(JABBER_SSL_CPPFLAGS) $(AM_CPPFLAGS)
 jabber_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
+INCLUDES = -I$(top_srcdir)
 all: all-am
 
 .SUFFIXES:
@@ -663,7 +664,6 @@ uninstall-am: uninstall-libLTLIBRARIES
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES
-
 
 override libdir = $(plugindir)
 

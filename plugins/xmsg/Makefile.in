@@ -299,6 +299,8 @@ EXTRA_DIST = session-pl.txt session-en.txt vars-pl.txt vars-en.txt
 lib_LTLIBRARIES = xmsg.la
 xmsg_la_SOURCES = xmsg.c
 xmsg_la_LDFLAGS = -module -avoid-version
+# TODO: add $(C_FVISIBILITY) to *_CFLAGS or comment why this plugin should not be using it.
+INCLUDES = -I$(top_srcdir)
 all: all-am
 
 .SUFFIXES:
@@ -600,8 +602,6 @@ uninstall-am: uninstall-libLTLIBRARIES
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES
-
-# TODO: add $(C_FVISIBILITY) to *_CFLAGS or comment why this plugin should not be using it.
 
 override libdir = $(plugindir)
 
