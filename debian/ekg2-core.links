@@ -1,2 +1,5 @@
 usr/share/ekg2/commands-pl.txt usr/share/doc/ekg2/commands-pl.txt
 usr/share/ekg2/vars-pl.txt     usr/share/doc/ekg2/vars-pl.txt
+usr/share/ekg2/vars-en.txt     usr/share/doc/ekg2/vars-en.txt
+usr/share/ekg2/session-pl.txt  usr/share/doc/ekg2/session-pl.txt
+usr/share/ekg2/session-en.txt  usr/share/doc/ekg2/session-en.txt

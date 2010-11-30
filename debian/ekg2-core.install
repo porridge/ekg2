@@ -24,6 +24,7 @@ usr/share/ekg2/commands-pl.txt
 usr/share/ekg2/session-en.txt
 usr/share/ekg2/session-pl.txt
 usr/share/ekg2/vars-pl.txt
+usr/share/ekg2/vars-en.txt
 usr/share/ekg2/plugins/mail
 usr/share/ekg2/plugins/rc
 usr/share/ekg2/plugins/logs
