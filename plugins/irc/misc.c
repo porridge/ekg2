@@ -797,7 +797,7 @@ IRC_COMMAND(irc_c_whois)
 {
 	char		*t = irc_uid(param[3]), *dest = NULL;
 	char		*str, *tmp, *col[5];
-	int		secs, mins, hours, days, which, i;
+	int		secs = 0, mins, hours, days, which, i;
 	time_t		timek;
 	int		timek_int = (int) timek;
 	window_t	*w = window_find_s(s, t);
@@ -1679,8 +1679,7 @@ IRC_COMMAND(irc_c_mode)
 			ul = userlist_find_u(&(ch->chanp->window->userlist), param[k]);
 			if (!ul) goto notreallyok;
 
-			irc_nick_prefix(j, ch, irc_color_in_contacts(add, 
-						ch->mode, ul));
+			irc_nick_prefix(j, ch, irc_color_in_contacts(j, ch->mode, ul));
 
 			query_emit_id(NULL, USERLIST_REFRESH);
 		} 
