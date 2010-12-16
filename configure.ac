@@ -4,7 +4,7 @@ AC_INIT(ekg/ekg.c)
 AC_PREREQ(2.50)
 AC_CONFIG_HEADERS(ekg2-config.h)
 
-AM_INIT_AUTOMAKE(ekg2, 0.3.0-rc4-pre)
+AM_INIT_AUTOMAKE(ekg2, 0.3.0-rc4)
 
 dnl we don't use neither fortran neither cxx ... set it to no for disable checking for it..
 F77="no"
@@ -536,9 +536,7 @@ dnl  Libs required:	pthread, clntsh
 dnl  Other:		$ORACLE_HOME must be set
 dnl  Default state:	turned off
 dnl	
-AC_ARG_WITH([logsoracle],     [AC_HELP_STRING([--with-logsoracle], [log messages/status changes into an Oracle database @<:@default=no@:>@])],
-	    [with_logsoracle=yes],
-	    [with_logsoracle=no])
+AC_ARG_WITH([logsoracle],     [AC_HELP_STRING([--with-logsoracle], [log messages/status changes into an Oracle database @<:@default=no@:>@])])
 
 if test "x$with_logsoracle" == "xyes"; then
 	AC_CHECK_ORACLE

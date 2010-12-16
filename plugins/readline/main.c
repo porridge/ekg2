@@ -109,7 +109,7 @@ static QUERY(readline_ui_window_kill) { /* window_free */
 }
 
 static QUERY(readline_ui_window_refresh) {
-
+	window_refresh();
 	return 0;
 }
 
@@ -221,9 +221,9 @@ static QUERY(readline_variable_changed) {
 	char *name = *(va_arg(ap, char**));
 	if (!xstrcasecmp(name, "sort_windows") && config_sort_windows) {
 		window_t *w;
-		int id = 1;
+		int id = 2;
 		for (w = windows; w; w = w->next)
-			w->id = id++;
+			if (w->id>1) w->id = id++;	/* don't sort debug & status window */
 	}
 	return 0;
 }
@@ -261,7 +261,17 @@ static QUERY(readline_beep) { /* ui_readline_beep() */
 static WATCHER(readline_watch_stdin) {
 	return 0;
 }
-	
+
+static int bind_debug_window(int a, int key) {
+	window_switch(0);
+	return 0;
+}
+
+static int binding_cycle_sessions(int a, int key) {
+	window_session_cycle(window_current);
+	return 0;
+}
+
 EXPORT int readline_plugin_init(int prio) {
 	char c;
 	struct sigaction sa;
@@ -284,6 +294,7 @@ EXPORT int readline_plugin_init(int prio) {
 	query_connect_id(&readline_plugin, UI_WINDOW_KILL, readline_ui_window_kill, NULL);
 	query_connect_id(&readline_plugin, UI_WINDOW_PRINT, readline_ui_window_print, NULL);
 	query_connect_id(&readline_plugin, UI_WINDOW_REFRESH, readline_ui_window_refresh, NULL);
+	query_connect_id(&readline_plugin, UI_REFRESH, readline_ui_window_refresh, NULL);
 	query_connect_id(&readline_plugin, UI_WINDOW_CLEAR, readline_ui_window_clear, NULL);
 	query_connect_id(&readline_plugin, VARIABLE_CHANGED, readline_variable_changed, NULL);
 	query_connect_id(&readline_plugin, UI_LOOP, ekg2_readline_loop, NULL);
@@ -296,12 +307,13 @@ EXPORT int readline_plugin_init(int prio) {
 		w->priv_data = xmalloc(sizeof(readline_window_t));
 	
 	window_refresh();
+
+	rl_readline_name = "ekg2";
 	rl_initialize();
-	
+
 	rl_getc_function = my_getc;
 	rl_event_hook	 = my_loop;
-	rl_readline_name = "ekg2";
-	
+
 	rl_attempted_completion_function = (CPPFunction *) my_completion;
 	rl_completion_entry_function = (void*) empty_generator;
 
@@ -314,7 +326,9 @@ EXPORT int readline_plugin_init(int prio) {
 	rl_set_key("\033[12~", binding_quick_list, emacs_standard_keymap);
 	rl_set_key("\033[N", binding_quick_list, emacs_standard_keymap);
 	
-	//rl_set_key("\033[24~", binding_toggle_debug, emacs_standard_keymap);
+	rl_set_key("\033`", bind_debug_window, emacs_standard_keymap);
+
+	rl_bind_key(24, binding_cycle_sessions);	/* Ctrl-X XXX */
 
 	for (c = '0'; c <= '9'; c++)
 		rl_bind_key_in_map(c, bind_handler_window, emacs_meta_keymap);
@@ -342,6 +356,8 @@ EXPORT int readline_plugin_init(int prio) {
 	ui_screen_width = screen_columns;
 	ui_screen_height = screen_lines;
 	ui_need_refresh = 0;
+
+	rl_parse_and_bind(xstrdup("set completion-ignore-case on"));
 
 	return 0;
 }
