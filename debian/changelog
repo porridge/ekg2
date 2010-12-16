@@ -1,4 +1,4 @@
-ekg2 (1:0.3.0~rc4~pre+20101130+0614-1) experimental; urgency=low
+ekg2 (1:0.3.0~rc4-1) experimental; urgency=low
 
   * New upstream snapshot
   * Split the package, Closes: #386998
@@ -13,7 +13,7 @@ ekg2 (1:0.3.0~rc4~pre+20101130+0614-1) experimental; urgency=low
   * Install vars-en.txt
   * Link in docs to all {vars,session,commands}*-??.txt files in usr/share/ekg2
 
- -- Marcin Owsiany <porridge@debian.org>  Mon, 29 Nov 2010 22:23:44 -0800
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 17 Dec 2010 20:50:56 +0000
 
 ekg2 (1:0.3.0~rc4~pre+20101127+0508-1) experimental; urgency=low
 
