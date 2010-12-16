@@ -3041,7 +3041,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=ekg2
- VERSION=0.3.0-rc4-pre
+ VERSION=0.3.0-rc4
 
 
 cat >>confdefs.h <<_ACEOF
@@ -17296,9 +17296,7 @@ fi
 
 # Check whether --with-logsoracle was given.
 if test "${with_logsoracle+set}" = set; then :
-  withval=$with_logsoracle; with_logsoracle=yes
-else
-  with_logsoracle=no
+  withval=$with_logsoracle;
 fi
 
 
