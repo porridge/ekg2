@@ -99,7 +99,12 @@ struct textentry {
 	gint16 lines_taken;
 #define RECORD_WRAPS 4
 	guint16 wrap_offset[RECORD_WRAPS];
-	unsigned int mb:1;	/* is multibyte? */
+	guchar mb;		/* boolean: is multibyte? */
+#if 0
+	guchar tag;
+	guchar pad1;
+	guchar pad2;	/* 32-bit align : 44 bytes total */
+#endif
 };
 
 enum {
@@ -1127,6 +1132,21 @@ static void gtk_xtext_draw_marker(GtkXText * xtext, textentry * ent, int y)
 	}
 }
 
+#ifdef USE_SHM
+static int have_shm_pixmaps(Display *dpy) {
+	int major, minor;
+	static int checked = 0;
+	static int have = FALSE;
+
+	if (!checked) {
+		XShmQueryVersion (dpy, &major, &minor, &have);
+		checked = 1;
+	}
+
+	return have;
+}
+#endif
+
 static void gtk_xtext_paint(GtkWidget *widget, GdkRectangle * area)
 {
 	GtkXText *xtext = GTK_XTEXT(widget);
@@ -1140,8 +1160,13 @@ static void gtk_xtext_paint(GtkWidget *widget, GdkRectangle * area)
 		if (xtext->last_win_x != x || xtext->last_win_y != y) {
 			xtext->last_win_x = x;
 			xtext->last_win_y = y;
-#if !defined(USE_SHM) && !defined(WIN32)
-			if (xtext->shaded) {
+#ifndef WIN32
+#ifdef USE_SHM
+			if (xtext->shaded && !have_shm_pixmaps(GDK_WINDOW_XDISPLAY(xtext->draw_buf))) 
+#else
+ 			if (xtext->shaded)
+#endif
+			{
 				xtext->recycle = TRUE;
 				gtk_xtext_load_trans(xtext);
 				xtext->recycle = FALSE;
@@ -1647,7 +1672,7 @@ static gboolean gtk_xtext_motion_notify(GtkWidget *widget, GdkEventMotion * even
 	GtkXText *xtext = GTK_XTEXT(widget);
 	GdkModifierType mask;
 	int redraw, tmp, x, y, offset, len, line_x;
-	unsigned char *word;
+	char *word;
 	textentry *word_ent;
 
 	gdk_window_get_pointer(widget->window, &x, &y, &mask);
@@ -1806,7 +1831,6 @@ static void gtk_xtext_unselect(GtkXText * xtext)
 static gboolean gtk_xtext_button_release(GtkWidget *widget, GdkEventButton * event)
 {
 	GtkXText *xtext = GTK_XTEXT(widget);
-	unsigned char *word;
 	int old;
 
 	if (xtext->moving_separator) {
@@ -1835,6 +1859,8 @@ static gboolean gtk_xtext_button_release(GtkWidget *widget, GdkEventButton * eve
 
 		gtk_grab_remove(widget);
 		/*gdk_pointer_ungrab (0); */
+
+		/* got a new selection? */
 		if (xtext->buffer->last_ent_start)
 			gtk_xtext_set_clip_owner(GTK_WIDGET(xtext), event);
 
@@ -1846,7 +1872,7 @@ static gboolean gtk_xtext_button_release(GtkWidget *widget, GdkEventButton * eve
 		}
 
 		if (!xtext->hilighting) {
-			word = gtk_xtext_get_word(xtext, event->x, event->y, 0, 0, 0);
+			char *word = gtk_xtext_get_word(xtext, event->x, event->y, 0, 0, 0);
 			g_signal_emit(G_OBJECT(xtext), xtext_signals[WORD_CLICK], 0,
 				      word ? word : NULL, event);
 		} else {
@@ -1863,13 +1889,12 @@ static gboolean gtk_xtext_button_press(GtkWidget *widget, GdkEventButton * event
 	GtkXText *xtext = GTK_XTEXT(widget);
 	GdkModifierType mask;
 	textentry *ent;
-	unsigned char *word;
 	int line_x, x, y, offset, len;
 
 	gdk_window_get_pointer(widget->window, &x, &y, &mask);
 
 	if (event->button == 3 || event->button == 2) {	/* right/middle click */
-		word = gtk_xtext_get_word(xtext, x, y, 0, 0, 0);
+		char *word = gtk_xtext_get_word(xtext, x, y, 0, 0, 0);
 		if (word) {
 			g_signal_emit(G_OBJECT(xtext), xtext_signals[WORD_CLICK], 0, word, event);
 		} else
@@ -2038,12 +2063,14 @@ gtk_xtext_selection_get(GtkWidget *widget,
 
 #if (GTK_MAJOR_VERSION == 2) && (GTK_MINOR_VERSION == 0)
 			gdk_string_to_compound_text(
+								stripped, &encoding, &format,
+								&new_text, &new_length);
 #else
 			gdk_string_to_compound_text_for_display(gdk_drawable_get_display
 								(widget->window),
-#endif
 								stripped, &encoding, &format,
 								&new_text, &new_length);
+#endif
 			gtk_selection_data_set(selection_data_ptr, encoding, format, new_text,
 					       new_length);
 			gdk_free_compound_text(new_text);
@@ -2186,9 +2213,11 @@ static int
 gtk_xtext_render_flush(GtkXText * xtext, int x, int y, const unsigned char *str,
 		       int len, GdkGC * gc, int is_mb)
 {
-	int str_width, dofill;
-	GdkDrawable *pix = NULL;
-	int dest_x = 0, dest_y = 0;
+	int str_width, dofill = TRUE;
+
+#ifdef USE_DB
+	GdkDrawable *pix;
+#endif
 
 	if (xtext->dont_render || len < 1)
 		return 0;
@@ -2216,6 +2245,10 @@ gtk_xtext_render_flush(GtkXText * xtext, int x, int y, const unsigned char *str,
 #ifdef USE_DB
 	pix = gdk_pixmap_new(xtext->draw_buf, str_width, xtext->fontsize, xtext->depth);
 	if (pix) {
+		GdkRectangle clip;
+		GdkRectangle dest;
+		int dest_x, dest_y;
+
 #ifdef USE_XFT
 		XftDrawChange(xtext->xftdraw, GDK_WINDOW_XWINDOW(pix));
 #endif
@@ -2224,27 +2257,16 @@ gtk_xtext_render_flush(GtkXText * xtext, int x, int y, const unsigned char *str,
 
 		gdk_gc_set_ts_origin(xtext->bgc, xtext->ts_x - x, xtext->ts_y - dest_y);
 
-		x = 0;
-		y = xtext->font->ascent;
 		xtext->draw_buf = pix;
-	}
-#endif
 
-	dofill = TRUE;
+		/* backcolor is always handled by XDrawImageString */
+		if (!xtext->backcolor && xtext->pixmap) {
+			/* draw the background pixmap behind the text - CAUSES FLICKER HERE!! */
+			xtext_draw_bg(xtext, 0, 0, str_width, xtext->fontsize);
+			dofill = FALSE;	/* already drawn the background */
+		}
 
-	/* backcolor is always handled by XDrawImageString */
-	if (!xtext->backcolor && xtext->pixmap) {
-		/* draw the background pixmap behind the text - CAUSES FLICKER HERE!! */
-		xtext_draw_bg(xtext, x, y - xtext->font->ascent, str_width, xtext->fontsize);
-		dofill = FALSE;	/* already drawn the background */
-	}
-
-	backend_draw_text(xtext, dofill, gc, x, y, str, len, str_width, is_mb);
-
-#ifdef USE_DB
-	if (pix) {
-		GdkRectangle clip;
-		GdkRectangle dest;
+		backend_draw_text(xtext, dofill, gc, 0, xtext->font->ascent, str, len, str_width, is_mb);
 
 		gdk_gc_set_ts_origin(xtext->bgc, xtext->ts_x, xtext->ts_y);
 		xtext->draw_buf = GTK_WIDGET(xtext)->window;
@@ -2267,8 +2289,18 @@ gtk_xtext_render_flush(GtkXText * xtext, int x, int y, const unsigned char *str,
 					  dest.x - dest_x, dest.y - dest_y,
 					  dest.x, dest.y, dest.width, dest.height);
 		g_object_unref(pix);
-	}
+	} else
 #endif
+	{
+		/* backcolor is always handled by XDrawImageString */
+		if (!xtext->backcolor && xtext->pixmap) {
+			/* draw the background pixmap behind the text - CAUSES FLICKER HERE!! */
+			xtext_draw_bg(xtext, x, y - xtext->font->ascent, str_width, xtext->fontsize);
+			dofill = FALSE;	/* already drawn the background */
+		}
+
+		backend_draw_text(xtext, dofill, gc, x, y, str, len, str_width, is_mb);
+	}
 
 	if (xtext->underline) {
 #ifdef USE_XFT
@@ -2283,14 +2315,8 @@ dounder:
 		col.pixel = xtext->xft_fg->pixel;
 		gdk_gc_set_foreground(gc, &col);
 #endif
-		if (pix)
-			y = dest_y + xtext->font->ascent + 1;
-		else {
-			y++;
-			dest_x = x;
-		}
 		/* draw directly to window, it's out of the range of our DB */
-		gdk_draw_line(xtext->draw_buf, gc, dest_x, y, dest_x + str_width - 1, y);
+		gdk_draw_line(xtext->draw_buf, gc, x, y + 1, x + str_width - 1, y + 1);
 	}
 
 	return str_width;
@@ -2856,6 +2882,7 @@ static XImage *get_image(GtkXText * xtext, Display * xdisplay, XShmSegmentInfo *
 static GdkPixmap *shade_pixmap(GtkXText * xtext, Pixmap p, int x, int y, int w, int h)
 {
 	unsigned int dummy, width, height, depth;
+	int dummy_;
 	GdkPixmap *shaded_pix;
 	Window root;
 	Pixmap tmp;
@@ -2864,7 +2891,11 @@ static GdkPixmap *shade_pixmap(GtkXText * xtext, Pixmap p, int x, int y, int w, 
 	GC tgc;
 	Display *xdisplay = GDK_WINDOW_XDISPLAY(xtext->draw_buf);
 
-	XGetGeometry(xdisplay, p, &root, &dummy, &dummy, &width, &height, &dummy, &depth);
+#ifdef USE_SHM
+	int shm_pixmaps = have_shm_pixmaps(xdisplay);
+#endif
+
+	XGetGeometry(xdisplay, p, &root, &dummy_, &dummy_, &width, &height, &dummy, &depth);
 
 	if (width < x + w || height < y + h || x < 0 || y < 0) {
 		gcv.subwindow_mode = IncludeInferiors;
@@ -2878,17 +2909,19 @@ static GdkPixmap *shade_pixmap(GtkXText * xtext, Pixmap p, int x, int y, int w, 
 		XFreeGC(xdisplay, tgc);
 
 #ifdef USE_SHM
-		ximg = get_image(xtext, xdisplay, &xtext->shminfo, 0, 0, w, h, depth, tmp);
-#else
-		ximg = XGetImage(xdisplay, tmp, 0, 0, w, h, -1, ZPixmap);
+		if (shm_pixmaps)
+			ximg = get_image(xtext, xdisplay, &xtext->shminfo, 0, 0, w, h, depth, tmp);
+		else
 #endif
+			ximg = XGetImage(xdisplay, tmp, 0, 0, w, h, -1, ZPixmap);
 		XFreePixmap(xdisplay, tmp);
 	} else {
 #ifdef USE_SHM
-		ximg = get_image(xtext, xdisplay, &xtext->shminfo, x, y, w, h, depth, p);
-#else
-		ximg = XGetImage(xdisplay, p, x, y, w, h, -1, ZPixmap);
+		if (shm_pixmaps)
+			ximg = get_image(xtext, xdisplay, &xtext->shminfo, x, y, w, h, depth, p);
+		else
 #endif
+			ximg = XGetImage(xdisplay, p, x, y, w, h, -1, ZPixmap);
 	}
 
 	if (!ximg)
@@ -2910,7 +2943,7 @@ static GdkPixmap *shade_pixmap(GtkXText * xtext, Pixmap p, int x, int y, int w, 
 		shaded_pix = xtext->pixmap;
 	else {
 #ifdef USE_SHM
-		if (xtext->shm) {
+		if (xtext->shm && shm_pixmaps) {
 #if (GTK_MAJOR_VERSION == 2) && (GTK_MINOR_VERSION == 0)
 			shaded_pix =
 				gdk_pixmap_foreign_new(XShmCreatePixmap
@@ -2934,7 +2967,7 @@ static GdkPixmap *shade_pixmap(GtkXText * xtext, Pixmap p, int x, int y, int w, 
 	}
 
 #ifdef USE_SHM
-	if (!xtext->shm)
+	if (!xtext->shm || !shm_pixmaps)
 #endif
 		XPutImage(xdisplay, GDK_WINDOW_XWINDOW(shaded_pix),
 			  GDK_GC_XGC(xtext->fgc), ximg, 0, 0, 0, 0, w, h);
@@ -2952,7 +2985,7 @@ static void gtk_xtext_free_trans(GtkXText * xtext)
 {
 	if (xtext->pixmap) {
 #ifdef USE_SHM
-		if (xtext->shm) {
+		if (xtext->shm && have_shm_pixmaps(GDK_WINDOW_XDISPLAY(xtext->draw_buf))) {
 			XFreePixmap(GDK_WINDOW_XDISPLAY(xtext->pixmap),
 				    GDK_WINDOW_XWINDOW(xtext->pixmap));
 			XShmDetach(GDK_WINDOW_XDISPLAY(xtext->draw_buf), &xtext->shminfo);
@@ -3123,7 +3156,7 @@ static int gtk_xtext_find_subline(GtkXText * xtext, textentry * ent, int line)
 
 /* horrible hack for drawing time stamps */
 
-static void gtk_xtext_render_stamp(GtkXText * xtext, textentry * ent, const char *text, int len, int line, int win_width)
+static void gtk_xtext_render_stamp(GtkXText * xtext, textentry * ent, const unsigned char *text, int len, int line, int win_width)
 {
 	textentry tmp_ent;
 	int jo, ji, hs;
@@ -3849,7 +3882,7 @@ static int gtk_xtext_render_page_timeout(GtkXText * xtext)
 
 static void gtk_xtext_append_entry(xtext_buffer * buf, textentry * ent)
 {
-	unsigned int mb;
+	int mb;
 
 /* xchat->ekg2, note: i removed here strtr(ent->str, '\t', ' ') 
  *		coz we should pass here only fstring_t, where fstring_t can't have \t */
