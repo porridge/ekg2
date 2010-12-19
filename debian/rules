@@ -12,7 +12,7 @@ DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 /usr/share/topgit/tg2quilt.mk:
 
 %:
-	dh --with quilt,python-central $@
+	dh --with quilt,python-central --parallel $@
 
 # Remember to update README.Debian as well...
 override_dh_auto_configure:
