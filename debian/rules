@@ -57,10 +57,12 @@ override_dh_auto_build:
 	dh_auto_build -- PERL_MM_OPT=INSTALLDIRS=vendor
 	cd docs/ && XSLTRANSFORMER='xsltproc --nonet' sh generate-ekg2book.sh pl generate
 	cd docs/ && XSLTRANSFORMER='xsltproc --nonet' sh generate-ekg2book.sh en generate
-	cd docs/ && ./generate-doc.sh
 # dh_installman gets confused with the ".en" part and either chooses wrong directory or extension
 	cp docs/ekg2.en.1 docs/ekg2.1
 	cp docs/ekg2-remote.en.1 docs/ekg2-remote.1
+ifneq (,$(findstring ekg2-api-docs, $(shell dh_listpackages)))
+	cd docs/ && ./generate-doc.sh
+endif
 
 override_dh_auto_clean:
 	cd docs && sh generate-ekg2book.sh pl clean
@@ -87,4 +89,6 @@ override_dh_installdocs:
 	dh_installdocs --remaining-packages
 	cp -a docs/ekg2book/book    $(CURDIR)/debian/ekg2-core/usr/share/doc/ekg2-core/book-pl
 	cp -a docs/ekg2book-en/book $(CURDIR)/debian/ekg2-core/usr/share/doc/ekg2-core/book-en
+ifneq (,$(findstring ekg2-api-docs, $(shell dh_listpackages)))
 	cp -a docs/doxygen          $(CURDIR)/debian/ekg2-api-docs/usr/share/doc/ekg2-api-docs/
+endif
