@@ -1,3 +1,11 @@
+ekg2 (1:0.3.0~rc4-2) experimental; urgency=low
+
+  * Added a rule to not attempt refreshing tg2quilt.mk.
+  * Enabled parallel builds.
+  * Disabled build of doxygen docs in binary-arch, Closes: #608501
+
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 31 Dec 2010 14:27:05 +0000
+
 ekg2 (1:0.3.0~rc4-1) experimental; urgency=low
 
   * New upstream snapshot
