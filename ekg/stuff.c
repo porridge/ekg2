@@ -1723,30 +1723,6 @@ const char *timestamp_time(const char *format, time_t t) {
 	return buf;
 }
 
-/**
- * on_off()
- *
- * @todo	It's only used in vars.c by variable_set() move it?
- *
- * @return	 1 - If @a value is one of: <i>on</i>, <i>true</i>, <i>yes</i>, <i>tak</i>, <i>1</i>	[case-insensitive]<br>
- *		 0 - If @a value is one of: <i>off</i>, <i>false</i>, <i>no</i>, <i>nie</i>, <i>0</i>	[case-insensitive]<br>
- *		else -1
- */
-
-int on_off(const char *value)
-{
-	if (!value)
-		return -1;
-
-	if (!xstrcasecmp(value, "on") || !xstrcasecmp(value, "true") || !xstrcasecmp(value, "yes") || !xstrcasecmp(value, "tak") || !xstrcmp(value, "1"))
-		return 1;
-
-	if (!xstrcasecmp(value, "off") || !xstrcasecmp(value, "false") || !xstrcasecmp(value, "no") || !xstrcasecmp(value, "nie") || !xstrcmp(value, "0"))
-		return 0;
-
-	return -1;
-}
-
 struct timer *timer_add_ms(plugin_t *plugin, const char *name, unsigned int period, int persist, int (*function)(int, void *), void *data) {
 	struct timer *t;
 	struct timeval tv;
@@ -2598,41 +2574,7 @@ uint32_t *ekg_sent_message_format(const char *text)
 	return format;
 }
 
-
-static int tolower_pl(const unsigned char c);
-/*
- * strncasecmp_pl()
- *
- * porównuje dwa ci±gi o okre¶lonej przez n d³ugo¶ci
- * dzia³a analogicznie do xstrncasecmp()
- * obs³uguje polskie znaki
- */
-
-int strncasecmp_pl(const char *cs, const char *ct , size_t count)
-{
-	register signed char __res = 0;
-
-	while (count) {
-		if ((__res = tolower_pl(*cs) - tolower_pl(*ct++)) != 0 || !*cs++)
-			break;
-		count--;
-	}
-
-	return __res;
-}
-
-int strcasecmp_pl(const char *cs, const char *ct)
-{
-	register signed char __res = 0;
-
-	while ((__res = tolower_pl(*cs) - tolower_pl(*ct++)) == 0 && !*cs++) {
-		if (!*cs++)
-			return(0);
-	}
-
-	return __res;
-}
-
+#if ! USE_UNICODE
 /*
  * tolower_pl()
  *
@@ -2662,6 +2604,66 @@ static int tolower_pl(const unsigned char c) {
 		default: /* reszta */
 			return tolower(c);
 	}
+}
+#endif
+
+size_t strlen_pl(const char *s) {
+#if USE_UNICODE
+	if (!s) s = "";
+	return mbsrtowcs(NULL, &s, 0, NULL);
+#else
+	return xstrlen(s);
+#endif
+}
+
+char *xstrncat_pl(char *dest, const char *src, size_t n) {
+#if USE_UNICODE
+	int len=xstrlen(src);
+	wchar_t *wc = xmalloc((len+1) * sizeof(wchar_t));
+	const char *p = src;
+	
+	if (mbsrtowcs(wc, &p, n, NULL) < 0) n = 0;
+	else n = p ? p - src : len;
+	xfree(wc);
+#endif
+	return xstrncat(dest, src, n);
+}
+
+/*
+ * strncasecmp_pl()
+ *
+ * porównuje dwa ci±gi o okre¶lonej przez n d³ugo¶ci
+ * dzia³a analogicznie do xstrncasecmp()
+ * obs³uguje polskie znaki
+ */
+int strncasecmp_pl(const char *cs, const char *ct , size_t count)
+{
+	register signed char __res = 0;
+#if USE_UNICODE
+	wchar_t *wc1 = xmalloc((count+1) * sizeof(wchar_t));
+	wchar_t *wc2 = xmalloc((count+1) * sizeof(wchar_t));
+	wchar_t *p;
+	int n1 = mbsrtowcs(wc1, &cs, count, NULL);
+	int n2 = mbsrtowcs(wc2, &ct, count, NULL);
+
+	wc1[n1<0 ? 0 : n1] = 0;
+	wc2[n2<0 ? 0 : n2] = 0;
+
+	for(p=wc1; *p; p++) *p = towlower(*p);
+	for(p=wc2; *p; p++) *p = towlower(*p);
+
+	__res = wcscoll(wc1, wc2);
+
+	xfree(wc1);
+	xfree(wc2);
+#else
+	while (count) {
+		if ((__res = tolower_pl(*cs) - tolower_pl(*ct++)) != 0 || !*cs++)
+			break;
+		count--;
+	}
+#endif
+	return __res;
 }
 
 /*

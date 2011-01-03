@@ -20,7 +20,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ecurses.h"
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -65,6 +65,7 @@
 #include "bindings.h"
 #include "contacts.h"
 #include "mouse.h"
+#include "notify.h"
 
 static WINDOW *ncurses_status	= NULL;		/* okno stanu */
 static WINDOW *ncurses_header	= NULL;		/* okno nag³ówka */
@@ -97,12 +98,6 @@ int have_winch_pipe = 0;
 static AspellSpeller *spell_checker = NULL;
 static AspellConfig  *spell_config  = NULL;
 #endif
-
-/* typing */
-int ncurses_typing_mod			= 0;	/* whether buffer was modified */
-static int ncurses_typing_count		= 0;	/* last count sent */
-window_t *ncurses_typing_win		= NULL;	/* last window for which typing was sent */
-static time_t ncurses_typing_time	= 0;	/* time at which last typing was sent */
 
 static char ncurses_funnything[5] = "|/-\\";
 
@@ -172,117 +167,7 @@ QUERY(ncurses_password_input) {
 	
 	return -1;
 }
-int ncurses_lineslen() {
-	if (ncurses_lines) {
-		int n = -1;
-		CHAR_T **l;
 
-		if (ncurses_lines[0][0] == '/')
-			return 0;
-
-		for (l = ncurses_lines; *l; l++)
-			n += xwcslen(*l) + 1;
-
-		return n;
-	} else
-		return (ncurses_line[0] == '/' ? 0 : xwcslen(ncurses_line));
-}
-
-static inline int ncurses_typingsend(const int len, const int first) {
-	const char *sid	= session_uid_get(ncurses_typing_win->session);
-	const char *uid	= get_uid(ncurses_typing_win->session, ncurses_typing_win->target);
-	
-	if (((first > 1) || (ncurses_typing_win->in_active)) && uid)
-		return query_emit_id(NULL, PROTOCOL_TYPING_OUT, &sid, &uid, &len, &first);
-	else
-		return -1;
-}
-
-TIMER(ncurses_typing) {
-	window_t *oldwin	= NULL;
-
-	if (type)
-		return 0;
-
-	if (ncurses_typing_mod > 0) { /* need to update status */
-		const int curlen		= ncurses_lineslen();
-		const int winchange		= (ncurses_typing_win != window_current);
-
-		if (winchange && ncurses_typing_win && ncurses_typing_win->target)
-			ncurses_typing_time	= 0; /* this should force check below */
-		else
-			ncurses_typing_time	= time(NULL);
-
-		if (window_current && window_current->target && curlen &&
-				(winchange || ncurses_typing_count != curlen)) {
-
-#if 0
-			debug_function("ncurses_typing(), [UNIMPL] got change for %s [%s] vs %s [%s], %d vs %d!\n",
-					window_current->target, session_uid_get(window_current->session),
-					ncurses_typing_win ? ncurses_typing_win->target : NULL,
-					ncurses_typing_win ? session_uid_get(ncurses_typing_win->session) : NULL,
-					curlen, ncurses_typing_count);
-#endif
-			if (winchange)
-				oldwin		= ncurses_typing_win;
-
-			ncurses_typing_win	= window_current;
-			ncurses_typing_count	= curlen;
-			ncurses_typingsend(curlen, winchange);
-		}
-
-		ncurses_typing_mod		= 0;
-	}
-
-	{
-		const int isempty = (ncurses_lines
-				? (!ncurses_lines[0][0] && !ncurses_lines[1]) || ncurses_lines[0][0] == '/'
-				: !ncurses_line[0] || ncurses_line[0] == '/');
-		const int timeout = (config_typing_timeout_empty && isempty ?
-					config_typing_timeout_empty : config_typing_timeout);
-
-		if (ncurses_typing_win && (!ncurses_typing_time || (timeout && time(NULL) - ncurses_typing_time > timeout))) {
-			window_t *tmpwin = NULL;
-
-			if (oldwin) {
-				tmpwin			= ncurses_typing_win;
-				ncurses_typing_win	= oldwin;
-			}
-			ncurses_typingsend(0, (ncurses_typing_mod == -1 ? 3 : 1));
-#if 0
-			debug_function("ncurses_typing(), [UNIMPL] disabling for %s [%s]\n",
-					ncurses_typing_win->target, session_uid_get(ncurses_typing_win->session));
-#endif
-			if (oldwin)
-				ncurses_typing_win	= tmpwin;
-			else
-				ncurses_typing_win	= NULL;
-		}
-	}
-
-	return 0;
-}
-
-void ncurses_window_gone(window_t *w) {
-	if (w == ncurses_typing_win) { /* don't allow timer to touch removed window */
-		const int tmp		= ncurses_typing_mod;
-
-		ncurses_typing_time	= 0;
-		ncurses_typing_mod	= -1; /* prevent ncurses_typing_time modification & main loop behavior */
-
-		ncurses_typing(0, NULL);
-
-		ncurses_typing_mod	= tmp;
-	} else if (w->in_active || w->out_active) { /* <gone/> or <active/> */
-		window_t *tmp		= ncurses_typing_win;
-		ncurses_typing_win	= w;
-
-		if (!ncurses_typingsend(0, !w->out_active ? 4 : 5) || w->out_active)
-			w->out_active	^= 1;
-
-		ncurses_typing_win	= tmp;
-	}
-}
 
 	/* this one is meant to check whether we need to send some chatstate to disconnecting session,
 	 * so jabber plugin doesn't need to care about this anymore */
@@ -438,38 +323,6 @@ void ncurses_commit()
 	doupdate();
 }
 
-/* 
- * ncurses_main_window_mouse_handler()
- * 
- * handler for mouse events in main window 
- */
-void ncurses_main_window_mouse_handler(int x, int y, int mouse_state)
-{
-	if (mouse_state == EKG_SCROLLED_UP) {
-		ncurses_current->start -= 5;
-		if (ncurses_current->start < 0)
-			ncurses_current->start = 0;
-	} else if (mouse_state == EKG_SCROLLED_DOWN) {
-		ncurses_current->start += 5;
-	
-		if (ncurses_current->start > ncurses_current->lines_count - window_current->height + ncurses_current->overflow)
-			ncurses_current->start = ncurses_current->lines_count - window_current->height + ncurses_current->overflow;
-
-		if (ncurses_current->start < 0)
-			ncurses_current->start = 0;
-
-		if (ncurses_current->start == ncurses_current->lines_count - window_current->height + ncurses_current->overflow) {
-			window_current->more = 0;
-			update_statusbar(0);
-		}
-	} else {
-		return;
-	}
-
-	ncurses_redraw(window_current);
-	ncurses_commit();
-}
-
 /*
  *
  */
@@ -522,25 +375,19 @@ int ncurses_backlog_add(window_t *w, fstring_t *str) {
 #if USE_UNICODE
 	{
 		int rlen = xstrlen(str->str.b);
-		wchar_t *temp = xmalloc((rlen + 1) * sizeof(CHAR_T));		/* new str->str */
+		wchar_t *temp = xmalloc((rlen + 1) * sizeof(CHAR_T));		/* new str->str (assuming worst case where there's no multibyte sequence) */
 
 		int cur = 0;
-		int i = 0;
+		int i;
 
 		mbtowc(NULL, NULL, 0);	/* reset */
 
-		while (cur <= rlen) {
+		for (i = 0; cur < rlen; i++) {
 			wchar_t znak;
 			int len	= mbtowc(&znak, &(str->str.b[cur]), rlen-cur);
 
-			if (!len) {	/* NUL, just in case */
-/*				temp[i]		= '\0'; */
-				str->attr[i]	= str->attr[cur]; 
-				i++;		/* just in case x 2 */
-				
-				/* It always hit here. So while (cur <= rlen) can be replaced with while (1) */
+			if (!len)	/* shouldn't happen -- cur < rlen */
 				break;
-			}
 
 			if (len > 0) {
 				temp[i]		= znak;
@@ -563,12 +410,11 @@ int ncurses_backlog_add(window_t *w, fstring_t *str) {
 				str->margin_left = i;
 
 			cur += len;
-			i++;
 		}
 
-	/* resize str->attr && str->str to match newlen. [I think we could use `i` instead of `i+1` but just in case] */
 		xfree(str->str.b); 
 
+		/* resize str->attr && str->str to match newlen. */
 		str->str.w	= xrealloc(temp, (i+1) * sizeof(CHAR_T));
 		str->attr	= xrealloc(str->attr, (i+1) * sizeof(short));
 	}
@@ -699,7 +545,42 @@ int ncurses_backlog_split(window_t *w, int full, int removed)
 				width -= 1;
 			if ((w->frames & WF_RIGHT))
 				width -= 1;
+#ifdef USE_UNICODE
+			{
+				int str_width = 0;
 
+				for (j = 0, word = 0; j < l->len; j++) {
+					int ch_width;
+
+					if (str[j] == CHAR(' '))
+						word = j + 1;
+
+					if (str_width >= width) {
+						l->len = (!w->nowrap && word) ? word : 		/* XXX, (str_width > width) ? word-1 : word? */
+							(str_width > width && j) ? j - 1 : j;
+
+						/* avoid dead loop -- always move forward */
+						/* XXX, a co z bledami przy rysowaniu? moze lepiej str++; attr++; albo break? */
+						if (!l->len)
+							l->len = 1;
+
+						if (str[l->len] == CHAR(' ')) {
+							l->len--;
+							str++;
+							attr++;
+						}
+						break;
+					}
+
+					ch_width = wcwidth(str[j]);
+					if (ch_width == -1) /* not printable? */
+						ch_width = 1;		/* XXX: should be rendered as '?' with A_REVERSE. I hope wcwidth('?') is always 1. */
+					str_width += ch_width;
+				}
+				if (w->nowrap)
+					break;
+			}
+#else
 			if (l->len < width)
 				break;
 
@@ -728,7 +609,7 @@ int ncurses_backlog_split(window_t *w, int full, int removed)
 					break;
 				}
 			}
-
+#endif
 			str += l->len;
 			attr += l->len;
 
@@ -2110,15 +1991,24 @@ static void print_char(WINDOW *w, int y, int x, CHAR_T ch, int attr) {
  *
  *  - meta - przedrostek klawisza.
  *
- * zwraca kod klawisza lub -2, je¶li nale¿y go pomin±æ.
+ * @returns:
+ *	-2		- ignore that key
+ *	ERR		- error
+ *	OK		- report a (wide) character
+ *	KEY_CODE_YES	- report the pressing of a function key
+ *	
  */
 static int ekg_getch(int meta, unsigned int *ch) {
+	int retcode;
 #if USE_UNICODE
-	int retcode = wget_wch(input, ch);
-	if (retcode == ERR) *ch = ERR;
+	retcode = wget_wch(input, ch);
 #else
 	*ch = wgetch(input);
+	retcode = *ch >= KEY_MIN ? KEY_CODE_YES : OK;
 #endif
+
+	if (retcode == ERR) return ERR;
+	if ((retcode == KEY_CODE_YES) && (*(int *)ch == -1)) return ERR;		/* Esc (delay) no key */
 
 #ifndef HAVE_USABLE_TERMINFO
 	/* Debian screen incomplete terminfo workaround */
@@ -2159,6 +2049,8 @@ static int ekg_getch(int meta, unsigned int *ch) {
 				case 0: mouse_state = (clicks) ? EKG_BUTTON1_DOUBLE_CLICKED : EKG_BUTTON1_CLICKED;	break;
 				case 1: mouse_state = (clicks) ? EKG_BUTTON2_DOUBLE_CLICKED : EKG_BUTTON2_CLICKED;	break;
 				case 2: mouse_state = (clicks) ? EKG_BUTTON3_DOUBLE_CLICKED : EKG_BUTTON3_CLICKED;	break;
+				case 64: mouse_state = EKG_SCROLLED_UP;							break;
+				case 65: mouse_state = EKG_SCROLLED_DOWN;						break;
 				default:										break;
 			}
 
@@ -2203,17 +2095,17 @@ static int ekg_getch(int meta, unsigned int *ch) {
 		x = wgetch(input) - 32; 
 		y = wgetch(input) - 32;
 
+		/* XXX query_emit UI_MOUSE ??? */
 		if (mouse_state)
 			ncurses_mouse_clicked_handler(x, y, mouse_state);
-	} 
+
+	}
 #undef GET_TIME
 #undef DIF_TIME
 	if (query_emit_id(NULL, UI_KEYPRESS, ch) == -1)  
 		return -2; /* -2 - ignore that key */
-#if USE_UNICODE
-	if (retcode == KEY_CODE_YES) return KEY_CODE_YES;
-#endif
-	return *ch;
+
+	return retcode;
 }
 
 /* XXX: deklaracja ncurses_watch_stdin nie zgadza sie ze
@@ -2463,6 +2355,16 @@ void ncurses_redraw_input(unsigned int ch) {
 	}
 }
 
+
+static void bind_exec(struct binding *b) {
+	if (b->function)
+		b->function(b->arg);
+	else {
+		command_exec_format(window_current->target, window_current->session, 0,
+				("%s%s"), ((b->action[0] == '/') ? "" : "/"), b->action);
+	}
+}
+
 /*
  * ncurses_watch_stdin()
  *
@@ -2480,13 +2382,16 @@ WATCHER(ncurses_watch_stdin)
 		return 0;
 
 	switch ((getch_ret = ekg_getch(0, &ch))) {
-		case(-1):	/* dziwna kombinacja, która by blokowa³a */
+		case ERR:
 		case(-2):	/* przeszlo przez query_emit i mamy zignorowac (pytthon, perl) */
-		case(0):	/* Ctrl-Space, g³upie to */
 			return 0;
-		case(3):
-		default:
+		case OK:
 			if (ch != 3) sigint_count = 0;
+			if (ch == 0) return 0;	/* Ctrl-Space, g³upie to */
+			break;
+		case KEY_CODE_YES:
+		default:
+			break;
 	}
 
 	if (bindings_added && ch != KEY_MOUSE) {
@@ -2496,9 +2401,7 @@ WATCHER(ncurses_watch_stdin)
 		int c;
 		array_add(&chars, xstrdup(itoa(ch)));
 
-		while (count <= bindings_added_max && 
-				(c = wgetch(input)) != ERR
-				) {
+		while (count <= bindings_added_max && (c = wgetch(input)) != ERR) {
 			array_add(&chars, xstrdup(itoa(c)));
 			count++;
 		}
@@ -2507,15 +2410,7 @@ WATCHER(ncurses_watch_stdin)
 
 		for (d = bindings_added; d; d = d->next) {
 			if (!xstrcasecmp(d->sequence, joined)) {
-				struct binding *b = d->binding;
-
-				if (b->function)
-					b->function(b->arg);
-				else {
-					command_exec_format(window_current->target, window_current->session, 0, ("%s%s"), 
-							((b->action[0] == '/') ? "" : "/"), b->action);
-				}
-
+				bind_exec(d->binding);
 				success = 1;
 				goto end;
 			}
@@ -2533,12 +2428,13 @@ end:
 	} 
 
 	if (ch == 27) {
-		if ((ekg_getch(27, &ch)) < 0)
+		if ((ekg_getch(27, &ch)) < OK)
 			goto loop;
-		
+
 		if (ch == 27)
 			b = ncurses_binding_map[27];
 		else if (ch > KEY_MAX) {
+			/* XXX shouldn't happen */
 			debug_error("%s:%d INTERNAL NCURSES/EKG2 FAULT. KEY-PRESSED: %d>%d TO PROTECT FROM SIGSEGV\n", __FILE__, __LINE__, ch, KEY_MAX);
 			goto then;
 		} else	b = ncurses_binding_map_meta[ch];
@@ -2563,13 +2459,7 @@ end:
 			}
 		}
 		if (b && b->action) {
-			if (b->function)
-				b->function(b->arg);
-			else {
-				command_exec_format(window_current->target, window_current->session, 0,
-						("%s%s"), ((b->action[0] == '/') ? "" : "/"), b->action
-						);
-			}
+			bind_exec(b);
 		} else {
 			/* obs³uga Ctrl-F1 - Ctrl-F12 na FreeBSD */
 			if (ch == '[') {
@@ -2583,37 +2473,15 @@ end:
 			}
 		}
 	} else {
-#if !USE_UNICODE
-		if (ch > KEY_MAX) {
-			debug_error("%s:%d INTERNAL NCURSES/EKG2 FAULT. KEY-PRESSED: %d>%d TO PROTECT FROM SIGSEGV\n", __FILE__, __LINE__, ch, KEY_MAX);
-			goto then;
-		}
-#endif
-
-		if (
-#if USE_UNICODE
-			(getch_ret == KEY_CODE_YES || ch < 0x100 /* TODO CHECK */) &&
-#endif
-			(b = ncurses_binding_map[ch]) && b->action)
+		if ( ((getch_ret == KEY_CODE_YES && ch <= KEY_MAX) || 
+			(getch_ret == OK && ch < 0x100)) &&
+			(b = ncurses_binding_map[ch]) && b->action )
 		{
-			if (b->function)
-				b->function(b->arg);
-			else {
-				command_exec_format(window_current->target, window_current->session, 0,
-						("%s%s"), ((b->action[0] == '/') ? "" : "/"), b->action
-						);
-			}
-		} else if (
-#if USE_UNICODE
-				(ch != KEY_MOUSE && ch != KEY_RESIZE) &&
-#else
-				(ch < 255) && 
-#endif
-				xwcslen(ncurses_line) < LINE_MAXLEN - 1)
-		{
-					/* move &ncurses_line[index_line] to &ncurses_line[index_line+1] */
+			bind_exec(b);
+		} else if (getch_ret == OK && xwcslen(ncurses_line) < LINE_MAXLEN - 1) {
+			/* move &ncurses_line[index_line] to &ncurses_line[index_line+1] */
 			memmove(ncurses_line + line_index + 1, ncurses_line + line_index, sizeof(CHAR_T) * (LINE_MAXLEN - line_index - 1));
-					/* put in ncurses_line[lindex_index] current char */
+			/* put in ncurses_line[lindex_index] current char */
 			ncurses_line[line_index++] = ch;
 
 			ncurses_typing_mod = 1;
@@ -2917,9 +2785,7 @@ void ncurses_lastlog_new(window_t *w) {
 	}
 	w->frames = lastlog_frame;
 	n->handle_redraw = ncurses_lastlog_update;
-/*
 	n->handle_mouse = ncurses_lastlog_mouse_handler;
- */
 	n->start = 0;
 	w->edge = lastlog_edge;
 	w->nowrap = !lastlog_wrap;
