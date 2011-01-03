@@ -1051,7 +1051,7 @@ exact_match:
 					session_in_line = session_current;
 				for (j = 0; params[word_current - 2][j]; j++) {
 					if (generators[i].ch == params[word_current - 2][j]) {
-						generators[i].generate(words[word], xstrlen(words[word]));
+						generators[i].generate(words[word], strlen_pl(words[word]));
 					}
 				}
 			}		
@@ -1115,6 +1115,7 @@ exact_match:
 	 */
 	if (count > 1) {
 		int common = 0;
+		int common_len;
 		int tmp = 0;
 		int quotes = 0;
 		char *s1  = completions[0];
@@ -1148,8 +1149,20 @@ exact_match:
 		}
 	
 		/* debug("common :%d\t\n", common); */
-
-		if (xstrlen(line) + common < LINE_MAXLEN) {
+#if UNICODE
+		{
+			char *p = completions[0];
+			wchar_t * wc = xmalloc((common+1) * sizeof(wchar_t));
+			if (mbsrtowcs(wc, &p, common, NULL) < 0)
+				common_len = 0;
+			else
+				common_len = p ? p - completions[0] : xstrlen(completions[0]);
+			xfree(wc);
+		}
+#else
+		common_len = common;
+#endif
+		if (xstrlen(line) + common_len < LINE_MAXLEN) {
 			line[0] = '\0';
 			for(i = 0; i < words_count; i++) {
 				if (i == word) {
@@ -1162,7 +1175,7 @@ exact_match:
 					if (completions[0][common - 1] == '"')
 						common--;
 
-					xstrncat(line, completions[0], common);
+					xstrncat_pl(line, completions[0], common);
 					*line_index = xstrlen(line);
 				} else {
 					if (xstrchr(words[i], (' '))) {
