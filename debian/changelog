@@ -1,8 +1,9 @@
 ekg2 (1:0.3.0~rc5-1) experimental; urgency=low
 
   * New upstream release candidate
+  * Added installation of newly created Perl plugin documentation.
 
- -- Marcin Owsiany <porridge@debian.org>  Mon, 03 Jan 2011 13:27:41 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Mon, 03 Jan 2011 13:36:34 +0000
 
 ekg2 (1:0.3.0~rc4-2) experimental; urgency=low
 
