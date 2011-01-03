@@ -1790,15 +1790,17 @@ static COMMAND(cmd_set)
 
 		switch (variable_set(arg, (unset) ? NULL : value)) {
 			case 0:
+				if (!be_quiet) {
+					config_changed = 1;
+					last_save = time(NULL);
+				}
+			case 1:
 			{
 				if (be_quiet)
 					break;
 
 				const char *my_params[2] = { (!unset) ? params[0] : params[0] + 1, NULL };
-
 				cmd_set(("set-show"), (const char **) my_params, NULL, NULL, quiet);
-				config_changed = 1;
-				last_save = time(NULL);
 				break;
 			}
 			case -1:
@@ -2284,10 +2286,10 @@ static COMMAND(cmd_test_fds)
 
 			xfree(mypath);
 			if (r <= 0)
-				sprintf(buf + xstrlen(buf), "file, inode %lu, size %lu", st.st_ino, st.st_size);
+				sprintf(buf + xstrlen(buf), "file, inode %lu, size %lu", (long)st.st_ino, (long)st.st_size);
 			else {
 				newpath[r] = 0;
-				sprintf(buf + xstrlen(buf), "file, inode %lu, size %lu, path %s", st.st_ino, st.st_size, newpath);
+				sprintf(buf + xstrlen(buf), "file, inode %lu, size %lu, path %s", (long)st.st_ino, (long)st.st_size, newpath);
 			}
 #else
 			sprintf(buf + xstrlen(buf), "file, inode %lu, size %lu", st.st_ino, st.st_size);

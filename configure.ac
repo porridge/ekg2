@@ -4,7 +4,7 @@ AC_INIT(ekg/ekg.c)
 AC_PREREQ(2.50)
 AC_CONFIG_HEADERS(ekg2-config.h)
 
-AM_INIT_AUTOMAKE(ekg2, 0.3.0-rc4)
+AM_INIT_AUTOMAKE(ekg2, 0.3.0_rc5)
 
 dnl we don't use neither fortran neither cxx ... set it to no for disable checking for it..
 F77="no"
@@ -173,7 +173,7 @@ AC_ARG_WITH(gpm-mouse,		AC_HELP_STRING([--without-gpm-mouse],		[Compile without 
 
 case $host_os in
 linux*)
-    if test x$with_gpm_mouse != no; then
+    if test "x$with_gpm_mouse" != "xno"; then
         AC_CHECK_LIB(gpm, Gpm_GetEvent,
             [AC_DEFINE(HAVE_LIBGPM, 1,
                        [Define to enable gpm mouse support on Linux])
@@ -913,7 +913,7 @@ if test "x$have_libgadu" = "xyes"; then
 fi
 
 if test "x$have_ncurses" = "xyes"; then
-	echo_section " - Mouse support:"
+	echo_section " - Mouse support:\t"
 	echo_have "in $mouse_lib\n"
 fi
 

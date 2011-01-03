@@ -3041,7 +3041,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=ekg2
- VERSION=0.3.0-rc4
+ VERSION=0.3.0_rc5
 
 
 cat >>confdefs.h <<_ACEOF
@@ -13988,7 +13988,7 @@ fi
 
 case $host_os in
 linux*)
-    if test x$with_gpm_mouse != no; then
+    if test "x$with_gpm_mouse" != "xno"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Gpm_GetEvent in -lgpm" >&5
 $as_echo_n "checking for Gpm_GetEvent in -lgpm... " >&6; }
 if test "${ac_cv_lib_gpm_Gpm_GetEvent+set}" = set; then :
@@ -20264,7 +20264,7 @@ if test "x$have_libgadu" = "xyes"; then
 fi
 
 if test "x$have_ncurses" = "xyes"; then
-	echo_section " - Mouse support:"
+	echo_section " - Mouse support:\t"
 	echo_have "in $mouse_lib\n"
 fi
 
