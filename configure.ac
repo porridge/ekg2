@@ -4,7 +4,7 @@ AC_INIT(ekg/ekg.c)
 AC_PREREQ(2.50)
 AC_CONFIG_HEADERS(ekg2-config.h)
 
-AM_INIT_AUTOMAKE(ekg2, 0.3.0_rc5)
+AM_INIT_AUTOMAKE(ekg2, 0.3.0_rc6)
 
 dnl we don't use neither fortran neither cxx ... set it to no for disable checking for it..
 F77="no"
@@ -434,17 +434,17 @@ if test "x$with_readline" != "no"; then
 
 	if test "x$have_readline" = "xyes"; then
 		PLUGINS="$PLUGINS readline"
-dnl backup CFLAGS && LDFLAGS
+dnl backup CFLAGS && LIBS
 		ac_save_CFLAGS="$CFLAGS"
-		ac_save_LDFLAGS="$LDFLAGS"
-dnl new CFLAGS && LDFLAGS
+		ac_save_LIBS="$LIBS"
+dnl new CFLAGS && LIBS
 		CFLAGS="$CFLAGS $READLINE_INCLUDES"
-	        LDFLAGS="$READLINE_LIBS $LDFLAGS"
+		LIBS="$LIBS $READLINE_LIBS"
 dnl check funcs
 		AC_CHECK_FUNCS([rl_set_prompt rl_filename_completion_function rl_get_screen_size rl_set_key rl_bind_key_in_map])
-dnl restore CFLAGS && LDFLAGS
+dnl restore CFLAGS && LIBS
 		CFLAGS="$ac_save_CFLAGS"
-		LDFLAGS="$ac_save_LDFLAGS"
+		LIBS="$ac_save_LIBS"
 	fi
 fi
 

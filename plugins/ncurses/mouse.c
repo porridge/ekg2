@@ -49,7 +49,7 @@ int mouse_initialized = 0;
  * 
  * should show mouse pointer 
  */
-static void show_mouse_pointer() {
+static void show_mouse_pointer(void) {
 #ifdef HAVE_LIBGPM
 	if (gpm_visiblepointer) {
 		Gpm_Event event;
@@ -201,7 +201,7 @@ void ncurses_mouse_clicked_handler(int x, int y, int mouse_flag)
 					const int promptlen	= ncurses_current ? ncurses_current->prompt_real_len : 0;
 					const int linelen	= xwcslen(ncurses_line);
 
-					line_index = x - promptlen;
+					line_index = x - promptlen + line_start;
 
 					if (line_index < 0)
 						line_index = 0;
@@ -227,7 +227,7 @@ void ncurses_mouse_clicked_handler(int x, int y, int mouse_flag)
 					lines_index = lines_start + y;
 					if (lines_index >= lines_count)
 						lines_index = lines_count - 1;
-					line_index = x;
+					line_index = x + line_start;
 					ncurses_lines_adjust();
 				}
 			}
@@ -373,7 +373,7 @@ void ncurses_enable_mouse(const char *env) {
  * it should disable mouse and destroy everything
  * connected with it's support
  */
-void ncurses_disable_mouse()
+void ncurses_disable_mouse(void)
 {
 	if (!mouse_initialized)
 		return;
