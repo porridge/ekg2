@@ -3041,7 +3041,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=ekg2
- VERSION=0.3.0_rc5
+ VERSION=0.3.0_rc6
 
 
 cat >>confdefs.h <<_ACEOF
@@ -15187,9 +15187,9 @@ $as_echo "$as_me: \"libgadu directory specified by user: $with_arg\"" >&6;}
 
   if test "x$without_libgadu" != "xyes"; then
     ocf="$CPPFLAGS"
-    olf="$LDFLAGS"
+    olf="$LIBS"
     CPPFLAGS="$CPPFLAGS $LIBGADU_CPPFLAGS"
-    LDFLAGS="$LDFLAGS $LIBGADU_LIBS"
+    LIBS="$LIBS $LIBGADU_LIBS"
     for ac_header in libgadu.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "libgadu.h" "ac_cv_header_libgadu_h" "$ac_includes_default"
@@ -15335,7 +15335,7 @@ fi
 done
 
     CPPFLAGS="$ocf"
-    LDFLAGS="$olf"
+    LIBS="$olf"
   fi
 
 
@@ -15409,8 +15409,8 @@ $as_echo_n "checking for ssl.h... " >&6; }
       if test -f $incl/openssl/ssl.h; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $incl/openssl/ssl.h" >&5
 $as_echo "$incl/openssl/ssl.h" >&6; }
-        ldflags_old="$LDFLAGS"
-        LDFLAGS="$lib -lssl -lcrypto"
+        libs_old="$LIBS"
+        LIBS="$lib -lssl -lcrypto"
         save_LIBS="$LIBS"
         LIBS="-lssl -lcrypto $LIBS"
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RSA_new in -lssl" >&5
@@ -15463,7 +15463,7 @@ $as_echo "#define HAVE_OPENSSL 1" >>confdefs.h
 fi
 
         LIBS="$save_LIBS"
-        LDFLAGS="$ldflags_old"
+        LIBS="$libs_old"
         break
       fi
     done
@@ -15508,9 +15508,9 @@ fi
 
 	if test "x$without_expat" != "xyes"; then
 		cf="$CPPFLAGS"
-		lf="$LDFLAGS"
+		lf="$LIBS"
 		CPPFLAGS="$CPPFLAGS $EXPAT_CPPFLAGS"
-		LDFLAGS="$LDFLAGS $EXPAT_LIBS"
+		LIBS="$LIBS $EXPAT_LIBS"
 		for ac_header in expat.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "expat.h" "ac_cv_header_expat_h" "$ac_includes_default"
@@ -15571,7 +15571,7 @@ fi
 done
 
 		CPPFLAGS="$cf"
-		LDFLAGS="$lf"
+		LIBS="$lf"
 	fi
 
 
@@ -15629,9 +15629,9 @@ fi
 
 	if test "x$without_ncurses" != "xyes"; then
 		save_CPPFLAGS="$CPPFLAGS"
-		save_LDFLAGS="$LDFLAGS"
+		save_LIBS="$LIBS"
 		CPPFLAGS="$CPPFLAGS $NCURSES_CPPFLAGS"
-		LDFLAGS="$LDFLAGS $NCURSES_LIBS"
+		LIBS="$LIBS $NCURSES_LIBS"
 		NLIBRARY=""
 		have_ncurses_h=""
 		opt=ncurses.h
@@ -15791,7 +15791,7 @@ fi
 		$as_unset have_ncurses_h
 
 		CPPFLAGS="$save_CPPFLAGS"
-		LDFLAGS="$save_LDFLAGS"
+		LIBS="$save_LIBS"
 	fi
 
 
@@ -16166,9 +16166,9 @@ $as_echo "not found" >&6; }
 	if test "x$have_readline" = "xyes"; then
 		PLUGINS="$PLUGINS readline"
 		ac_save_CFLAGS="$CFLAGS"
-		ac_save_LDFLAGS="$LDFLAGS"
+		ac_save_LIBS="$LIBS"
 		CFLAGS="$CFLAGS $READLINE_INCLUDES"
-	        LDFLAGS="$READLINE_LIBS $LDFLAGS"
+		LIBS="$LIBS $READLINE_LIBS"
 		for ac_func in rl_set_prompt rl_filename_completion_function rl_get_screen_size rl_set_key rl_bind_key_in_map
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
@@ -16183,7 +16183,7 @@ fi
 done
 
 		CFLAGS="$ac_save_CFLAGS"
-		LDFLAGS="$ac_save_LDFLAGS"
+		LIBS="$ac_save_LIBS"
 	fi
 fi
 
@@ -16215,9 +16215,9 @@ fi
 
 	if test "x$without_libgsm" != "xyes"; then
 		old_cppflgs="$CPPFLAGS"
-		old_ldflags="$LDFLAGS"
+		old_libs="$LIBS"
 		CPPFLAGS="$CPPFLAGS $LIBGSM_CFLAGS"
-		LDFLAGS="$LDFLAGS $LIBGSM_LIBS"
+		LIBS="$LIBS $LIBGSM_LIBS"
 		have_libgsm_h=""
 		for ac_header in gsm.h
 do :
@@ -16321,7 +16321,7 @@ fi
 		$as_unset have_libgsm_h
 
 		CPPFLAGS="$old_cppflags"
-		LDFLAGS="$old_ldflags"
+		LIBS="$old_libs"
 	fi
 
 

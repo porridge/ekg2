@@ -84,7 +84,6 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir dist dist-all distcheck
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -308,6 +307,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = config.rpath mkinstalldirs  m4 gettext.h
 SUBDIRS = plugins compat ekg $(REMOTE_SUBDIR) docs contrib po 
+DIST_SUBDIRS = compat contrib docs ekg plugins po remote
 ACLOCAL_AMFLAGS = -I m4
 # XXX: What is the point below? This seems not to affect anything.
 INCLUDES = -I$(top_srcdir) $(LTDLINCL)
