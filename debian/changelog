@@ -1,3 +1,9 @@
+ekg2 (1:0.3.0~rc7-1) experimental; urgency=low
+
+  * New upsteam release candidate.
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 22 Jan 2011 15:09:16 +0000
+
 ekg2 (1:0.3.0~rc6-1) experimental; urgency=low
 
   * New upstream release candidate
