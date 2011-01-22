@@ -3041,7 +3041,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=ekg2
- VERSION=0.3.0_rc6
+ VERSION=0.3.0_rc7
 
 
 cat >>confdefs.h <<_ACEOF
