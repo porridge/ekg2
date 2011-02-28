@@ -91,8 +91,8 @@ am_irc_la_OBJECTS = irc_la-irc.lo irc_la-misc.lo irc_la-people.lo \
 	irc_la-input.lo irc_la-autoacts.lo
 irc_la_OBJECTS = $(am_irc_la_OBJECTS)
 irc_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(irc_la_CFLAGS) $(CFLAGS) \
-	$(irc_la_LDFLAGS) $(LDFLAGS) -o $@
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(irc_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -161,6 +161,8 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTLLIBS = @INTLLIBS@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
+IRC_SSL_CPPFLAGS = @IRC_SSL_CPPFLAGS@
+IRC_SSL_LIBS = @IRC_SSL_LIBS@
 JABBER_SSL_CPPFLAGS = @JABBER_SSL_CPPFLAGS@
 JABBER_SSL_LIBS = @JABBER_SSL_LIBS@
 LD = @LD@
@@ -299,10 +301,10 @@ top_srcdir = @top_srcdir@
 EXTRA_DIST = commands-pl.txt session-pl.txt 
 lib_LTLIBRARIES = irc.la
 irc_la_SOURCES = irc.c misc.c people.c input.c misc.h irc.h people.h \
-		input.h IRCVERSION.h autoacts.c autoacts.h
+		input.h IRCVERSION.h autoacts.c autoacts.h irc-ssl.h
 
-irc_la_LDFLAGS = -module -avoid-version
-irc_la_CFLAGS = $(C_FVISIBILITY) $(AM_CFLAGS)
+irc_la_LDFLAGS = -module -avoid-version $(IRC_SSL_LIBS)
+irc_la_CPPFLAGS = $(IRC_SSL_CPPFLAGS) $(C_FVISIBILITY)
 INCLUDES = -I$(top_srcdir)
 all: all-am
 
@@ -406,39 +408,39 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 irc_la-irc.lo: irc.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -MT irc_la-irc.lo -MD -MP -MF $(DEPDIR)/irc_la-irc.Tpo -c -o irc_la-irc.lo `test -f 'irc.c' || echo '$(srcdir)/'`irc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT irc_la-irc.lo -MD -MP -MF $(DEPDIR)/irc_la-irc.Tpo -c -o irc_la-irc.lo `test -f 'irc.c' || echo '$(srcdir)/'`irc.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/irc_la-irc.Tpo $(DEPDIR)/irc_la-irc.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='irc.c' object='irc_la-irc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -c -o irc_la-irc.lo `test -f 'irc.c' || echo '$(srcdir)/'`irc.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o irc_la-irc.lo `test -f 'irc.c' || echo '$(srcdir)/'`irc.c
 
 irc_la-misc.lo: misc.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -MT irc_la-misc.lo -MD -MP -MF $(DEPDIR)/irc_la-misc.Tpo -c -o irc_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT irc_la-misc.lo -MD -MP -MF $(DEPDIR)/irc_la-misc.Tpo -c -o irc_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/irc_la-misc.Tpo $(DEPDIR)/irc_la-misc.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='misc.c' object='irc_la-misc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -c -o irc_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o irc_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
 
 irc_la-people.lo: people.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -MT irc_la-people.lo -MD -MP -MF $(DEPDIR)/irc_la-people.Tpo -c -o irc_la-people.lo `test -f 'people.c' || echo '$(srcdir)/'`people.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT irc_la-people.lo -MD -MP -MF $(DEPDIR)/irc_la-people.Tpo -c -o irc_la-people.lo `test -f 'people.c' || echo '$(srcdir)/'`people.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/irc_la-people.Tpo $(DEPDIR)/irc_la-people.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='people.c' object='irc_la-people.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -c -o irc_la-people.lo `test -f 'people.c' || echo '$(srcdir)/'`people.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o irc_la-people.lo `test -f 'people.c' || echo '$(srcdir)/'`people.c
 
 irc_la-input.lo: input.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -MT irc_la-input.lo -MD -MP -MF $(DEPDIR)/irc_la-input.Tpo -c -o irc_la-input.lo `test -f 'input.c' || echo '$(srcdir)/'`input.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT irc_la-input.lo -MD -MP -MF $(DEPDIR)/irc_la-input.Tpo -c -o irc_la-input.lo `test -f 'input.c' || echo '$(srcdir)/'`input.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/irc_la-input.Tpo $(DEPDIR)/irc_la-input.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='input.c' object='irc_la-input.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -c -o irc_la-input.lo `test -f 'input.c' || echo '$(srcdir)/'`input.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o irc_la-input.lo `test -f 'input.c' || echo '$(srcdir)/'`input.c
 
 irc_la-autoacts.lo: autoacts.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -MT irc_la-autoacts.lo -MD -MP -MF $(DEPDIR)/irc_la-autoacts.Tpo -c -o irc_la-autoacts.lo `test -f 'autoacts.c' || echo '$(srcdir)/'`autoacts.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT irc_la-autoacts.lo -MD -MP -MF $(DEPDIR)/irc_la-autoacts.Tpo -c -o irc_la-autoacts.lo `test -f 'autoacts.c' || echo '$(srcdir)/'`autoacts.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/irc_la-autoacts.Tpo $(DEPDIR)/irc_la-autoacts.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='autoacts.c' object='irc_la-autoacts.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(irc_la_CFLAGS) $(CFLAGS) -c -o irc_la-autoacts.lo `test -f 'autoacts.c' || echo '$(srcdir)/'`autoacts.c
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(irc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o irc_la-autoacts.lo `test -f 'autoacts.c' || echo '$(srcdir)/'`autoacts.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
