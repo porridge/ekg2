@@ -235,6 +235,9 @@
 /* Define as const if the declaration of iconv() needs const. */
 #undef ICONV_CONST
 
+/* define if you want use openssl for ssl connections */
+#undef IRC_HAVE_OPENSSL
+
 /* define if you want use gnutls for ssl connections */
 #undef JABBER_HAVE_GNUTLS
 
