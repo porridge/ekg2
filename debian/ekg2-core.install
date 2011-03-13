@@ -8,7 +8,6 @@ usr/lib/ekg2/plugins/jogger.so
 usr/lib/ekg2/plugins/logs.so
 usr/lib/ekg2/plugins/logsqlite.so
 usr/lib/ekg2/plugins/mail.so
-usr/lib/ekg2/plugins/pcm.so
 usr/lib/ekg2/plugins/polchat.so
 usr/lib/ekg2/plugins/rc.so
 usr/lib/ekg2/plugins/remote.so
