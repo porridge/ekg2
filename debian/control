@@ -51,7 +51,6 @@ Description: instant messenger and IRC client for UNIX systems
  are included in the ekg2-core package.
    - irssi-like ncurses interface, with mouse support [ekg2-ui-ncurses]
    - experimental GTK+ interface [ekg2-ui-gtk]
-   - experimental 'remote' interface [ekg2-remote]
    - spell checking [ekg2-ui-ncurses]
    - "remote control" via pipe or socket
    - XOSD support [ekg2-xosd]
@@ -83,7 +82,7 @@ Package: ekg2-dbg
 Architecture: any
 Section: debug
 Priority: extra
-Depends: ekg2-core (= ${binary:Version}) | ekg2-remote (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: instant messenger and IRC client for UNIX systems - debugging symbols
  EKG2 is an open source instant messenger program for UNIX systems. The program
  has a plugin-based structure, and supports multiple protocols, currently
@@ -116,18 +115,6 @@ Description: instant messenger and IRC client for UNIX systems - Jabber/XMPP
  This package contains the plugin which lets you communicate on the Jabber or
  XMPP IM networks.
 
-Package: ekg2-remote
-Architecture: any
-Depends: ekg2-ui-ncurses (= ${binary:Version}) | ekg2-ui-gtk (= ${binary:Version}) | ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: instant messenger and IRC client for UNIX systems - remote interface
- EKG2 is an open source instant messenger program for UNIX systems. The program
- has a plugin-based structure, and supports multiple protocols, currently
- Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS. Also a generic
- filesystem-based communication mechanism called "xmsg" is supported.
- .
- This package contains the remote control program, which lets you use an
- instance of the main ekg2 program which runs on a different machine.
-
 Package: ekg2-scripting-python
 Architecture: any
 Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
@@ -155,7 +142,7 @@ Description: instant messenger and IRC client for UNIX systems - Perl scripting
 
 Package: ekg2-ui-gtk
 Architecture: any
-Depends: ekg2-core (= ${binary:Version}) | ekg2-remote (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: instant messenger and IRC client for UNIX systems - GTK+ interface
  EKG2 is an open source instant messenger program for UNIX systems. The program
  has a plugin-based structure, and supports multiple protocols, currently
@@ -166,7 +153,7 @@ Description: instant messenger and IRC client for UNIX systems - GTK+ interface
 
 Package: ekg2-ui-ncurses
 Architecture: any
-Depends: ekg2-core (= ${binary:Version}) | ekg2-remote (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Suggests: aspell-dictionary
 Description: instant messenger and IRC client for UNIX systems - ncurses interface
  EKG2 is an open source instant messenger program for UNIX systems. The program

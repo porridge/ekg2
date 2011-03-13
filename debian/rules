@@ -79,7 +79,6 @@ override_dh_auto_build:
 	cd docs/ && XSLTRANSFORMER='xsltproc --nonet' sh generate-ekg2book.sh en generate
 # dh_installman gets confused with the ".en" part and either chooses wrong directory or extension
 	cp docs/ekg2.en.1 docs/ekg2.1
-	cp docs/ekg2-remote.en.1 docs/ekg2-remote.1
 ifneq (,$(findstring ekg2-api-docs, $(shell dh_listpackages)))
 	cd docs/ && ./generate-doc.sh
 endif
@@ -88,7 +87,7 @@ override_dh_auto_clean:
 	cd docs && sh generate-ekg2book.sh pl clean
 	cd docs && sh generate-ekg2book.sh en clean
 	rm -rf docs/doxygen
-	rm -f docs/ekg2.1 docs/ekg2-remote.1
+	rm -f docs/ekg2.1
 	dh_auto_clean
 
 override_dh_strip:
