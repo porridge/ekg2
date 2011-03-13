@@ -57,7 +57,7 @@ Description: instant messenger and IRC client for UNIX systems
    - a simple CAPTCHA (autoresponder)
    - Python and Perl scripting [ekg2-scripting-python, ekg2-scripting-perl]
    - launching shell commands on certain events
-   - encryption support (SIM, GnuPG, ROT13) [ekg2-core, ekg2-gnupg]
+   - encryption support (SIM, GnuPG) [ekg2-core, ekg2-gnupg]
    - logging to SQLite, plain text or XML files
    - sending SMs (using an external program such as sms-pl)
    - mail checking

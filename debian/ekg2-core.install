@@ -10,7 +10,6 @@ usr/lib/ekg2/plugins/logsqlite.so
 usr/lib/ekg2/plugins/mail.so
 usr/lib/ekg2/plugins/polchat.so
 usr/lib/ekg2/plugins/rivchat.so
-usr/lib/ekg2/plugins/rot13.so
 usr/lib/ekg2/plugins/sim.so
 usr/lib/ekg2/plugins/sms.so
 usr/lib/ekg2/plugins/xmsg.so
