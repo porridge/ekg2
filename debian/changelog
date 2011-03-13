@@ -1,8 +1,9 @@
-ekg2 (1:0.3.1~rc1-1) experimental; urgency=low
+ekg2 (1:0.3.1~rc1-1) unstable; urgency=low
 
   * New upstream release candidate.
+  * [71a9fb6] Added a debian/watch file. (Closes: #616149)
 
- -- Marcin Owsiany <porridge@debian.org>  Mon, 28 Feb 2011 22:39:08 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Sun, 13 Mar 2011 13:46:48 +0000
 
 ekg2 (1:0.3.0~rc7-1) experimental; urgency=low
 
