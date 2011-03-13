@@ -52,7 +52,6 @@ Description: instant messenger and IRC client for UNIX systems
    - irssi-like ncurses interface, with mouse support [ekg2-ui-ncurses]
    - experimental GTK+ interface [ekg2-ui-gtk]
    - spell checking [ekg2-ui-ncurses]
-   - "remote control" via pipe or socket
    - XOSD support [ekg2-xosd]
    - jogger.pl blog update support
    - a simple CAPTCHA (autoresponder)

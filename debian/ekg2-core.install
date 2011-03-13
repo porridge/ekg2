@@ -9,7 +9,6 @@ usr/lib/ekg2/plugins/logs.so
 usr/lib/ekg2/plugins/logsqlite.so
 usr/lib/ekg2/plugins/mail.so
 usr/lib/ekg2/plugins/polchat.so
-usr/lib/ekg2/plugins/rc.so
 usr/lib/ekg2/plugins/rivchat.so
 usr/lib/ekg2/plugins/rot13.so
 usr/lib/ekg2/plugins/sim.so
@@ -21,7 +20,6 @@ usr/share/ekg2/session-pl.txt
 usr/share/ekg2/vars-pl.txt
 usr/share/ekg2/vars-en.txt
 usr/share/ekg2/plugins/mail
-usr/share/ekg2/plugins/rc
 usr/share/ekg2/plugins/logs
 usr/share/ekg2/plugins/logsqlite
 usr/share/ekg2/plugins/autoresponder
