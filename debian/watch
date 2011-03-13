@@ -1,0 +1,3 @@
+version=3
+opts=uversionmangle=s/[_-](alpha|beta|rc)/~$1/ \
+http://pl.ekg2.org/download.php .*/ekg2-(.+)\.tar\.gz
