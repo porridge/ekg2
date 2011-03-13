@@ -12,7 +12,6 @@ usr/lib/ekg2/plugins/polchat.so
 usr/lib/ekg2/plugins/rivchat.so
 usr/lib/ekg2/plugins/sim.so
 usr/lib/ekg2/plugins/sms.so
-usr/lib/ekg2/plugins/xmsg.so
 usr/share/ekg2/commands-pl.txt
 usr/share/ekg2/session-en.txt
 usr/share/ekg2/session-pl.txt
@@ -24,7 +23,6 @@ usr/share/ekg2/plugins/logsqlite
 usr/share/ekg2/plugins/autoresponder
 usr/share/ekg2/plugins/sms
 usr/share/ekg2/plugins/irc
-usr/share/ekg2/plugins/xmsg
 usr/share/ekg2/plugins/sim
 usr/share/ekg2/plugins/gg
 usr/share/locale
