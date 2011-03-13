@@ -51,7 +51,6 @@ Description: instant messenger and IRC client for UNIX systems
  are included in the ekg2-core package.
    - irssi-like ncurses interface, with mouse support [ekg2-ui-ncurses]
    - experimental GTK+ interface [ekg2-ui-gtk]
-   - experimental HTTP interface
    - experimental 'remote' interface [ekg2-remote]
    - spell checking [ekg2-ui-ncurses]
    - "remote control" via pipe or socket
