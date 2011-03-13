@@ -54,7 +54,6 @@ override_dh_auto_configure:
 		--enable-rss \
 		--enable-sim \
 		--enable-sms \
-		--disable-xosd \
 		--with-aspell \
 		--with-expat \
 		--with-gnutls \
@@ -62,7 +61,6 @@ override_dh_auto_configure:
 		--with-gpm \
 		--with-gtk \
 		--with-libgadu \
-		--without-libxosd \
 		--with-ncurses \
 		--with-openssl \
 		--with-perl \
@@ -98,7 +96,7 @@ override_dh_auto_install:
 
 override_dh_installdocs:
 	dh_installdocs --link-doc=ekg2-core -pekg2 -pekg2-dbg -pekg2-gnupg -pekg2-jabber \
-	  -pekg2-scripting-python -pekg2-scripting-perl -pekg2-xosd
+	  -pekg2-scripting-python -pekg2-scripting-perl
 	dh_installdocs --remaining-packages
 	cp -a docs/ekg2book/book    $(CURDIR)/debian/ekg2-core/usr/share/doc/ekg2-core/book-pl
 	cp -a docs/ekg2book-en/book $(CURDIR)/debian/ekg2-core/usr/share/doc/ekg2-core/book-en

@@ -5,7 +5,7 @@ Maintainer: Marcin Owsiany <porridge@debian.org>
 Build-Depends: debhelper (>= 7.0.50~), dh-autoreconf, quilt (>= 0.46-7~),
  autoconf, automake1.11, libtool, gettext,
 # UI
- libncursesw5-dev, libgpmg1-dev, libaspell-dev, libgtk2.0-dev, libxosd-dev (>= 2.2.13),
+ libncursesw5-dev, libgpmg1-dev, libaspell-dev, libgtk2.0-dev,
 # scripting
  python, python-dev, python-central (>= 0.5), libperl-dev,
 # Protocols
@@ -39,7 +39,7 @@ Package: ekg2
 Architecture: any
 Depends: ekg2-core (= ${binary:Version}), ekg2-ui-ncurses (= ${binary:Version}), ekg2-jabber (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Recommends: ekg2-dbg
-Suggests: ekg2-gnupg, ekg2-scripting-python, ekg2-scripting-perl, ekg2-ui-gtk, ekg2-xosd
+Suggests: ekg2-gnupg, ekg2-scripting-python, ekg2-scripting-perl, ekg2-ui-gtk
 Description: instant messenger and IRC client for UNIX systems
  EKG2 is an open source instant messenger program for UNIX systems. The program
  has a plugin-based structure, and supports multiple protocols, currently
@@ -50,7 +50,6 @@ Description: instant messenger and IRC client for UNIX systems
    - irssi-like ncurses interface, with mouse support [ekg2-ui-ncurses]
    - experimental GTK+ interface [ekg2-ui-gtk]
    - spell checking [ekg2-ui-ncurses]
-   - XOSD support [ekg2-xosd]
    - jogger.pl blog update support
    - a simple CAPTCHA (autoresponder)
    - Python and Perl scripting [ekg2-scripting-python, ekg2-scripting-perl]
@@ -151,14 +150,3 @@ Description: instant messenger and IRC client for UNIX systems - ncurses interfa
  Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS.
  .
  This package contains the text-based ncurses user interface plugin.
-
-Package: ekg2-xosd
-Architecture: any
-Depends: ekg2-core (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: instant messenger and IRC client for UNIX systems - X OSD
- EKG2 is an open source instant messenger program for UNIX systems. The program
- has a plugin-based structure, and supports multiple protocols, currently
- Jabber, ICQ, Gadu-Gadu, IRC, RivChat, PolChat, NNTP and RSS.
- .
- This package contains the plugin which uses X On-Screen-Display library to
- notify about events by showing them on an X Window display.
