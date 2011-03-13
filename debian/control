@@ -2,7 +2,20 @@ Source: ekg2
 Section: net
 Priority: optional
 Maintainer: Marcin Owsiany <porridge@debian.org>
-Build-Depends: debhelper (>= 7.0.50~) , libncursesw5-dev, python-dev, python-central (>= 0.5), libperl-dev, libssl-dev, libgnutls-dev, libaspell-dev, libgadu-dev, libexpat1-dev, libgpmg1-dev, libidn11-dev, libxosd-dev (>= 2.2.13), libsqlite3-dev, python, xsltproc, docbook-xsl, doxygen, libgtk2.0-dev, libgpgme11-dev, zlib1g-dev, quilt (>= 0.46-7~)
+Build-Depends: debhelper (>= 7.0.50~), dh-autoreconf, quilt (>= 0.46-7~),
+ autoconf, automake1.11, libtool, gettext,
+# UI
+ libncursesw5-dev, libgpmg1-dev, libaspell-dev, libgtk2.0-dev, libxosd-dev (>= 2.2.13),
+# scripting
+ python, python-dev, python-central (>= 0.5), libperl-dev,
+ libssl-dev, libgnutls-dev, libgpgme11-dev,
+# Protocols
+ libgadu-dev, libexpat1-dev, libidn11-dev,
+# Other
+ zlib1g-dev, libsqlite3-dev,
+# Documentation
+ xsltproc, docbook-xsl, doxygen
+Build-Conflicts: autoconf2.13, automake1.4
 Standards-Version: 3.9.1
 XS-Python-Version: current
 Homepage: http://ekg2.org/
