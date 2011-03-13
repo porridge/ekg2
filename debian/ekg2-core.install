@@ -1,10 +1,8 @@
 usr/bin/ekg2
-usr/lib/ekg2/ioctld
 usr/lib/ekg2/plugins/autoresponder.so
 usr/lib/ekg2/plugins/feed.so
 usr/lib/ekg2/plugins/gg.so
 usr/lib/ekg2/plugins/icq.so
-usr/lib/ekg2/plugins/ioctld.so
 usr/lib/ekg2/plugins/irc.so
 usr/lib/ekg2/plugins/jogger.so
 usr/lib/ekg2/plugins/logs.so
@@ -29,7 +27,6 @@ usr/share/ekg2/plugins/rc
 usr/share/ekg2/plugins/logs
 usr/share/ekg2/plugins/logsqlite
 usr/share/ekg2/plugins/autoresponder
-usr/share/ekg2/plugins/ioctld
 usr/share/ekg2/plugins/sms
 usr/share/ekg2/plugins/irc
 usr/share/ekg2/plugins/xmsg
