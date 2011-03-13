@@ -69,50 +69,75 @@ Build-time configuration
 For the convenience of the user, here are the flags that ekg2 is configured
 with at build time:
 
-	EKG2_NO_COLOR_CONFIGURE=1 ./autogen.sh \
-		--host=$(DEB_HOST_GNU_TYPE) \
-		--build=$(DEB_BUILD_GNU_TYPE) \
+	dh_auto_configure -- \
+		$(confflags) \
 		--prefix=/usr \
 		--sysconfdir=/etc \
 		--mandir=\$${prefix}/share/man \
 		--infodir=\$${prefix}/share/info \
 		--libexecdir=\$${prefix}/lib/ekg2 \
-		--with-ioctld \
-		--with-libgadu \
-		--with-pthread \
-		--with-openssl \
-		--with-libgnutls \
+		--enable-autoresponder \
+		--enable-gg \
+		--enable-gpg \
+		--enable-gtk \
+		--enable-icq \
+		--enable-irc \
+		--enable-jabber \
+		--enable-jogger \
+		--enable-logs \
+		--enable-logsqlite \
+		--enable-mail \
+		--enable-ncurses \
+		--enable-nntp \
+		--enable-perl \
+		--enable-polchat \
+		--enable-python \
+		--enable-rivchat \
+		--enable-rss \
+		--enable-sim \
+		--enable-sms \
+		--disable-xosd \
+		--with-aspell \
 		--with-expat \
-		--with-ncurses \
+                --with-gnutls \
+		--with-gpgme \
+		--with-gpm \
 		--with-gtk \
-		--without-libgsm \
+		--with-libgadu \
+		--without-libxosd \
+		--with-ncurses \
+                --with-openssl \
 		--with-perl \
 		--with-python \
-		--with-libxosd \
 		--with-sqlite3 \
-		--without-logsoracle \
-		--with-aspell \
-		--without-libjpeg \
-		--without-libungif \
-		--without-libgif \
-		--with-gpm-mouse \
-		--with-gpg \
-		--with-zlib \
-		--without-readline \
-		--enable-remote \
-		--enable-unicode \
-		--enable-skip-relative-plugins-dir
+		--with-zlib
 
-Please note that the xosd plugin does not handle unicode correctly, due to the
-xosd library using a deprecated X11 interface.
+Some features are currently not buildable in the upstream source tree, possibly
+because they are broken and do not have an active maintainer.  The Debian
+packaging follows those upstream decisions, additionally disabling them
+explicitly in order not to re-enable unconsciously.
+ - dbus
+ - gif/ungif/jpeg support: Gadu-Gadu tokens are in GIF format now, but they are
+   not readable when displayed in ascii format, not mentioning their OCR-ability
+ - gsm: codec support is not implemented in the client
+ - httprc_xajax
+ - ioctld
+ - logsoracle: (also: no build-deps in Debian)
+ - oss
+ - pcm
+ - rc
+ - remote
+ - rot13
+ - ruby
+ - sniff
+ - xmsg
+ - xosd: also does not handle unicode correctly, due to the xosd library using
+   a deprecated X11 interface.
 
-Some features are disabled explicitly, here are the reasons:
- - readline: legal problems with openssl+readline (not compiled by default,
-   but better safe than sorry)
- - libgsm: codec support is not implemented in the client [was: libgsm1-dev
-   (>= 1.0.10-11.1)]
- - logsoracle: no build-deps in debian
- - gif/ungif/jpeg support: tokens are in GIF format now, but they are not
-   readable when displayed in ascii format, not mentioning their OCR-ability
+OpenSSL is necessary for "sim" plugin to work, and for TLS support in the "irc"
+plugin. GNUTLS support is recommended for TLS support in the "jabber" plugin.
+
+Readline plugin is disabled explicitly, due to legal problems with
+openssl+readline.
 
  -- Marcin Owsiany <porridge@debian.org>,  Sat, 27 Nov 2010 18:13:04 -0800

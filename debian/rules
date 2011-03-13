@@ -34,31 +34,41 @@ override_dh_auto_configure:
 		--mandir=\$${prefix}/share/man \
 		--infodir=\$${prefix}/share/info \
 		--libexecdir=\$${prefix}/lib/ekg2 \
-		--with-ioctld \
-		--with-libgadu \
-		--with-pthread \
-		--with-openssl \
-		--with-libgnutls \
+		--enable-autoresponder \
+		--enable-gg \
+		--enable-gpg \
+		--enable-gtk \
+		--enable-icq \
+		--enable-irc \
+		--enable-jabber \
+		--enable-jogger \
+		--enable-logs \
+		--enable-logsqlite \
+		--enable-mail \
+		--enable-ncurses \
+		--enable-nntp \
+		--enable-perl \
+		--enable-polchat \
+		--enable-python \
+		--enable-rivchat \
+		--enable-rss \
+		--enable-sim \
+		--enable-sms \
+		--disable-xosd \
+		--with-aspell \
 		--with-expat \
-		--with-ncurses \
+		--with-gnutls \
+		--with-gpgme \
+		--with-gpm \
 		--with-gtk \
-		--without-libgsm \
+		--with-libgadu \
+		--without-libxosd \
+		--with-ncurses \
+		--with-openssl \
 		--with-perl \
 		--with-python \
-		--with-libxosd \
 		--with-sqlite3 \
-		--without-logsoracle \
-		--with-aspell \
-		--without-libjpeg \
-		--without-libungif \
-		--without-libgif \
-		--with-gpm-mouse \
-		--with-gpg \
-		--with-zlib \
-		--without-readline \
-		--enable-remote \
-		--enable-unicode \
-		--enable-skip-relative-plugins-dir
+		--with-zlib
 # Reasons for disabling some features are in README.Debian
 # Remember to update README.Debian as well...
 
