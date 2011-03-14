@@ -1,6 +1,5 @@
 usr/bin/ekg2
 usr/lib/ekg2/plugins/autoresponder.so
-usr/lib/ekg2/plugins/feed.so
 usr/lib/ekg2/plugins/gg.so
 usr/lib/ekg2/plugins/icq.so
 usr/lib/ekg2/plugins/irc.so
@@ -8,8 +7,10 @@ usr/lib/ekg2/plugins/jogger.so
 usr/lib/ekg2/plugins/logs.so
 usr/lib/ekg2/plugins/logsqlite.so
 usr/lib/ekg2/plugins/mail.so
+usr/lib/ekg2/plugins/nntp.so
 usr/lib/ekg2/plugins/polchat.so
 usr/lib/ekg2/plugins/rivchat.so
+usr/lib/ekg2/plugins/rss.so
 usr/lib/ekg2/plugins/sim.so
 usr/lib/ekg2/plugins/sms.so
 usr/share/ekg2/commands-pl.txt
