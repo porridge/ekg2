@@ -1,9 +1,8 @@
 Building ekg2 for Debian
 ------------------------
 
-The ekg2 source package uses quilt to apply and remove its patches. Please
-refer to /usr/share/doc/quilt/README.source for information about how to use
-quilt for source packages.
+The ekg2 source package uses the standard 3.0 (quilt) format to apply and
+remove its patches.
 
 The quilt series is generated from the Git repository, using TopGit.
 This process is documented in /usr/share/doc/topgit/HOWTO-tg2quilt.gz .
@@ -16,5 +15,5 @@ The ekg2 packages uses the following branch layout:
  - 0.3.x: tracks the upstream "0.3.x" maintenance branch
  - debian: debianization changes for the "0.3.x" maintenance branch
 
- -- Marcin Owsiany <porridge@debian.org>  Thu, 17 Mar 2011 13:37:15 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 17 Mar 2011 16:31:29 +0000
 
