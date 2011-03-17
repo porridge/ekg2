@@ -1,0 +1,2 @@
+# Auto-refreshed po files do not provide any value.
+extend-diff-ignore = "^po/.*\.po$"
