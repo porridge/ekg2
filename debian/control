@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Marcin Owsiany <porridge@debian.org>
 Build-Depends: debhelper (>= 7.0.50~), dh-autoreconf, quilt (>= 0.46-7~),
- autoconf, automake1.11, libtool, gettext,
+ autoconf, automake1.11, libtool, autopoint | gettext (<= 0.17-9), gettext,
 # UI
  libncursesw5-dev, libgpmg1-dev, libaspell-dev, libgtk2.0-dev,
 # scripting
