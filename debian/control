@@ -61,7 +61,7 @@ Description: instant messenger and IRC client for UNIX systems
    - sending SMs (using an external program such as sms-pl)
    - mail checking
  .
- This is a meta-package which depends on a set of commonly used EKG2 packages.
+ This is a metapackage which depends on a set of commonly used EKG2 packages.
 
 Package: ekg2-api-docs
 Architecture: all
