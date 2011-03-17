@@ -1,3 +1,4 @@
 usr/lib/ekg2/plugins/ncurses.so
+usr/lib/ekg2/plugins/ncurses.la
 usr/share/ekg2/plugins/ncurses
 usr/share/ekg2/themes

@@ -1,3 +1,4 @@
 usr/lib/ekg2/plugins/python.so
+usr/lib/ekg2/plugins/python.la
 usr/share/ekg2/scripts/*.py
 usr/share/ekg2/plugins/python
