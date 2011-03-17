@@ -1,3 +1,32 @@
+ekg2 (1:0.4~pre+20110317.1-1) unstable; urgency=low
+
+  * Merge a new upstream snapshot.
+    - includes complete rewrite of the build system as well as significant
+      refactoring of internal infrastructure code. As a result a few plugins
+      are not being built, at least for now. See debian/NEWS for details.
+  * [d64fd80] Ignore debian/patches.
+  * [2e21b07] Change the build to work according to current Debian best
+    practice, i.e. full autoreconf and clean on every build.
+  * [ec2938d] Do not include auto-refreshed po files in debian patch.
+  * [32d2beb] Adjust configure arguments to current availability.
+  * [c374e0d] Disabled httprc_xajax, following upstream.
+  * [7f2228f] Disabled ioctld, following upstream.
+  * [eabdf3b] Disabled pcm, following upstream.
+  * [b110cf8] Disabled remote, following upstream. This also happens to fix a
+    circular dependency. (Closes: #618321)
+  * [de55d81] Disabled rc, following upstream.
+  * [00d454e] Disabled rot13, following upstream.
+  * [b50f35b] Disabled xmsg, following upstream.
+  * [a778d58] Disabled xosd, following upstream.
+  * [1097b7a] Install nntp and rss, not feed.
+  * [e97aee7] Call dh with target as first arg.
+  * [9a3b684] Trimmed the TODO list.
+  * [97cc88f] Documented plugin split/removal.
+  * [df853be] Updated developer information.
+  * [062076c] Added Vcs-* headers.
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 17 Mar 2011 14:35:34 +0000
+
 ekg2 (1:0.3.1~rc1-1) unstable; urgency=low
 
   * New upstream release candidate.
