@@ -1,0 +1,7 @@
+ekg2 (1:0.4~0.20110317.1-1) experimental; urgency=low
+
+  * The feed plugin has been split into "nntp" and "rss" plugins.
+  * The following plugins have been disabled, due to lack of build support in
+    the upstream package: httprc_xajax ioctld pcm rc remote rot13 xmsg xosd
+
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 17 Mar 2011 13:27:15 +0000
