@@ -22,6 +22,8 @@
 #ifndef __EKG_DYNSTUFF_H
 #define __EKG_DYNSTUFF_H
 
+#include <glib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -142,14 +144,7 @@ int list_remove_safe(list_t *list, void *data, int free_data);
  *     string_free(s, 1);
  */
 
-struct string {
-	char *str;
-	int len, size;
-};
-
-typedef struct string *string_t;
-
-#ifndef EKG2_WIN32_NOFUNCTION
+typedef GString *string_t;
 
 string_t string_init(const char *str);
 int string_append(string_t s, const char *str);
@@ -165,24 +160,19 @@ char *string_free(string_t s, int free_string);
 
 /* tablice stringow */
 char **array_make(const char *string, const char *sep, int max, int trim, int quotes);
-char *array_join(char **array, const char *sep);
 char *array_join_count(char **array, const char *sep, int count);
 
 int array_add(char ***array, char *string);
 int array_add_check(char ***array, char *string, int casesensitive);
-int array_count(char **array);
 int array_contains(char **array, const char *string, int casesensitive);
 int array_item_contains(char **array, const char *string, int casesensitive);
 char *array_shift(char ***array);
-void array_free(char **array);
 void array_free_count(char **array, int count);
 
 /* rozszerzenia libców */
 
-const char *itoa(long int i);
+const char *ekg_itoa(long int i);
 const char *cssfind(const char *haystack, const char *needle, const char sep, int caseinsensitive);
-
-#endif
 
 char *escape(const char *src);
 char *unescape(const char *src);
@@ -207,6 +197,10 @@ void private_item_set(private_data_t **data, const char *item_name, const char *
 void private_item_set_int(private_data_t **data, const char *item_name, int value);
 
 void private_items_destroy(private_data_t **data);
+
+#if !GLIB_CHECK_VERSION(2, 28, 0)
+void g_slist_free_full(GSList *list, GDestroyNotify free_func);
+#endif
 
 #ifdef __cplusplus
 }

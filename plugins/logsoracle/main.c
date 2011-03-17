@@ -17,19 +17,10 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <string.h> /* memset() */
-#include <stdint.h> /* uint32_t */
 #include <time.h>   /* time_t */
-
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/vars.h>
-#include <ekg/protocol.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/xmalloc.h>
 
 #include "main.h"
 #include "oralog.h"
@@ -69,11 +60,11 @@ int logsoracle_plugin_init(int prio)
 	plugin_register(&logsoracle_plugin, prio);
 
 	/* connect events with handlers */
-	query_connect(&logsoracle_plugin, ("set-vars-default"), logsoracle_handler_setvarsdef, NULL);
-	query_connect(&logsoracle_plugin, ("config-postinit"), logsoracle_handler_postinit, NULL);
-	query_connect(&logsoracle_plugin, ("session-status"), logsoracle_handler_sestatus, NULL);	
-	query_connect(&logsoracle_plugin, ("protocol-status"), logsoracle_handler_prstatus, NULL);
-	query_connect(&logsoracle_plugin, ("protocol-message-post"), logsoracle_handler_prmsg, NULL);
+	query_connect(&logsoracle_plugin, "set-vars-default", logsoracle_handler_setvarsdef, NULL);
+	query_connect(&logsoracle_plugin, "config-postinit", logsoracle_handler_postinit, NULL);
+	query_connect(&logsoracle_plugin, "session-status", logsoracle_handler_sestatus, NULL);	
+	query_connect(&logsoracle_plugin, "protocol-status", logsoracle_handler_prstatus, NULL);
+	query_connect(&logsoracle_plugin, "protocol-message-post", logsoracle_handler_prmsg, NULL);
 		
 	/* register variables */
 	variable_add(&logsoracle_plugin, ("auto_connect"), VAR_BOOL, 1, &logsoracle_config.auto_connect, NULL, NULL, NULL);
@@ -264,7 +255,7 @@ QUERY(logsoracle_handler_prmsg)
 	char *uid	  = *(va_arg(ap, char**));	/* sender uid */
 	char **rcpts	  = *(va_arg(ap, char***));	/* list of reciepients (uids)*/
 	char *text	  = *(va_arg(ap, char**));	/* message content */
-	uint32_t *format  = *(va_arg(ap, uint32_t**));	/* ? */
+	guint32 *format  = *(va_arg(ap, guint32**));	/* ? */
 	time_t	 sent	  = *(va_arg(ap, time_t*));	/* timestamp */
 	int  class	  = *(va_arg(ap, int*));	/* check msgclass_t in protocol.h */
 	char *seq	  = *(va_arg(ap, char**));	/* sequence number */
@@ -300,7 +291,7 @@ QUERY(logsoracle_handler_prmsg)
 	/* BUG (?) */
 	if(rcpts_alloc) {
 		/* This will also attemp to free allocated strings */
-		array_free(rcpts);
+		g_strfreev(rcpts);
 		rcpts=NULL;
 	}
 	/* BUG */

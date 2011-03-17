@@ -1,4 +1,4 @@
-// ma³y opis dostêpnych zmiennych pluginu gg
+// maÅ‚y opis dostÄ™pnych zmiennych pluginu gg
 // (c) copyright 2001-2003 Wojtek Waniewski <wojtekka@irc.pl>
 // (c) copyright      2004 Piotr Kupisiewicz <deletek@ekg2.org>
 // (c) copyright      2004-2006 Adam Mikuta <adamm@ekg2.org>
@@ -42,6 +42,12 @@ display_token
         variable which is available only when we've got special liblary that wi'll let 
         us to decode JPEG. Turning it off will cause that 
         ekg will save tokens to file.
+
+enable_chatstates
+	type: bool
+	default value: 1
+	
+	enable or disable typing notification
 
 get_images
         type: bool

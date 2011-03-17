@@ -19,7 +19,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <sys/types.h>
 
@@ -27,22 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#ifdef HAVE_REGEX_H
-#	include <regex.h>
-#endif
-
-#include "commands.h"
-#include "dynstuff.h"
-#include "windows.h"
-#include "userlist.h"
-#include "sessions.h"
-#include "themes.h"
-#include "stuff.h"
-#include "xmalloc.h"
-
-#include "dynstuff_inline.h"
-#include "queries.h"
 
 int window_last_id = -1;		/* ostatnio wy¶wietlone okno */
 
@@ -61,8 +45,6 @@ int config_display_crap = 1;		/* czy wy¶wietlaæ ¶mieci? */
 window_t *window_current = NULL;	/* okno aktualne, zawsze na co¶ musi wskazywaæ! */
 window_t *window_status  = NULL;	/* okno statusowe, zawsze musi miec dobry adres w pamieci [NULL jest ok] */
 window_t *window_debug	 = NULL;	/* okno debugowe, zawsze musi miec dobry adres w pamieci [NULL jest ok] */
-
-window_lastlog_t *lastlog_current = NULL;
 
 /**
  * window_find_ptr()
@@ -206,9 +188,9 @@ void window_switch(int id) {
 			session_current = w->session;
 	
 		window_current = w;
-		query_emit_id(NULL, UI_WINDOW_SWITCH, &w);	/* XXX */
+		query_emit(NULL, "ui-window-switch", &w);	/* XXX */
 
-		w->act = 0;
+		w->act = EKG_WINACT_NONE;
 		if (w->target && w->session && (u = userlist_find(w->session, w->target)) && u->blink) {
 			u->blink	= 0;
 			ul_refresh	= 1;
@@ -232,7 +214,7 @@ void window_switch(int id) {
 	}
 
 	if (ul_refresh)
-		query_emit_id(NULL, USERLIST_REFRESH);
+		query_emit(NULL, "userlist-refresh");
 }
 
 /**
@@ -299,8 +281,8 @@ window_t *window_new(const char *target, session_t *session, int new_id) {
 			if (w->id > id)
 				break;
 
-			if (w->id >= 1000-1 && w->id < 2000 /* -1 */) {	/* [REVERVED CLASS: 1000-1999]	1k-1.999k windows reverved for special use. [1000 - __contacts, 1001 - __lastlog] */
-				id = 2000;
+			if (w->id >= WINDOW_RESERVED_MIN_ID && w->id <= WINDOW_RESERVED_MAX_ID) {
+				id = WINDOW_RESERVED_MAX_ID + 1;
 				continue;
 			}
 
@@ -328,7 +310,7 @@ window_t *window_new(const char *target, session_t *session, int new_id) {
 /*	w->userlist = NULL; */		/* xmalloc memset() to 0 memory */
 
 	windows_add(w);
-	query_emit_id(NULL, UI_WINDOW_NEW, &w);	/* XXX */
+	query_emit(NULL, "ui-window-new", &w);	/* XXX */
 
 	return w;
 }
@@ -338,22 +320,17 @@ window_t *window_new(const char *target, session_t *session, int new_id) {
  *
  * Print fstring_t @a line to window
  *
- * @todo If UI_WINDOW_PRINT is not handled by ui-plugin, we should free @a line, or we'll have memleaks.
- *
  * @param w - window
  * @param line - line
- *
  */
 
 void window_print(window_t *w, fstring_t *line) {
-	if (!w || !line) {
-		fstring_free(line);
-		return;
-	}
+	g_assert(w);
+	g_assert(line);
 
 	if (!line->ts)
 		line->ts = time(NULL);
-	query_emit_id(NULL, UI_WINDOW_PRINT, &w, &line);	/* XXX */
+	query_emit(NULL, "ui-window-print", &w, &line);
 }
 
 /*
@@ -445,7 +422,7 @@ void window_kill(window_t *w) {
 		w->target	= NULL;
 /*		w->session	= NULL; */
 
-		query_emit_id(NULL, UI_WINDOW_TARGET_CHANGED, &w);
+		query_emit(NULL, "ui-window-target-changed", &w);
 		return;
 	}
 
@@ -473,7 +450,7 @@ void window_kill(window_t *w) {
 		}
 	}
 
-	query_emit_id(NULL, UI_WINDOW_KILL, &w);
+	query_emit(NULL, "ui-window-kill", &w);
 	windows_remove(w);
 }
 
@@ -594,9 +571,9 @@ COMMAND(cmd_window) {
 	const int par0_matchlen	= par0_len > 2 ? par0_len : 2;
 
 	if (!xstrcmp(name, "clear") || (params[0] && !xstrncasecmp(params[0], "clear", par0_matchlen))) {
-		window_t *w = xmemdup(window_current, sizeof(window_t));
-		query_emit_id(NULL, UI_WINDOW_CLEAR, &w);
-		xfree(w);
+		window_t *w = g_memdup(window_current, sizeof(window_t));
+		query_emit(NULL, "ui-window-clear", &w);
+		g_free(w);
 		return 0;
 	}
 
@@ -607,11 +584,11 @@ COMMAND(cmd_window) {
 			if (w->id) {
 				if (w->target) {
 					if (!w->floating)
-						printq("window_list_query", itoa(w->id), w->target);
+						printq("window_list_query", ekg_itoa(w->id), w->alias ? w->alias : w->target);
 					else
-						printq("window_list_floating", itoa(w->id), itoa(w->left), itoa(w->top), itoa(w->width), itoa(w->height), w->target);
+						printq("window_list_floating", ekg_itoa(w->id), ekg_itoa(w->left), ekg_itoa(w->top), ekg_itoa(w->width), ekg_itoa(w->height), w->target);
 				} else
-					printq("window_list_nothing", itoa(w->id));
+					printq("window_list_nothing", ekg_itoa(w->id));
 			}
 		}
 		return 0;
@@ -621,7 +598,7 @@ COMMAND(cmd_window) {
 		window_t *w;
 		int a, id = 0;
 
-		for (a=3; !id && a>0; a--)
+		for (a=EKG_WINACT_IMPORTANT; !id && a>EKG_WINACT_NONE; a--)
 			for (w = windows; w; w = w->next) {
 				if ((w->act==a) && !w->floating && w->id) {
 					id = w->id;
@@ -666,114 +643,6 @@ COMMAND(cmd_window) {
 		return 0;
 	}
 
-		/* at least 'lastl' */
-	if (!xstrncasecmp(params[0], "lastlog", par0_matchlen)) {
-		static window_lastlog_t lastlog_current_static;
-
-		window_lastlog_t *lastlog;
-
-		const char *str;
-		window_t *w = NULL;
-
-		int iscase	= -1;	/* default-default variable */
-		int isregex	= 0;	/* constant, make variable? */
-		int islock	= 0;	/* constant, make variable? */
-
-		if (!params[1]) {
-			printq("not_enough_params", name);
-			return -1;
-		}
-
-		if (params[2]) {
-			char **arr = array_make(params[1], " ", 0, 1, 1);
-			int i;
-
-	/* parse configuration */
-			for (i = 0; arr[i]; i++) {
-				if (match_arg(arr[i], 'r', "regex", 2)) 
-					isregex = 1;
-				else if (match_arg(arr[i], 'R', "extended-regex", 2))
-					isregex = 2;
-				else if (match_arg(arr[i], 's', "substring", 2))
-					isregex = 0;
-
-				else if (match_arg(arr[i], 'C', "CaseSensitive", 2))
-					iscase = 1;
-				else if (match_arg(arr[i], 'c', "caseinsensitive", 2))
-					iscase = 0;
-
-				else if (match_arg(arr[i], 'w', "window", 2) && arr[i+1]) {
-					w = window_exist(atoi(arr[++i]));
-					
-					if (!w) {
-						printq("window_doesnt_exist", arr[i]);
-						array_free(arr);
-						return -1;
-					}
-				} else {
-					printq("invalid_params", name);
-					array_free(arr);
-					return -1;
-				}
-			}
-			array_free(arr);
-			str = params[2];
-
-		} else	str = params[1];
-
-		lastlog = w ? window_current->lastlog : &lastlog_current_static;
-
-		if (!lastlog) 
-			lastlog = xmalloc(sizeof(window_lastlog_t));
-
-		if (w || lastlog_current) {
-#ifdef HAVE_REGEX_H
-			if (lastlog->isregex)
-				regfree(&lastlog->reg);
-			xfree(lastlog->expression);
-#endif
-
-		}
-
-/* compile regexp if needed */
-		if (isregex) {
-#ifdef HAVE_REGEX_H
-			int rs, flags = REG_NOSUB;
-			char errbuf[512];
-
-			if (isregex == 2)
-				flags |= REG_EXTENDED;
-
-/* XXX, when config_lastlog_case is toggled.. we need to recompile regex's */
-			if (!lastlog->casense || (lastlog->casense == -1 && !config_lastlog_case))
-				flags |= REG_ICASE;
-
-			if ((rs = regcomp(&lastlog->reg, str, flags))) {
-				regerror(rs, &lastlog->reg, errbuf, sizeof(errbuf));
-				printq("regex_error", errbuf);
-				/* XXX, it was copied from ekg1, although i don't see much sense to free if regcomp() failed.. */
-				regfree(&(lastlog->reg));
-				return -1;
-			}
-#else
-			printq("generic_error", "you don't have regex.h !!!!!!!!!!!!!!!!!!!11111");
-/*			isrgex = 0; */
-			return -1;
-#endif
-		}
-
-		lastlog->w		= w;
-		lastlog->casense	= iscase;
-		lastlog->lock		= islock;
-		lastlog->isregex	= isregex;
-		lastlog->expression	= xstrdup(str);
-
-		if (w)	window_current->lastlog	= lastlog;
-		else	lastlog_current		= lastlog;
-			
-		return query_emit_id(NULL, UI_WINDOW_UPDATE_LASTLOG);
-	}
-	
 	if (!xstrncasecmp(params[0], "kill", par0_matchlen)) {
 		window_t *w = window_current;
 
@@ -816,19 +685,19 @@ COMMAND(cmd_window) {
 			return -1;
 
 		if (!params[1]) {
-			printq("invalid_params", name);
+			printq("not_enough_params", name);
 			return -1;
 		}
 
 		source = (params[2]) ? atoi(params[2]) : window_current->id;
 
 		if (!source) {
-			printq("window_invalid_move", itoa(source));
+			printq("window_invalid_move", ekg_itoa(source));
 			return -1;
 		}
 
 		if (!window_exist(source)) {
-			printq("window_doesnt_exist", itoa(source));
+			printq("window_doesnt_exist", ekg_itoa(source));
 			return -1;
 		}
 
@@ -848,7 +717,7 @@ COMMAND(cmd_window) {
 
 
 		if (!dest) {
-			printq("window_invalid_move", itoa(dest));
+			printq("window_invalid_move", ekg_itoa(dest));
 			return -1;
 		}
 
@@ -873,12 +742,12 @@ COMMAND(cmd_window) {
 
 	
 	if (!xstrncasecmp(params[0], "refresh", par0_matchlen)) {
-		query_emit_id(NULL, UI_REFRESH);
+		query_emit(NULL, "ui-refresh");
 		return 0;
 	}
 
 
-	printq("invalid_params", name);
+	printq("invalid_params", name, params[0]);
 
 	return 0;
 }
@@ -897,10 +766,10 @@ void window_session_set(window_t *w, session_t *new_session) {
 
 	if (w == window_current) {
 		session_current = new_session;
-		query_emit_id(NULL, SESSION_CHANGED);
+		query_emit(NULL, "session-changed");
 	}
 
-	query_emit_id(NULL, UI_WINDOW_TARGET_CHANGED, &w);
+	query_emit(NULL, "ui-window-target-changed", &w);
 
 	/* let's sync window_status->session with window_debug->session */
 	if (lock == 0) {
@@ -940,8 +809,8 @@ int window_session_cycle(window_t *w) {
 	session_t *s;
 	session_t *new_session = NULL;
 	int once = 0;
-	char *uid;
-	char *nickname;
+	const char *uid;
+	const char *nickname;
 
 	if (!w || !sessions) {
 		return -1;

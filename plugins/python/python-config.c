@@ -17,7 +17,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
+
 #include "python.h"
 
 #include <sys/types.h>
@@ -28,18 +29,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <Python.h>
-
-#include <ekg/debug.h>
-
-#include <ekg/commands.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/userlist.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
 
 #include "python.h"
 #include "python-config.h"
@@ -71,13 +60,7 @@ void ekg_config_dealloc(PyObject * o)
 
 int ekg_config_len(ekg_configObj * self)
 {
-	int cnt = 0;
-	variable_t *v;
-
-	for (v = variables; v; v = v->next) {
-		cnt++;
-	}
-	return cnt;
+	return g_slist_length(variables);
 }
 
 /**
@@ -90,10 +73,11 @@ int ekg_config_len(ekg_configObj * self)
 PyObject *ekg_config_get(ekg_configObj * self, PyObject * key)
 {
     char *name = PyString_AsString(key);
-    variable_t *v;
+    GSList *vl;
     debug("[python] Getting value for '%s' config option\n", name);
 
-    for (v = variables; v; v = v->next) {
+    for (vl = variables; vl; vl = vl->next) {
+		variable_t *v = vl->data;
 		if (!strcmp(v->name, name)) {
 			if (v->type == VAR_BOOL || v->type == VAR_INT
 					|| v->type == VAR_MAP) {
@@ -134,7 +118,7 @@ PyObject *ekg_config_set(ekg_configObj * self, PyObject * key, PyObject * value)
 			PyErr_SetString(PyExc_TypeError, "invalid type");
 			return NULL;
 		}
-		variable_set(name, itoa(PyInt_AsLong(value)));
+		variable_set(name, ekg_itoa(PyInt_AsLong(value)));
 	} else {
 		if (!PyString_Check(value)) {
 			PyErr_SetString(PyExc_TypeError, "invalid type");

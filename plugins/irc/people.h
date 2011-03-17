@@ -18,10 +18,9 @@
 #ifndef __IRC_PIPL_H
 #define __IRC_PIPL_H
 
-#include <ekg/sessions.h>
 #include "irc.h"
 
-people_t *irc_find_person(list_t p, char *nick);
+people_t *irc_find_person(irc_private_t *j, list_t p, char *nick);
 channel_t *irc_find_channel(list_t p, char *channame);
 people_chan_t *irc_find_person_chan(list_t p, char *channame);
 
@@ -44,7 +43,7 @@ channel_t *irc_add_channel(session_t *s, irc_private_t *j, char *name,
 
 int irc_nick_change(session_t *s, irc_private_t *j, char *old_nick, char *new_nick);
 int irc_nick_prefix(irc_private_t *j, people_chan_t *ch, int irc_color);
-int irc_color_in_contacts(char *modes, int mode, userlist_t *ul);
+int irc_color_in_contacts(irc_private_t *j, int mode, userlist_t *ul);
 
 /* clean up */
 int irc_free_people(session_t *s, irc_private_t *j);

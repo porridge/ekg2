@@ -15,7 +15,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <ekg/win32.h>
+#include "ekg2.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,20 +27,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
-
 #include "rc.h"
 
 PLUGIN_DEFINE(rc, PLUGIN_UI, NULL);
-#ifdef EKG2_WIN32_SHARED_LIB
-	EKG2_WIN32_SHARED_LIB_HELPER
-#endif
 
 static void rc_input_close(rc_input_t *r);
 
@@ -286,7 +275,7 @@ static void rc_paths_changed(const char *name)
 		rc_input_close(r);		/* it'll remove l->data */
 	}
 
-	array_free(paths);
+	g_strfreev(paths);
 }
 
 EXPORT int rc_plugin_init(int prio) {

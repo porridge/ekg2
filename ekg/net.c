@@ -18,8 +18,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
-#include <ekg/win32.h>
+#include "ekg2.h"
 
 #include <sys/types.h>
 
@@ -37,17 +36,12 @@
 #include <stdarg.h>	/* ? */
 #include <unistd.h>
 
-#define __USE_POSIX
 #ifndef NO_POSIX_SYSTEM
 #include <netdb.h>	/* OK */
 #endif
 
 #ifdef __sun	  /* Solaris, thanks to Beeth */
 #include <sys/filio.h>
-#endif
-
-#ifdef LIBIDN
-# include <idna.h>
 #endif
 
 /*
@@ -62,20 +56,8 @@
  *	THX.
  */
 
-#include "debug.h"
-#include "dynstuff.h"
 #include "net.h"
-#include "plugins.h"
-#include "sessions.h"
-#include "xmalloc.h"
 #include "srv.h"
-
-#ifdef LIBIDN /* stolen from squid->url.c (C) Duane Wessels */
-static const char valid_hostname_chars_u[] =
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	"abcdefghijklmnopqrstuvwxyz"
-	"0123456789-._";
-#endif
 
 struct ekg_connect_data {
 		/* internal data */
@@ -165,14 +147,28 @@ watch_t *ekg_resolver4(plugin_t *plugin, const char *server, watcher_handler_fun
 			do {
 				gim_host *gim_host_list = NULL;
 				int sport;
+				gboolean hostname_duped = FALSE;
 
 				if ((nexthost = xstrchr(hostname, ','))) *nexthost = '\0';
 				sport = ekg_resolver_split(hostname, port);
+
+				if (g_hostname_is_non_ascii(hostname)) {
+					gchar *tmp = g_hostname_to_ascii(hostname);
+
+					if (tmp) {
+						hostname_duped = TRUE;
+						hostname = tmp;
+						debug_function("ekg_resolver4(), encoded hostname: %s\n", hostname);
+					} else
+						debug_error("g_hostname_to_ascii(%s) failed\n", hostname);
+				}
 
 				srv_resolver (&gim_host_list, hostname, proto_port, sport, 0);
 				basic_resolver (&gim_host_list, hostname, sport);
 				resolve_missing_entries(&gim_host_list);
 
+				if (hostname_duped)
+					g_free(hostname);
 				hostname = nexthost+1;
 				write_out_and_destroy_list(fd[1], gim_host_list);
 			} while (nexthost);
@@ -188,7 +184,7 @@ watch_t *ekg_resolver4(plugin_t *plugin, const char *server, watcher_handler_fun
 	/* parent */
 	close(fd[1]);
 
-	/* XXX dodac dzieciaka do przegladania */
+	ekg_child_add(plugin, "resolver: %s", res, NULL, NULL, NULL, server);
 	return watch_add_line(plugin, fd[0], WATCH_READ_LINE, async, data);
 }
 
@@ -198,8 +194,8 @@ static void ekg_connect_data_free(struct ekg_connect_data *c) {
 		c->internal_watch->data = NULL;	/* avoid double free */
 		watch_free(c->internal_watch);
 	}
-	array_free(c->resolver_queue);
-	array_free(c->connect_queue);
+	g_strfreev(c->resolver_queue);
+	g_strfreev(c->connect_queue);
 	xfree(c->session);
 
 	xfree(c);
@@ -262,8 +258,8 @@ static int ekg_build_sin(const char *data, const int defport, struct sockaddr **
 
 	*address = NULL;
 
-	if (array_count(a) < 3) {
-		array_free(a);
+	if (g_strv_length(a) < 3) {
+		g_strfreev(a);
 		return 0;
 	}
 
@@ -280,7 +276,7 @@ static int ekg_build_sin(const char *data, const int defport, struct sockaddr **
 		ipv4 = xmalloc(len);
 
 		ipv4->sin_family = AF_INET;
-		ipv4->sin_port	 = htons(port);
+		ipv4->sin_port	 = g_htons(port);
 #ifdef HAVE_INET_PTON
 		inet_pton(AF_INET, addr, &(ipv4->sin_addr));
 #else
@@ -302,7 +298,7 @@ static int ekg_build_sin(const char *data, const int defport, struct sockaddr **
 
 		ipv6 = xmalloc(len);
 		ipv6->sin6_family  = AF_INET6;
-		ipv6->sin6_port    = htons(port);
+		ipv6->sin6_port    = g_htons(port);
 #ifdef HAVE_INET_PTON
 		inet_pton(AF_INET6, addr, &(ipv6->sin6_addr));
 #else
@@ -313,7 +309,7 @@ static int ekg_build_sin(const char *data, const int defport, struct sockaddr **
 	} else
 		debug_function("ekg_build_sin(), unknown addr family %d!\n", family);
 
-	array_free(a);
+	g_strfreev(a);
 
 	return len;
 }
@@ -547,17 +543,16 @@ watch_t *ekg_resolver2(plugin_t *plugin, const char *server, watcher_handler_fun
 
 		close(fd[0]);
 
-#ifdef LIBIDN
-		{
-			char *tmp;
+		if (g_hostname_is_non_ascii(myserver)) {
+			gchar *tmp = g_hostname_to_ascii(myserver);
 
-			if ((xstrspn(myserver, valid_hostname_chars_u) != xstrlen(myserver)) && /* need to escape */
-				(idna_to_ascii_8z(myserver, &tmp, 0) == IDNA_SUCCESS)) {
-				xfree(myserver);
+			if (tmp) {
+				g_free(myserver);
 				myserver = tmp;
-			}
+				debug_function("ekg_resolver2(), encoded hostname: %s\n", myserver);
+			} else
+				debug_error("g_hostname_to_ascii(%s) failed\n", myserver);
 		}
-#endif
 		if ((a.s_addr = inet_addr(myserver)) == INADDR_NONE) {
 			struct hostent *he = gethostbyname(myserver);
 
@@ -575,7 +570,7 @@ watch_t *ekg_resolver2(plugin_t *plugin, const char *server, watcher_handler_fun
 	/* parent */
 	close(fd[1]);
 	xfree(myserver);
-	/* XXX dodac dzieciaka do przegladania */
+
+	ekg_child_add(plugin, "resolver: %s", res, NULL, NULL, NULL, server);
 	return watch_add(plugin, fd[0], WATCH_READ, async, data);
 }
-

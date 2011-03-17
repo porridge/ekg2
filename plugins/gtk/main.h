@@ -2,8 +2,6 @@
 #include <gtk/gtkcontainer.h>
 #include <gtk/gtksignal.h>
 
-#include <ekg/plugins.h>
-
 extern int ui_quit;
 
 extern plugin_t gtk_plugin;
@@ -91,7 +89,6 @@ extern int new_window_in_tab_config;
 
 #define truncchans_config 20
 #define tab_sort_config 1
-#define tab_icons_config 0
 #define style_namelistgad_config 0
 
 #define chanmodebuttons_config -1

@@ -1,0 +1,14 @@
+// opis komend dla pluginu gpg
+// 2009 created by Paweł Tomak <satherot@gmail.com>
+
+key
+	parametry:  [opcje] [uid [klucz]]
+	krotki opis: zarządza kluczami używanymi do szyfrowania wiadomości
+	
+	  -l, --listkeys                  wypisuje wszystkie klucze oraz ich status (domyślna opcja)
+	
+	  -s, --setkey <uid> <klucz>      dodaje/ustawia klucz użytkownika o podanym uid
+	
+	  -f, --forcekey <uid> <klucz>    wymusza dodanie klucza użytkownika nawet jesli coś się nie zgadza z poprawnością klucza
+	
+	  -d, --delkey <uid>              usuwa klucz dla podanego użytkownika

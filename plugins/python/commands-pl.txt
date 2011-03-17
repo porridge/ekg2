@@ -1,0 +1,36 @@
+eval
+	parametry: [kod]
+	krotki opis: uruchom dowolny kod w ekg2
+	
+	Uruchom dowolny kod w języku Python w ekg2. Kod ma dostęp modułu ekg.
+	Na przykład spróbuj wykonać:
+	
+	  /python:eval ekg.echo("2 + 2 = %%s" %% (2 + 2))
+
+list
+	parametry:
+	krotki opis: wypisz listę załadowanych skryptów
+
+load
+	parametry: [skrypt]
+	krotki opis: załaduj skrypt języka Python do ekg2 i uruchom go
+	
+	Załaduj dowolny skrypt języka Python do ekg2 i uruchom go. `skrypt` jest
+	nazwą pliku w katalogu .ekg2/scripts lub .ekg2/<profile>/scripts.
+
+run
+	parametry: [skrypt]
+	krotki opis: jednorazowo wykonaj skrypt języka Python
+	
+	Jednorazowo wykonaj dowolny skrypt języka Python. Zauważ, że skrypt nie
+	powinien rejestrować żadnych handlerów - skrypt zostanie usunięty z ekg2
+	jak tylko skończy się wykonywać. Zobacz również /python:load. `skrypt` jest
+	nazwą pliku ze ścieżką względem CWD.
+
+unload
+	parametry: [skrypt]
+	krotki opis: usuń skrypt z ekg2
+	
+	Usuń skrypt. To znaczy wyrejestruj wszystkie handlery i bindingi
+	zarejestrowane przez dany skrypt i usuń skrypt z pamięci. `skrypt` jest
+	nazwą skryptu, czyli nazwą pliku bez rozszerzenia '.py'.

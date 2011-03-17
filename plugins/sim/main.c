@@ -1,3 +1,5 @@
+#include "ekg2.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -8,19 +10,6 @@
 #include <string.h>
 #include <dirent.h>
 #include <errno.h>
-
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/vars.h>
-#include <ekg/userlist.h>
-#include <ekg/sessions.h>
-#include <ekg/xmalloc.h>
-
-#include <ekg/recode.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/queries.h>
 
 #include "simlite.h"
 
@@ -221,7 +210,7 @@ static COMMAND(command_key)
 
 	if (match_arg(params[0], 'd', ("delete"), 2)) {
 		char *tmp;
-		char *uid;
+		const char *uid;
 
 		if (!params[1]) {
 			printq("not_enough_params", name);
@@ -313,7 +302,7 @@ static COMMAND(command_key)
 		return 0;
 	}
 
-	printq("invalid_params", name);
+	printq("invalid_params", name, params[0]);
 
 	return -1;
 }
@@ -355,8 +344,8 @@ EXPORT int sim_plugin_init(int prio)
 	plugin_register(&sim_plugin, prio);
 	ekg_recode_cp_inc();
 
-	query_connect_id(&sim_plugin, MESSAGE_ENCRYPT, message_encrypt, NULL);
-	query_connect_id(&sim_plugin, MESSAGE_DECRYPT, message_decrypt, NULL);
+	query_connect(&sim_plugin, "message-encrypt", message_encrypt, NULL);
+	query_connect(&sim_plugin, "message-decrypt", message_decrypt, NULL);
 
 	command_add(&sim_plugin, ("sim:key"), ("puUC uUC"), command_key, 0,
 			"-g --generate -s --send -d --delete -l --list");

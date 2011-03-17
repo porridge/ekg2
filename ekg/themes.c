@@ -19,9 +19,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
-#define _XOPEN_SOURCE 600
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -29,18 +28,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-
-#include "dynstuff.h"
-#include "stuff.h"
-#include "recode.h"
-#include "themes.h"
-#include "xmalloc.h"
-#include "windows.h"
-#include "userlist.h"
-
-#include "debug.h"
-#include "dynstuff_inline.h"
-#include "queries.h"
 
 static char *prompt_cache = NULL, *prompt2_cache = NULL, *error_cache = NULL;
 static const char *timestamp_cache = NULL;
@@ -206,6 +193,129 @@ static const char *format_ansi(char ch) {
 
 	return ("");
 }
+
+/**
+ * fstring_iter()
+ *
+ * Initiate iteration over fstring_t. Set pointers to the initial
+ * values.
+ *
+ * @param s - the iterated fstring_t.
+ * @param text - location to store the current text segment pointer.
+ * @param attr - location to store the current attr segment pointer.
+ * @param len - location to store the length of the current segment.
+ *
+ * @note This function just initializes the vars, use fstring_next()
+ * to get the first segment.
+ */
+void fstring_iter(const fstring_t *s, gchar **text, fstr_attr_t **attr, gssize *len) {
+	*text = s->str;
+	*attr = s->attr;
+	*len = 0;
+}
+
+/**
+ * fstring_next()
+ *
+ * Iterate over fragments of fstring_t with unchanged attributes.
+ *
+ * @param text - location to store the current text segment pointer.
+ * @param attr - location to store the current attr segment pointer.
+ * @param len - location to store the length of the current segment.
+ * @param change - location to store changed attribute map or NULL.
+ *
+ * @return TRUE if next segment was found, FALSE on end of string.
+ *
+ * @note This function relies on the values stored by previous calls,
+ * please do not modify them. The variables need to be initialized
+ * by @ref fstring_iter().
+ *
+ * @code
+ *
+ *	gchar *s;
+ *	fstr_attr_t *a;
+ *	gssize len;
+ *	fstr_attr_t change;
+ *
+ *	fstring_iter(fstr, &s, &a, &len);
+ *	while (fstring_next(&s, &a, &len, NULL)) {
+ *		my_setattr(*a);
+ *		my_printn(s, len);
+ *	}
+ *
+ * @endcode
+ */
+gboolean fstring_next(gchar **text, fstr_attr_t **attr, gssize *len, fstr_attr_t *change) {
+	const gchar* c;
+	const fstr_attr_t* a;
+	const fstr_attr_t prevattr = *len ? **attr : FSTR_NORMAL;
+	fstr_attr_t curattr;
+
+	*text += *len;
+	*attr += *len;
+	curattr = **text ? **attr : FSTR_NORMAL;
+
+	for (c = *text, a = *attr;; c++, a++) {
+		if (G_UNLIKELY(!*c || *a != curattr)) {
+			*len = (c - *text);
+			/* yep, returning the _previous_ change here */
+			if (change)
+				*change = ((G_LIKELY(*len) ? curattr : FSTR_NORMAL) ^ prevattr);
+			return !!*len;
+		}
+	}
+
+	g_assert_not_reached();
+}
+
+static char *fstring2str(fstring_t *f) {
+	static char *fore = "krgybmcwKRGYBMCW";
+	static char *back = "lshzeqdx";
+	GString *st = g_string_sized_new(strlen(f->str));
+
+	gchar *c;
+	fstr_attr_t *a, change;
+	gssize len;
+
+	fstring_iter(f, &c, &a, &len);
+	while (fstring_next(&c, &a, &len, &change)) {
+		if (change) {
+			fstr_attr_t attr = *a;
+
+			if (change & FSTR_BLINK) {
+				if (attr & FSTR_BLINK)
+					g_string_append(st, format_ansi('i'));	/* turn on blinking */
+				else
+					change |= FSTR_NORMAL;
+			}
+			if (change & FSTR_UNDERLINE) {
+				if (attr & FSTR_UNDERLINE)
+					g_string_append(st, format_ansi('U'));	/* turn on underline */
+				else
+					change |= FSTR_NORMAL;
+			}
+			if (change & FSTR_REVERSE) {
+				if (attr & FSTR_BLINK)
+					g_string_append(st, format_ansi('V'));	/* turn on reverse */
+				else
+					change |= FSTR_NORMAL;
+			}
+			if ((change & FSTR_NORMAL) && (attr & FSTR_NORMAL)) {
+				g_string_append(st, format_ansi('n'));
+			}
+			if (change & (FSTR_BOLD|FSTR_FOREMASK)) {
+				char c = fore[(attr & FSTR_FOREMASK) + ((attr & FSTR_BOLD) ? 8 : 0)];
+				g_string_append(st, format_ansi(c));
+			}
+			if (change & FSTR_BACKMASK)
+				g_string_append(st, format_ansi(back[(attr & FSTR_BACKMASK)>>3]));
+		}
+
+		g_string_append_len(st, c, len);
+	}
+	return g_string_free(st, FALSE);
+}
+
 
 /*
  * va_format_string()
@@ -435,19 +545,23 @@ static char *va_format_string(const char *format, va_list ap) {
 
 			if (*p >= '1' && *p <= '9') {
 				char *str = (char *) args[*p - '1'];
-				int i, len;
-
-				if (!str)
-					str = "";
-				len = xstrlen(str);
+				int i, need_free = 0;
 
 				if (fill_length) {
+					fstring_t * fstr = fstring_new(str);
+					/* XXX: width */
+					int len = g_utf8_strlen(fstr->str, -1);
 					if (len >= fill_length) {
-						if (!fill_soft)
-							len = fill_length;
+						if (!fill_soft) {
+							/* XXX: how about double width chars? */
+							*(g_utf8_offset_to_pointer(fstr->str, fill_length)) = 0;
+							str = fstring2str(fstr);
+							need_free = 1;
+						}
 						fill_length = 0;
 					} else
 						fill_length -= len;
+					fstring_free(fstr);
 				}
 
 				if (center) {
@@ -460,12 +574,20 @@ static char *va_format_string(const char *format, va_list ap) {
 					for (i = 0; i < fill_length+center; i++)
 						string_append_c(buf, fill_char);
 
-				string_append_n(buf, str, len);
+				string_append(buf, str);
 
 				if (fill_after)
 					for (i = 0; i < fill_length; i++)
 						string_append_c(buf, fill_char);
+				if (need_free)
+					xfree(str);
 			}
+		} else if ((*p=='/') && (p[1] == '|')) {	/* /| 'set margin' */
+			if ((p == format) || (p[-1]!='/'))
+				string_append(buf, "\033[0000m");	/* najg³upsze, ale to nie jest moje ostatnie s³owo */
+			else
+				string_append_c(buf, '|');
+			p++;
 		} else
 			string_append_c(buf, *p);
 		p++;
@@ -475,6 +597,27 @@ static char *va_format_string(const char *format, va_list ap) {
 		theme_cache_reset();
 
 	return string_free(buf, 0);
+}
+
+/**
+ * fstring_dup()
+ *
+ * Return a duplicated copy of a fstring_t with all internal data duplicated.
+ *
+ * @param str - string
+ *
+ * @return A newly-allocated fstring_t.
+ *
+ * @note Please note that private data is not duplicated.
+ */
+fstring_t *fstring_dup(const fstring_t *str) {
+	fstring_t *out = g_memdup(str, sizeof(fstring_t));
+	gsize len = strlen(str->str) + 1;
+
+	out->str = g_memdup(str->str, len * sizeof(gchar));
+	out->attr = g_memdup(str->attr, len * sizeof(fstr_attr_t));
+
+	return out;
 }
 
 /**
@@ -494,7 +637,7 @@ fstring_t *fstring_new(const char *str) {
 #define NPAR 16			/* ECMA-48 CSI have got max 16 params (NPAR) defined in <linux/console_struct.h> */
 	fstring_t *res;
 	char *tmpstr;
-	short attr = FSTR_NORMAL;
+	fstr_attr_t attr = FSTR_NORMAL;
 	int i, j, len = 0, isbold = 0;
 
 	for (i = 0; str[i]; i++) {
@@ -523,8 +666,8 @@ fstring_t *fstring_new(const char *str) {
 	}
 
 	res			= xmalloc(sizeof(fstring_t));
-	res->str.b = tmpstr	= xmalloc((len + 1) * sizeof(char));
-	res->attr		= xmalloc((len + 1) * sizeof(short));
+	res->str = tmpstr	= xmalloc((len + 1) * sizeof(gchar));
+	res->attr		= xmalloc((len + 1) * sizeof(fstr_attr_t));
 
 	res->margin_left = -1;
 /*
@@ -578,11 +721,16 @@ fstring_t *fstring_new(const char *str) {
 						case 0:				/* RESET */
 							attr = FSTR_NORMAL;
 							isbold = 0;
-							if (parlen[k] >= 2)
-								res->prompt_len = j;
 
-							if (parlen[k] == 3)
-								res->prompt_empty = 1;
+							if (parlen[k] == 4)	/* /| set margin */
+								res->margin_left = j;
+							else {
+								if (parlen[k] >= 2)
+									res->prompt_len = j;
+
+								if (parlen[k] == 3)
+									res->prompt_empty = 1;
+							}
 							break;
 						case 1:				/* BOLD */
 							if (k == npar && !isbold)		/* if (*p == ('m') && !isbold) */
@@ -618,15 +766,6 @@ fstring_t *fstring_new(const char *str) {
 
 		if (str[i] == 13)
 			continue;
-
-		if (str[i] == ('/') && str[i + 1] == ('|')) {
-			if (i == 0 || str[i - 1] != ('/')) {
-				res->margin_left = j;
-				i++;
-				continue;
-			}
-			continue;
-		}
 
 		if (str[i] == 9) {
 			int k = 0, l = 8 - (j % 8);
@@ -687,7 +826,7 @@ void fstring_free(fstring_t *str)
 	if (!str)
 		return;
 
-	xfree(str->str.b);
+	xfree(str->str);
 	xfree(str->attr);
 	xfree(str->priv_data);
 	xfree(str);
@@ -737,7 +876,7 @@ static void print_window_c(window_t *w, int activity, const char *theme, va_list
 		if (activity > w->act) {
 			w->act = activity;
 				/* emit UI_WINDOW_ACT_CHANGED only when w->act changed */
-			query_emit_id(NULL, UI_WINDOW_ACT_CHANGED, &w);
+			query_emit(NULL, "ui-window-act-changed", &w);
 		}
 	}
 
@@ -749,6 +888,7 @@ static void print_window_c(window_t *w, int activity, const char *theme, va_list
 		char *tmp = stmp;
 		while ((line = split_line(&tmp))) {
 			char *p;
+			fstring_t *l;
 
 			if ((p = xstrstr(line, "\033[00m"))) {
 				xfree(prompt);
@@ -760,11 +900,13 @@ static void print_window_c(window_t *w, int activity, const char *theme, va_list
 			}
 
 			if (prompt) {
-				char *tmp = saprintf("%s%s", prompt, line);
-				window_print(w, fstring_new(tmp));
-				xfree(tmp);
+				gchar *tmp = g_strdup_printf("%s%s", prompt, line);
+				l = fstring_new(tmp);
+				g_free(tmp);
 			} else
-				window_print(w, fstring_new(line));
+				l = fstring_new(line);
+			window_print(w, l);
+			fstring_free(l);
 		}
 		xfree(prompt);
 	}
@@ -808,7 +950,7 @@ static window_t *print_window_find(const char *target, session_t *session, int s
 	/* 1) let's check if we have such window as target... */
 
 	/* if it's jabber and we've got '/' in target strip it. [XXX, window resources] */
-	if ((!xstrncmp(target, "xmpp:", 5)) && (tmp = xstrchr(target, '/'))) {
+	if ( ( (!xstrncmp(target, "tlen:", 5)) || (!xstrncmp(target, "xmpp:", 5)) ) && (tmp = xstrchr(target, '/'))) {
 		newtarget = xstrndup(target, tmp - target);
 		w = window_find_s(session, newtarget);		/* and search for windows with stripped '/' */
 		/* even if w == NULL here, we use newtarget to create window without resource */
@@ -837,7 +979,7 @@ static window_t *print_window_find(const char *target, session_t *session, int s
 	if (u && u->nickname)
 		target = u->nickname;			/* use nickname instead of target */
 	else if (u && u->uid && ( /* don't use u->uid, if it has resource attached */
-			xstrncmp(u->uid, "xmpp:", 5) || !xstrchr(u->uid, '/')))
+			(xstrncmp(u->uid, "tlen:", 5) && xstrncmp(u->uid, "xmpp:", 5)) || !xstrchr(u->uid, '/')))
 		target = u->uid;			/* use uid instead of target. XXX here. think about jabber resources */
 	else if (newtarget)
 		target = newtarget;			/* use target with stripped '/' */
@@ -854,7 +996,7 @@ static window_t *print_window_find(const char *target, session_t *session, int s
 				w->target = xstrdup(target);
 				w->session = session;
 
-				query_emit_id(NULL, UI_WINDOW_TARGET_CHANGED, &w);	/* XXX */
+				query_emit(NULL, "ui-window-target-changed", &w);	/* XXX */
 				break;
 			}
 			if (w)		/* wtf? */
@@ -868,7 +1010,7 @@ static window_t *print_window_find(const char *target, session_t *session, int s
 
 	/* [FOR 3) and 4)] If we create window or we change target. notify user */
 
-	print("window_id_query_started", itoa(w->id), target, session_name(session));
+	print("window_id_query_started", ekg_itoa(w->id), target, session_name(session));
 	print_window_w(w, EKG_WINACT_JUNK, "query_started", target, session_name(session));
 	print_window_w(w, EKG_WINACT_JUNK, "query_started_window", target);
 
@@ -1244,9 +1386,10 @@ void theme_free() {
 }
 
 void theme_plugins_init() {
-	plugin_t *p;
+	GSList *pl;
 
-	for (p = plugins; p; p = p->next) {
+	for (pl = plugins; pl; pl = pl->next) {
+		const plugin_t *p = pl->data;
 		if (p->theme_init)
 			p->theme_init();
 	}
@@ -1312,7 +1455,7 @@ void theme_init()
 	format_add("prompt2", "%K:%c:%C:%n", 1);
 	format_add("prompt2,speech", " ", 1);
 	format_add("error", "%K:%r:%R:%n", 1);
-	format_add("error,speech", "b³±d!", 1);
+	format_add("error,speech", "Error!", 1);
 	format_add("timestamp", "%T", 1);
 	format_add("timestamp,speech", " ", 1);
 
@@ -1346,13 +1489,12 @@ void theme_init()
 	format_add("wdebug",	"%W%1\n", 1);
 	format_add("warndebug",	"%r%1\n", 1);
 	format_add("okdebug",	"%G%1\n", 1);
-	format_add("wtfdebug",	"%W?!%n %M%1\n", 1);
 
 	format_add("ekg_failure", _("%! %|Something really unexpected happened, you should %Treally%n contact authors!\nEKG2 may now behave fine, or more failures could occur.\nDetails follow (see also __debug):\n%R%1%n"), 1);
 
 	format_add("value_none", _("(none)"), 1);
 	format_add("not_enough_params", _("%! Too few parameters. Try %Thelp %1%n\n"), 1);
-	format_add("invalid_params", _("%! Invalid parameters. Try %Thelp %1%n\n"), 1);
+	format_add("invalid_params", _("%! Invalid parameter %T%2%n. Try %Thelp %1%n\n"), 1);
 	format_add("var_not_set", _("%! Required variable %T%2%n by %T%1%n is unset\n"), 1);
 	format_add("invalid_uid", _("%! Invalid user id\n"), 1);
 	format_add("invalid_session", _("%! Invalid session\n"), 1);
@@ -1619,8 +1761,8 @@ void theme_init()
 	format_add("variable", "%> %1 = %2\n", 1);
 	format_add("variable_not_found", _("%! Unknown variable: %T%1%n\n"), 1);
 	format_add("variable_invalid", _("%! Invalid session variable value\n"), 1);
-	format_add("no_config", _("%! Incomplete configuration. Use:\n%!   %Tsession -a <gg:gg-number/xmpp:jabber-id>%n\n%!   %Tsession password <password>%n\n%!   %Tsave%n\n%! And then:\n%!	 %Tconnect%n\n%! If you don't have uid, use:\n%!   %Tregister <e-mail> <password>%n\n\n%> %|Query windows will be created automatically. To switch windows press %TAlt-number%n or %TEsc%n and then number. To start conversation use %Tquery%n. To add someone to roster use %Tadd%n. All key shortcuts are described in %TREADME%n. There is also %Thelp%n command. Remember about prefixes before UID, for example %Tgg:<no>%n. \n\n"), 2);
-	format_add("no_config,speech", _("incomplete configuration. enter session -a, and then gg: gg-number, or xmpp: jabber id, then session password and your password. enter save to save. enter connect to connect. if you dont have UID enter register, space, e-mail and password. Query windows will be created automatically. To switch windows press Alt and window number or Escape and then number. To start conversation use query command. To add someone to roster use add command. All key shortcuts are described in README file. There is also help command."), 1);
+	format_add("no_config", _("%! Incomplete configuration. Use:\n%!   %Tsession -a <gg:gg-number/xmpp:jabber-id>%n\n%!   %Tsession password <password>%n\n%!   %Tsave%n\n%! And then:\n%!	 %Tconnect%n\n%! If you don't have an account yet, use:\n%!   %Tregister <e-mail> <password>%n\n\n%> %|Query windows will be created automatically. To switch windows press %TAlt-number%n or %TEsc%n and then the number. To start a conversation use %Tquery%n. To add someone to your roster use %Tadd%n. All key shortcuts are described in %TREADME%n. There is also a %Thelp%n command. Remember about prefixes before UID, for example %Tgg:<no>%n. \n\n"), 2);
+	format_add("no_config,speech", _("incomplete configuration. enter session -a, and then gg: gg-number, or xmpp: jabber id, then session password and your password. enter save to save. enter connect to connect. if you do not have an account yet, enter register, space, e-mail and password. Query windows will be created automatically. To switch windows press Alt and window number or Escape and then the number. To start a conversation use query command. To add someone to your roster use add command. All key shortcuts are described in README file. There is also a help command."), 1);
 	format_add("no_config_gg_not_loaded", _("%! Incomplete configuration. Use:\n%!	 %T/plugin +gg%n - to load gg plugin\n%!   %Tsession -a <gg:gg-number/xmpp:jabber-id>%n\n%!   %Tsession password <password>%n\n%!   %Tsave%n\n%! And then:\n%!	 %Tconnect%n\n%! If you don't have uid, use:\n%!   %Tregister <e-mail> <password>%n\n\n%> %|Query windows will be created automatically. To switch windows press %TAlt-number%n or %TEsc%n and then number. To start conversation use %Tquery%n. To add someone to roster use %Tadd%n. All key shortcuts are described in %TREADME%n. There is also %Thelp%n command. Remember about prefixes before UID, for example %Tgg:<no>%n. \n\n"), 2);
 	format_add("no_config_no_libgadu", _("%! Incomplete configuration. %TBIG FAT WARNING:%n\n%!    %Tgg plugin has not been compiled, probably there is no libgadu library in the system\n%! Use:\n%!   %Tsession -a <xmpp:jabber-id>%n\n%!   %Tsession password <password>%n\n%!	%Tsave%n\n%! And then:\n%!   %Tconnect%n\n%! If you don't have uid, use:\n%!   %Tregister%n\n\n%> %|Query windows will be created automatically. To switch windows press %TAlt-number%n or %TEsc%n and then number. To start conversation use %Tquery%n. To add someone to roster use %Tadd%n. All key shortcuts are described in %TREADME%n. There is also %Thelp%n command. Remember about prefixes before UID, for example %Txmpp:<jid>%n. \n\n"), 2);
 	format_add("error_reading_config", _("%! Error reading configuration file: %1\n"), 1);
@@ -1664,7 +1806,7 @@ void theme_init()
 	format_add("passwd_abuse", "%! (%1) Somebody want to clear our password (%2)", 1);
 
 	/* changing information in public catalog */
-	format_add("change", _("%> Informations in public directory chenged\n"), 1);
+	format_add("change", _("%> Information in public directory has been changed\n"), 1);
 	format_add("change_failed", _("%! Error while changing information in public directory\n"), 1);
 
 	/* users finding */
@@ -1694,7 +1836,7 @@ void theme_init()
 	/* exec */
 	format_add("process", "%> %(-5)1 %2\n", 1);
 	format_add("no_processes", _("%! There are no running procesees\n"), 1);
-	format_add("process_exit", _("%> Proces %1 (%2) exited with %3 status\n"), 1);
+	format_add("process_exit", _("%> Process %1 (%2) exited with status %3\n"), 1);
 	format_add("exec", "%1\n",1);	/* lines are ended by \n */
 	format_add("exec_error", _("%! Error running process : %1\n"), 1);
 	format_add("exec_prompt", "$ %1\n", 1);
@@ -1706,6 +1848,7 @@ void theme_init()
 	format_add("user_info_status_time_format", "%Y-%m-%d %H:%M", 1);
 	format_add("user_info_status_time", _("%K| %nCurrent status since: %T%1%n\n"), 1);
 	format_add("user_info_block", _("%K| %nBlocked\n"), 1);
+	format_add("user_info_online", _("%K| %nCan always see our status\n"), 1);
 	format_add("user_info_offline", _("%K| %nCan't see our status\n"), 1);
 	format_add("user_info_name", _("%K| %nName: %T%1 %2%n\n"), 1);
 	format_add("user_info_mobile", _("%K| %nTelephone: %T%1%n\n"), 1);
@@ -1870,7 +2013,7 @@ void theme_init()
 
 	/* window */
 	format_add("window_add", _("%) New window created\n"), 1);
-	format_add("window_noexist", _("%! Choosen window do not exist\n"), 1);
+	format_add("window_noexist", _("%! Chosen window does not exist\n"), 1);
 	format_add("window_doesnt_exist", _("%! Window %T%1%n does not exist\n"), 1);
 	format_add("window_no_windows", _("%! Can't close last window\n"), 1);
 	format_add("window_del", _("%) Window closed\n"), 1);
@@ -1940,11 +2083,6 @@ void theme_init()
 	format_add("last_end", _("%) Lastlog end\n"), 1);
 	format_add("last_end_status", _("%) Lastlog status end\n"), 1);
 
-
-	/* lastlog */
-	format_add("lastlog_title",	_("%) %gLastlog [%B%2%n%g] from window: %W%T%1%n"), 1);
-	format_add("lastlog_title_cur", _("%) %gLastlog [%B%2%n%g] from window: %W%T%1 (*)%n"), 1);
-
 	/* queue */
 	format_add("queue_list_timestamp", "%d-%m-%Y %H:%M", 1);
 	format_add("queue_list_message", "%) %G >>%n [%1] %2 %3\n", 1);
@@ -1991,7 +2129,7 @@ void theme_init()
 	format_add("session_info_param", "%)	%1 = %T%2%n\n", 1); /* key, value */
 	format_add("session_info_footer", "", 1); /* uid */
 	format_add("session_exists", _("%! Session %T%1%n already exists\n"), 1); /* uid */
-	format_add("session_doesnt_exist", _("%! Sesion %T%1%n does not exist\n"), 1); /* uid */
+	format_add("session_doesnt_exist", _("%! Session %T%1%n does not exist\n"), 1); /* uid */
 	format_add("session_added", _("%> Created session %T%1%n\n"), 1); /* uid */
 	format_add("session_removed", _("%> Removed session %T%1%n\n"), 1); /* uid */
 	format_add("session_format", "%T%1%n", 1);
@@ -2041,7 +2179,7 @@ void theme_init()
 	format_add("metacontact_info_unknown", _("%Munknown%n"), 1);
 
 	format_add("plugin_already_loaded", _("%! Plugin %T%1%n already loaded%n.\n"), 1);
-	format_add("plugin_doesnt_exist", _("%! Plugin %T%1%n can not be found%n\n"), 1);
+	format_add("plugin_doesnt_exist", _("%! Can't load plugin %T%1%n. See debug window.%n\n"), 1);
 	format_add("plugin_incorrect", _("%! Plugin %T%1%n is not correct EKG2 plugin%n\n"), 1);
 	format_add("plugin_not_initialized", _("%! Plugin %T%1%n not initialized correctly, check debug window%n\n"), 1);
 	format_add("plugin_unload_ui", _("%! Plugin %T%1%n is an UI plugin and can't be unloaded%n\n"), 1);
@@ -2072,13 +2210,6 @@ void theme_init()
 	format_add("script_varlist_empty", _("%! No script vars!\n"), 1);
 
 	format_add("directory_cant_create",	_("%! Can't create directory: %1 (%2)"), 1);
-
-	/* charset stuff */
-	format_add("console_charset_using",	_("%) EKG2 detected that your console works under: %W%1%n Please verify and change %Gconsole_charset%n variable if needed"), 1);
-	format_add("console_charset_bad",	_("%! EKG2 detected that your console works under: %W%1%n, but in %Gconsole_charset%n variable you've got: %W%2%n Please verify."), 1);
-	format_add("iconv_fail",		_("%! iconv_open() fail to initialize charset conversion between %W%1%n and %W%2%n. Check %Gconsole_charset%n variable, if it won't help inform ekg2 dev team and/or upgrade iconv"), 1);
-	format_add("iconv_list",		_("%) %g%[-10]1%n %c<==> %g%[-10]2%n %b(%nIn use: %W%3, %4%b)"), 1);
-	format_add("iconv_list_bad",		_("%! %R%[-10]1%n %r<==> %R%[-10]2%n %b[%rINIT ERROR: %5%b] %b(%nIn use: %W%3, %4%b) "), 1);
 
 	/* jogger-like I/O */
 	format_add("io_cantopen", _("%! %|Unable to open file: %T%1%n (%c%2%n)!"), 1);

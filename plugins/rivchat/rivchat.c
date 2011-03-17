@@ -16,10 +16,10 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#define _BSD_SOURCE 1 /* gethostname() */
+#include "ekg2.h"
+
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 #include <errno.h>
 #include <unistd.h>
 
@@ -33,32 +33,13 @@
 #include <pwd.h>
 #include <sys/utsname.h>
 
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
-#include <ekg/recode.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/queries.h>
-#include <ekg/userlist.h>
-#include <ekg/vars.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
-
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
-
 #define DEFQUITMSG "EKG2 - It's better than sex!"
 #define SGQUITMSG(x) session_get(x, "QUIT_MSG")
 #define QUITMSG(x) (SGQUITMSG(x)?SGQUITMSG(x):DEFQUITMSG)
 
 #include "rivchat.h"	/* only protocol-stuff */
 
-// extern uint32_t rivchat_fix32(uint32_t x);	/* misc.c */
+// extern guint32 rivchat_fix32(guint32 x);	/* misc.c */
 #define rivchat_fix32(x) x
 
 typedef struct {
@@ -67,15 +48,15 @@ typedef struct {
 	char *nick;
 	char *topic;
 
-	uint32_t ourid;
-	uint8_t seq_nr;
-	uint32_t uptime;
+	guint32 ourid;
+	guint8 seq_nr;
+	guint32 uptime;
 } rivchat_private_t;
 
 typedef struct {
 	int user_locked;
 
-	uint32_t id;		/* unikatowy numerek usera... czyt. ma byc unikatowy*/
+	guint32 id;		/* unikatowy numerek usera... czyt. ma byc unikatowy*/
 	time_t packet_time;
 	time_t ping_packet_time;
 	rivchat_info_t ping_packet;
@@ -93,8 +74,8 @@ static int rivchat_theme_init();
 
 PLUGIN_DEFINE(rivchat, PLUGIN_PROTOCOL, rivchat_theme_init);
 
-static int rivchat_send_packet(session_t *s, uint32_t type, userlist_t *user, const char *buf, size_t buflen);
-static int rivchat_send_packet_string(session_t *s, uint32_t type, userlist_t *user, const char *str);
+static int rivchat_send_packet(session_t *s, guint32 type, userlist_t *user, const char *buf, size_t buflen);
+static int rivchat_send_packet_string(session_t *s, guint32 type, userlist_t *user, const char *str);
 
 #define rivchat_userlist_priv_get(u) ((rivchat_userlist_private_t *) userlist_private_get(&rivchat_plugin, u))
 
@@ -163,7 +144,7 @@ static QUERY(rivchat_userlist_info_handle) {
 		return 1;
 
 	__ip = user_private_item_get_int(u, "ip");
-	printq("rivchat_info_ip", inet_ntoa(*((struct in_addr*) &__ip)), itoa(user_private_item_get_int(u, "port")));
+	printq("rivchat_info_ip", inet_ntoa(*((struct in_addr*) &__ip)), ekg_itoa(user_private_item_get_int(u, "port")));
 
 	if (user->ping_packet_time) {
 		rivchat_info_t *ping = &(user->ping_packet);
@@ -172,24 +153,24 @@ static QUERY(rivchat_userlist_info_handle) {
 		char *prog, *os;
 
 		if (ping->filetransfer)
-			printq("rivchat_info_have_dcc", itoa(ping->filetransfer));
+			printq("rivchat_info_have_dcc", ekg_itoa(ping->filetransfer));
 
 		if (ping->master)
-			printq("rivchat_info_master", itoa(ping->master));
+			printq("rivchat_info_master", ekg_itoa(ping->master));
 
-		printq("rivchat_info_words", itoa(ping->slowa));
+		printq("rivchat_info_words", ekg_itoa(ping->slowa));
 
-		printq("rivchat_info_connected", itoa(ping->online * 10));
+		printq("rivchat_info_connected", ekg_itoa(ping->online * 10));
 
 	/* user, host */
-		user = ekg_cp_to_locale(xstrndup(ping->user, sizeof(ping->user)));
-		host = ekg_cp_to_locale(xstrndup(ping->host, sizeof(ping->host)));
+		user = ekg_cp_to_core(xstrndup(ping->user, sizeof(ping->user)));
+		host = ekg_cp_to_core(xstrndup(ping->host, sizeof(ping->host)));
 		printq("rivchat_info_username", user, host);
 		xfree(user); xfree(host);
 
 	/* prog, os, version */
-		prog = ekg_cp_to_locale(xstrndup(ping->prog, sizeof(ping->prog)));
-		os = ekg_cp_to_locale(xstrndup(ping->os, sizeof(ping->os)));
+		prog = ekg_cp_to_core(xstrndup(ping->prog, sizeof(ping->prog)));
+		os = ekg_cp_to_core(xstrndup(ping->os, sizeof(ping->os)));
 		sprintf(ver, "%u.%u", ping->version[0], ping->version[1]);
 		printq("rivchat_info_version", prog, ver, os);
 		xfree(prog); xfree(os);
@@ -455,7 +436,7 @@ static char *rivchat_generate_data(session_t *s) {
  * It's like orginal rivchat client do.
  */
 
-static int rivchat_send_packet(session_t *s, uint32_t type, userlist_t *user, const char *buf, size_t buflen) {
+static int rivchat_send_packet(session_t *s, guint32 type, userlist_t *user, const char *buf, size_t buflen) {
 	rivchat_private_t *j;
 	rivchat_userlist_private_t *p = NULL;
 
@@ -500,11 +481,11 @@ static int rivchat_send_packet(session_t *s, uint32_t type, userlist_t *user, co
 	hdr.seq = j->seq_nr++;		/* XXX */
 	hdr.encrypted = (user) ? RC_ENCRYPTED : 0;
 #if 0
-	uint8_t gender;				/* 1 - man, 2 - woman */
-	uint8_t bold;				/* ? */
+	guint8 gender;				/* 1 - man, 2 - woman */
+	guint8 bold;				/* ? */
 #endif
 	sin.sin_family = AF_INET;
-	sin.sin_port = htons(j->port);
+	sin.sin_port = g_htons(j->port);
 	sin.sin_addr.s_addr = INADDR_BROADCAST;	/* XXX */
 	sin.sin_addr.s_addr = (user == NULL) ? inet_addr("10.1.0.255") : user_private_item_get_int(user, "ip");
 
@@ -517,7 +498,7 @@ static int rivchat_send_packet(session_t *s, uint32_t type, userlist_t *user, co
 	return len;
 }
 
-static int rivchat_send_packet_string(session_t *s, uint32_t type, userlist_t *user, const char *str) {
+static int rivchat_send_packet_string(session_t *s, guint32 type, userlist_t *user, const char *str) {
 	int ret;
 	char *recodedstring = ekg_locale_to_cp_dup(str);
 
@@ -532,11 +513,11 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 	rivchat_userlist_private_t *p = NULL;
 
 /* XXX, protect from spoofing, i've got some ideas... */
-	uint32_t from_id = rivchat_fix32(_hdr->fromid);
-	uint32_t to_id = rivchat_fix32(_hdr->toid);
+	guint32 from_id = rivchat_fix32(_hdr->fromid);
+	guint32 to_id = rivchat_fix32(_hdr->toid);
 	int is_our = (from_id == j->ourid);
 	int is_priv = (to_id != RC_BROADCAST);
-	uint32_t type = rivchat_fix32(_hdr->type);
+	guint32 type = rivchat_fix32(_hdr->type);
 
 	int display_activity = EKG_WINACT_NONE;
 	char *display_data = NULL;
@@ -549,7 +530,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 		return;
 	}
 
-	nick = ekg_cp_to_locale(xstrndup(_hdr->nick, sizeof(_hdr->nick)));
+	nick = ekg_cp_to_core(xstrndup(_hdr->nick, sizeof(_hdr->nick)));
 	uid = saprintf("rivchat:%X", from_id);
 
 	u = userlist_find(s, uid);
@@ -610,7 +591,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 		{
 			int to_us;
 			
-			display_data = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			display_data = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 
 			to_us = !!xstrstr(display_data, j->nick);
 			display_activity = (is_priv || to_us) ? EKG_WINACT_IMPORTANT : EKG_WINACT_MSG;
@@ -621,8 +602,8 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 		{
 			rivchat_info_t *hdr2 = (rivchat_info_t *) _hdr->data;
 
-			char *user = ekg_cp_to_locale(xstrndup(hdr2->user, sizeof(hdr2->user)));
-			char *host = ekg_cp_to_locale(xstrndup(hdr2->host, sizeof(hdr2->host)));
+			char *user = ekg_cp_to_core(xstrndup(hdr2->user, sizeof(hdr2->user)));
+			char *host = ekg_cp_to_core(xstrndup(hdr2->host, sizeof(hdr2->host)));
 
 			if (is_our) {	/* we join? */
 				window_t *w = window_new(rivchat_make_window(j->port), s, 0);
@@ -646,7 +627,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 		case RC_PINGAWAY:
 		{
 			/* if user is already in away state, do nothing... else do type = RC_AWAY */
-			display_data = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			display_data = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 			if (u->status == EKG_STATUS_AWAY && !xstrcmp(u->descr, display_data)) {
 				xfree(display_data);
 				display_data = NULL;
@@ -660,7 +641,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 		{
 			display_activity = EKG_WINACT_JUNK;
 			if (!display_data)
-				display_data = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+				display_data = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 
 			xfree(u->descr); u->descr = xstrdup(display_data);
 			u->status = EKG_STATUS_AWAY;
@@ -679,7 +660,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 
 		case RC_QUIT:
 		{
-			display_data = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			display_data = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 			if (!xstrlen(display_data)) {
 				xfree(display_data);
 				display_data = xstrdup("no reason");
@@ -696,7 +677,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 		case RC_NEWTOPIC: 
 		{
 			display_activity = EKG_WINACT_MSG;
-			display_data = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			display_data = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 
 			if (type == RC_NEWTOPIC) {
 				xfree(j->topic);
@@ -716,7 +697,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 
 		case RC_POP:	/* XXX, ladniej */
 		{
-			char *pop_data = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			char *pop_data = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 
 			print_window(rivchat_make_window(j->port), s, is_priv ? EKG_WINACT_IMPORTANT : EKG_WINACT_JUNK, 1, 
 					is_priv ? "rivchat_pop_recv" : "rivchat_pop_broadcast",
@@ -729,7 +710,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 		case RC_NICKCHANGE:
 		{
 			display_activity = EKG_WINACT_MSG;
-			display_data = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			display_data = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 
 			xfree(u->nickname);	u->nickname = xstrdup(display_data);
 
@@ -743,7 +724,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 		case RC_ME:
 		{
 			display_activity = EKG_WINACT_MSG;
-			display_data = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			display_data = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 			break;
 		}
 
@@ -789,7 +770,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 				break;
 			}
 
-			filename = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			filename = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 	/* XXX, na pewno 64bity? */
 			size =
 		/*
@@ -809,7 +790,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 			dcc_size_set(d, size);
 			dcc_close_handler_set(d, rivchat_dcc_close);
 
-			print("dcc_get_offer", format_user(s, uid), filename, itoa(size), itoa(d->id));
+			print("dcc_get_offer", format_user(s, uid), filename, ekg_itoa(size), ekg_itoa(d->id));
 
 			xfree(filename);
 			break;
@@ -827,7 +808,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 				break;
 			}
 
-			filename = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			filename = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 
 			debug("RC_FILEREQUEST\n");
 
@@ -862,7 +843,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 				break;
 			}
 
-			filename = ekg_cp_to_locale(xstrndup(_hdr->data, sizeof(_hdr->data)));
+			filename = ekg_cp_to_core(xstrndup(_hdr->data, sizeof(_hdr->data)));
 
 			debug("RC_FILECANCEL2\n");
 
@@ -902,7 +883,7 @@ static void rivchat_parse_packet(session_t *s, rivchat_header_t *_hdr, const cha
 	}
 
 	if (userlist_changed)
-		query_emit_id(NULL, USERLIST_REFRESH);
+		query_emit(NULL, "userlist-refresh");
 
 	xfree(nick);
 	xfree(uid);
@@ -987,7 +968,7 @@ static TIMER_SESSION(rivchat_pingpong) {
 	}
 
 	if (userlist_changed)
-		query_emit_id(NULL, USERLIST_REFRESH);
+		query_emit(NULL, "userlist-refresh");
 
 	rivchat_send_packet(s, RC_PING, NULL, rivchat_generate_data(s), RC_INFOSIZE);
 	return 0;
@@ -1033,7 +1014,7 @@ static COMMAND(rivchat_command_connect) {
 		return -1;
 	}
 
-	sin.sin_port		= htons(port);
+	sin.sin_port		= g_htons(port);
 	sin.sin_family		= AF_INET;
 	sin.sin_addr.s_addr	= INADDR_ANY;
 
@@ -1328,7 +1309,7 @@ static COMMAND(rivchat_command_places) {
 	for (i = 1, l = final; l; l = l->next, i++) {
 		rivchat_place_t *place = l->data;
 
-		printq("rivchat_place", session->uid, place->nickname, itoa(place->words), itoa(place->uptime), place->master ? "*" : " ", itoa(i));
+		printq("rivchat_place", session->uid, place->nickname, ekg_itoa(place->words), ekg_itoa(place->uptime), place->master ? "*" : " ", ekg_itoa(i));
 	}
 	list_destroy(final, 1);
 	return 0;
@@ -1472,7 +1453,7 @@ EXPORT int rivchat_plugin_init(int prio) {
 
 /* magic stuff */
 	if ((pwd_entry = getpwuid(getuid()))) {
-		strlcpy(pwd_name, pwd_entry->pw_name, sizeof(pwd_name));
+		g_strlcpy(pwd_name, pwd_entry->pw_name, sizeof(pwd_name));
 		/* XXX, we need to free buffer allocated by getpwuid()? */
 
 		rivchat_plugin_vars[RIVCHAT_VAR_NICKNAME].value = pwd_name;
@@ -1481,7 +1462,7 @@ EXPORT int rivchat_plugin_init(int prio) {
 
 	if (gethostname(pwd_hostname, sizeof(pwd_hostname))) {
 		debug_error("[rivchat] gethostname() failed\n");
-		strlcpy(pwd_hostname, "localhost", sizeof(pwd_hostname));
+		g_strlcpy(pwd_hostname, "localhost", sizeof(pwd_hostname));
 	}
 
 	rivchat_plugin_vars[RIVCHAT_VAR_HOSTNAME].value = pwd_hostname;
@@ -1491,15 +1472,15 @@ EXPORT int rivchat_plugin_init(int prio) {
 	plugin_register(&rivchat_plugin, prio);
 	ekg_recode_cp_inc();
 
-	query_connect_id(&rivchat_plugin, PROTOCOL_VALIDATE_UID, rivchat_validate_uid, NULL);
-	query_connect_id(&rivchat_plugin, SESSION_ADDED, rivchat_session_init, NULL);
-	query_connect_id(&rivchat_plugin, SESSION_REMOVED, rivchat_session_deinit, NULL);
-	query_connect_id(&rivchat_plugin, PLUGIN_PRINT_VERSION, rivchat_print_version, NULL);
+	query_connect(&rivchat_plugin, "protocol-validate-uid", rivchat_validate_uid, NULL);
+	query_connect(&rivchat_plugin, "session-added", rivchat_session_init, NULL);
+	query_connect(&rivchat_plugin, "session-removed", rivchat_session_deinit, NULL);
+	query_connect(&rivchat_plugin, "plugin-print-version", rivchat_print_version, NULL);
 
-	query_connect_id(&rivchat_plugin, USERLIST_INFO, rivchat_userlist_info_handle, NULL);
-	query_connect_id(&rivchat_plugin, USERLIST_PRIVHANDLE, rivchat_userlist_priv_handler, NULL);
+	query_connect(&rivchat_plugin, "userlist-info", rivchat_userlist_info_handle, NULL);
+	query_connect(&rivchat_plugin, "userlist-privhandle", rivchat_userlist_priv_handler, NULL);
 
-	query_connect_id(&rivchat_plugin, IRC_TOPIC, rivchat_topic_header, NULL);
+	query_connect(&rivchat_plugin, "irc-topic", rivchat_topic_header, NULL);
 
 #if 0
 	query_connect(&irc_plugin, ("ui-window-kill"),	irc_window_kill, NULL);

@@ -15,19 +15,10 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "ekg2.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/recode.h>
-#include <ekg/protocol.h>
-#include <ekg/queries.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/userlist.h>
-#include <ekg/xmalloc.h>
 
 #define JOGGER_TEXT_MAX 14
 
@@ -72,7 +63,7 @@ void jogger_localize_texts() {
 
 	jogger_free_texts(1);
 	for (i = 0; i < JOGGER_TEXT_MAX; i++)
-		jogger_text[i] = ekg_utf8_to_locale_dup(utf_jogger_text[i]);
+		jogger_text[i] = ekg_utf8_to_core_dup(utf_jogger_text[i]);
 }
 
 QUERY(jogger_msghandler) {
@@ -80,7 +71,7 @@ QUERY(jogger_msghandler) {
 	const char *uid		= *(va_arg(ap, char **));
 	char **rcpts		= *(va_arg(ap, char ***));
 	const char *msg		= *(va_arg(ap, char **));
-		uint32_t **UNUSED(format) = va_arg(ap, uint32_t **);
+		guint32 **UNUSED(format) = va_arg(ap, guint32 **);
 	time_t sent		= *(va_arg(ap, const time_t *));
 	const int class		= *(va_arg(ap, const int *));
 	const char *seq		= *(va_arg(ap, char**));
@@ -148,7 +139,7 @@ au_retry:
 			const int oq	= ((found > 0) && (session_int_get(js, "newentry_open_query") || (found < 4)));
 			char *suid, *uid, *lmsg, *url;
 			char **rcpts	= NULL;
-			uint32_t *fmt	= NULL;
+			guint32 *fmt	= NULL;
 
 
 			if (found == 4) {
@@ -197,7 +188,7 @@ au_retry:
 					xfree(url);
 			}
 
-			query_emit_id(NULL, PROTOCOL_MESSAGE, &suid, &uid, &rcpts, &lmsg, &fmt, &sent, &class, &seq, &dobeep, &secure);
+			query_emit(NULL, "protocol-message", &suid, &uid, &rcpts, &lmsg, &fmt, &sent, &class, &seq, &dobeep, &secure);
 
 			xfree(suid);
 			xfree(uid);
@@ -232,7 +223,7 @@ au_retry:
 		char *lmsg	= (char*) msg;
 		char *rcpts[2]	= { NULL, NULL };
 		char **rcptsb	= rcpts; /* this is REALLY necessary, please do not remove or else we get segv */
-		uint32_t *fmt	= NULL;
+		guint32 *fmt	= NULL;
 
 		if (*lmsg == '#') {
 			int n;
@@ -253,7 +244,7 @@ au_retry:
 		if (!rcpts[0])
 			rcpts[0]	= xstrdup("jogger:");
 
-		query_emit_id(NULL, PROTOCOL_MESSAGE, &suid, &uid, &rcptsb, &lmsg, &fmt, &sent, &class, &seq, &dobeep, &secure);
+		query_emit(NULL, "protocol-message", &suid, &uid, &rcptsb, &lmsg, &fmt, &sent, &class, &seq, &dobeep, &secure);
 	
 		xfree(rcpts[0]);
 		xfree(uid);

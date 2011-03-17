@@ -1,5 +1,5 @@
 // description of available in ncurses plugin
-// (c) cpopyright 2004 Piotr Kupisiewicz <deletek@ekg2.org>
+// (c) copyright 2004 Piotr Kupisiewicz <deletek@ekg2.org>
 
 aspell 
 	type: bool
@@ -26,6 +26,14 @@ backlog_size
 	
 	number of lines which will be save in screen buffor (those one which 
 	is scroll by Page Up and Page Down). Cann't be less than lines on screen.
+
+backlog_scroll_half_page
+	type: bool
+	default value: 1
+	
+	defines how window is scrolled: if set to 1 (default), window is scrolled
+	for half its size, if set to 0, whole content minus one line is scrolled
+	up or down.
 
 contacts
 	type: integer
@@ -55,7 +63,7 @@ contacts_metacontacts_swallow
 	If turn on - displaying all users means that if on contact list is displayd metaconatct, 
 	all contacts belongs to it are hide.
 
-contacts_options
+contacts_order
 	type: text
 	default value: none
 	
@@ -79,6 +87,8 @@ contacts_options
 	no - not available
 	
 	er - illegal contac
+	
+	ty - pseudo state "typing not avail"
 	
 	it possible to skipp some of status -- they will be not displayed on contacts list.
 	
@@ -121,6 +131,24 @@ kill_irc_window
 	
         if set to 0, you disables killing irc chat window with keystroke
         binding.
+
+lastlog_display_all
+	type: integer
+	default value: 0
+	
+	*not translated yet*
+
+lastlog_matchcase
+	type: bool
+	default value: 0
+	
+	*not translated yet*
+
+lastlog_noitems
+	type: bool
+	default value: 0
+	
+	*not translated yet*
 
 margin_size
 	type: integer

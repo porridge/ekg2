@@ -15,27 +15,18 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "ekg2.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
 #include <limits.h>
 
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/recode.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
 
 #define JOGGER_KEYS_MAX 25
 #define JOGGER_VALUES_MAX 14
@@ -84,10 +75,10 @@ void jogger_localize_headers() {
 
 	jogger_free_headers(1);
 	for (i = 0; i < JOGGER_KEYS_MAX; i++)
-		jogger_header_keys[i] = ekg_utf8_to_locale_dup(utf_jogger_header_keys[i]);
+		jogger_header_keys[i] = ekg_utf8_to_core_dup(utf_jogger_header_keys[i]);
 
 	for (i = 0; i < JOGGER_VALUES_MAX; i++)
-		jogger_header_values[i] = ekg_utf8_to_locale_dup(utf_jogger_header_values[i]);
+		jogger_header_values[i] = ekg_utf8_to_core_dup(utf_jogger_header_values[i]);
 }
 
 /**
@@ -162,7 +153,7 @@ static int jogger_checkoutfile(const char *file, char **data, int *len, char **h
 			_read += res;
 			if (maxlen && _read > maxlen) {
 				xfree(out);
-				printq("io_toobig", file, itoa(_read > fs ? _read : fs), itoa(maxlen));
+				printq("io_toobig", file, ekg_itoa(_read > fs ? _read : fs), ekg_itoa(maxlen));
 				return EFBIG;
 			} else if (_read == bufsize) { /* fs sucks? */
 				bufsize += 0x4000;
@@ -185,11 +176,11 @@ static int jogger_checkoutfile(const char *file, char **data, int *len, char **h
 
 	mylen = xstrlen(out);
 	if (fs && _read > fs)
-		printq("io_expanded", file, itoa(_read), itoa(fs));
+		printq("io_expanded", file, ekg_itoa(_read), ekg_itoa(fs));
 	else if (_read < fs)
-		printq("io_truncated", file, itoa(_read), itoa(fs));
+		printq("io_truncated", file, ekg_itoa(_read), ekg_itoa(fs));
 	if (_read > mylen)
-		printq("io_binaryfile", file, itoa(mylen), itoa(_read));
+		printq("io_binaryfile", file, ekg_itoa(mylen), ekg_itoa(_read));
 	if (len)
 		*len = _read;
 
@@ -222,7 +213,7 @@ COMMAND(jogger_prepare) {
 	int outstarted		= 0;
 
 	if (!fn) {
-		printq("invalid_params", name);
+		printq("invalid_params", name, params[0]);
 		return -1;
 	}
 
@@ -240,7 +231,7 @@ COMMAND(jogger_prepare) {
 		if (next)	*next	= '\n';
 
 		char tmp[24];		/* longest correct key has 10 chars + '(' + \0 */
-		strlcpy(tmp, s, 20);
+		g_strlcpy(tmp, s, 20);
 		xstrcpy(tmp+20, "..."); /* add ellipsis and \0 */
 		xstrtr(tmp, '\n', 0);
 
@@ -335,14 +326,14 @@ COMMAND(jogger_prepare) {
 	s += xstrspn(s, " \n\r");	/* get on to first real char (again) */
 	if (*s == '(') {
 		char tmp[14];
-		strlcpy(tmp, s, 10);
+		g_strlcpy(tmp, s, 10);
 		xstrcpy(tmp+10, "...");
 		xstrtr(tmp, '\n', 0);
 		WARN_PRINT("jogger_warning_mislocated_header");
 	}
 	if (!xstrstr(s, "<EXCERPT>") && (len - (s-entry) > 4096)) {
 		char tmp[21];
-		strlcpy(tmp, s+4086, 20);
+		g_strlcpy(tmp, s+4086, 20);
 		tmp[20] = 0;
 		xstrtr(tmp, '\n', ' '); /* sanitize */
 		WARN_PRINT("jogger_warning_noexcerpt");

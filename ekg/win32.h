@@ -10,15 +10,10 @@
 
 #include "ekg2-config.h"
 
-#ifdef PLUGIN_SHARED_LIBS
-# define EKG2_WIN32_SHARED_LIB "da! we want shared libs...... DLL's HELL! :> yeah, let's rock."
-# define EKG2_WIN32_HELPERS
-#endif
-
 #if 0
-	typedef unsigned long uint32_t;
-	typedef unsigned short uint16_t;
-	typedef unsigned char uint8_t;
+	typedef unsigned long guint32;
+	typedef unsigned short guint16;
+	typedef unsigned char guint8;
 #endif
 
 #include <windef.h>
@@ -47,17 +42,6 @@ struct utsname {
 	char machine[30];
 };
 
-struct timezone { /* XXX */
-	int tz_minuteswest;	/* minutes west of Greenwich */
-	int tz_dsttime;		/* type of DST correction */
-};
-/* shared */
-#ifdef EKG2_WIN32_SHARED_LIB
-# define EKG2_WIN32_NOFUNCTION 1
-# error "Currently --enable-shared don't work automagicly pass --enable-static to ./configure if you really want. contact with me. (jid:darkjames@chrome.pl)"
-# include "win32_helper.h"
-#endif
-
 #define THREAD(x) DWORD x(void *data)
 typedef THREAD(thread_func_t);
 
@@ -74,7 +58,6 @@ int fcntl(int fd, int cmd, long arg);
 int fchmod(int fildes, mode_t mode);	/* unimpl */
 int pipe(int *filedes);
 
-int gettimeofday(struct timeval *tv, struct timezone *tz);	/* emulated */
 int ioctl(int fd, int request, void *flags);			/* BAD PROTOTYPE. I KNOW. XXX, emulate some things */
 int uname(struct utsname *buf);					/* emulated ? */
 

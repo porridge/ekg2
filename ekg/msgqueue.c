@@ -18,7 +18,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
+#include <glib/gstdio.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,17 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include "debug.h"
-#include "dynstuff.h"
-#include "commands.h"
-#include "msgqueue.h"
-#include "protocol.h"
-#include "sessions.h"
-#include "stuff.h"
-#include "xmalloc.h"
-
-#include "dynstuff_inline.h"
 
 msg_queue_t *msgs_queue = NULL;
 
@@ -224,17 +214,21 @@ int msg_queue_write()
 
 	for (m = msgs_queue; m; m = m->next) {
 		const char *fn;
-		FILE *f;
+		GFile *f;
+		GFileOutputStream *fs;
 
 		if (!(fn = prepare_pathf("queue/%ld.%d", (long) m->time, num++)))	/* prepare_pathf() ~/.ekg2/[PROFILE/]queue/TIME.UNIQID */
 			continue;
 
-		if (!(f = fopen(fn, "w")))
+		f = g_file_new_for_path(fn);
+		fs = g_file_replace(f, NULL, FALSE, G_FILE_CREATE_PRIVATE, NULL, NULL);
+		g_object_unref(f);
+
+		if (!fs)
 			continue;
 
-		chmod(fn, 0600);
-		fprintf(f, "v2\n%s\n%s\n%ld\n%s\n%d\n%s", m->session, m->rcpts, m->time, m->seq, m->mclass, m->message);
-		fclose(f);
+		ekg_fprintf(G_OUTPUT_STREAM(fs), "v2\n%s\n%s\n%ld\n%s\n%d\n%s", m->session, m->rcpts, m->time, m->seq, m->mclass, m->message);
+		g_object_unref(fs);
 	}
 
 	return 0;
@@ -265,64 +259,71 @@ int msg_queue_read() {
 		const char *fn;
 
 		msg_queue_t m;
-		struct stat st;
 		string_t msg;
 		char *buf;
-		FILE *f;
+		GFile *f;
+		GFileInputStream *fs;
+		GDataInputStream *fd;
 		int filever = 0;
 
 		if (!(fn = prepare_pathf("queue/%s", d->d_name)))
 			continue;
 
-		if (stat(fn, &st) || !S_ISREG(st.st_mode))
+		f = g_file_new_for_path(fn);
+		fs = g_file_read(f, NULL, NULL);
+		g_object_unref(f);
+
+		if (!fs)
 			continue;
 
-		if (!(f = fopen(fn, "r")))
-			continue;
+		fd = g_data_input_stream_new(G_INPUT_STREAM(fs));
 
 		memset(&m, 0, sizeof(m));
 
-		buf = read_file(f, 0);
+		do {
+			buf = read_line(fd);
+		} while (buf && (buf[0] == '#' || buf[0] == ';' || (buf[0] == '/' && buf[1] == '/')));
+		/* Allow leading comments */
 		
 		if (buf && *buf == 'v')
 			filever = atoi(buf+1);
 		if (!filever || filever > 2) {
-			fclose(f);
+			g_object_unref(fd);
 			continue;
 		}
 
-		if (!(m.session = read_file(f, 1))) {
-			fclose(f);
+		if (!(m.session = g_strdup(read_line(fd)))) {
+			g_object_unref(fd);
 			continue;
 		}
 	
-		if (!(m.rcpts = read_file(f, 1))) {
+		if (!(m.rcpts = g_strdup(read_line(fd)))) {
 			xfree(m.session);
-			fclose(f);
+			g_object_unref(fd);
 			continue;
 		}
 
-		if (!(buf = read_file(f, 0))) {
+		if (!(buf = read_line(fd))) {
 			xfree(m.session);
 			xfree(m.rcpts);
-			fclose(f);
+			g_object_unref(fd);
 			continue;
 		}
 
 		m.time = atoi(buf);
 
-		if (!(m.seq = read_file(f, 1))) {
+		if (!(m.seq = g_strdup(read_line(fd)))) {
 			xfree(m.session);
 			xfree(m.rcpts);
-			fclose(f);
+			g_object_unref(fd);
 			continue;
 		}
 	
 		if (filever == 2) {
-			if (!(buf = read_file(f, 0))) {
+			if (!(buf = read_line(fd))) {
 				xfree(m.session);
 				xfree(m.rcpts);
-				fclose(f);
+				g_object_unref(fd);
 				continue;
 			}
 
@@ -332,21 +333,21 @@ int msg_queue_read() {
 
 		msg = string_init(NULL);
 
-		buf = read_file(f, 0);
+		buf = read_line(fd);
 
 		while (buf) {
 			string_append(msg, buf);
-			buf = read_file(f, 0);
+			buf = read_line(fd);
 			if (buf)
 				string_append(msg, "\r\n");
 		}
 
 		m.message = string_free(msg, 0);
 
-		msgs_queue_add(xmemdup(&m, sizeof(m)));
+		msgs_queue_add(g_memdup(&m, sizeof(m)));
 
-		fclose(f);
-		unlink(fn);
+		g_object_unref(fd);
+		g_unlink(fn);
 	}
 
 	closedir(dir);

@@ -1,6 +1,4 @@
-#include "jabber_dcc.h"
-
-#include <ekg/debug.h>
+#include "ekg2.h"
 
 int jabber_dcc = 0;
 int jabber_dcc_port = 0;
@@ -17,12 +15,8 @@ static int jabber_dcc_fd = -1;
 
 #include <unistd.h>
 
-#include <ekg/plugins.h>
-#include <ekg/userlist.h>
-#include <ekg/themes.h>
-#include <ekg/xmalloc.h>
-
 #include "jabber.h"
+#include "jabber_dcc.h"
 
 WATCHER(jabber_dcc_handle_recv) {
 	dcc_t *d = data;
@@ -312,7 +306,7 @@ static watch_t *jabber_dcc_init(int port) {
 
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = INADDR_ANY;
-	sin.sin_port = htons(port);
+	sin.sin_port = g_htons(port);
 
 	while (bind(fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
 		debug_error("jabber_dcc_init() bind() port: %d FAILED (%s)\n", port, strerror(errno));
@@ -322,7 +316,7 @@ static watch_t *jabber_dcc_init(int port) {
 			return NULL;
 		}
 
-		sin.sin_port = htons(port);
+		sin.sin_port = g_htons(port);
 	}
 	if (listen(fd, 10)) {
 		debug_error("jabber_dcc_init() listen() FAILED (%s)\n", strerror(errno));

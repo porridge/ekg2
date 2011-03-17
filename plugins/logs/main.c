@@ -20,39 +20,16 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
-#include <ekg/win32.h>
+#include "ekg2.h"
 
 #ifdef __APPLE__
 #define _DARWIN_C_SOURCE
 #include <netinet/in.h>
 #endif
 
-#ifndef __FreeBSD__
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
-#endif
-
 #if defined(__MINGW32__) || defined(__FreeBSD__) || defined(__sun)
 #include <limits.h>
 #endif
-
-#include <stdint.h>
-
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/log.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h> //print()
-#include <ekg/vars.h>
-#include <ekg/windows.h>
-#include <ekg/userlist.h>
-#include <ekg/xmalloc.h>
-
-#include <ekg/queries.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -65,26 +42,15 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 #include <zlib.h>
-#endif
-
-#ifndef HAVE_STRLCAT
-#  include "compat/strlcat.h"
-#endif
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
 #endif
 
 #include "main.h"
 
-#undef HAVE_ZLIB		/* disable zlib fjuczer */
+#undef HAVE_LIBZ		/* disable zlib fjuczer */
 
 PLUGIN_DEFINE(logs, PLUGIN_LOG, NULL);
-
-#ifdef EKG2_WIN32_SHARED_LIB
-	EKG2_WIN32_SHARED_LIB_HELPER
-#endif
 
 static struct buffer_info buffer_lograw = { NULL, 0, 0 };
 
@@ -148,7 +114,7 @@ static char *log_escape(const char *str)
 
 static char *fstring_reverse(fstring_t *fstr) {
 	const char *str;
-	const short *attr;
+	const fstr_attr_t *attr;
 	string_t asc;
 	int i;
 
@@ -156,7 +122,7 @@ static char *fstring_reverse(fstring_t *fstr) {
 		return NULL;
 
 	attr = fstr->attr;
-	str = fstr->str.b;
+	str = fstr->str;
 
 	if (!attr || !str)
 		return NULL;
@@ -284,7 +250,7 @@ static int logs_window_check(logs_log_t *ll, time_t t) {
 		chan = 2;
 	} else {
 		int datechanged = 0; /* bitmaska 0x01 (dzien) 0x02 (miesiac) 0x04 (rok) */
-		struct tm *tm	= xmemdup(localtime(&(ll->t)), sizeof(struct tm));
+		struct tm *tm	= g_memdup(localtime(&(ll->t)), sizeof(struct tm));
 		struct tm *tm2	= localtime(&t);
 
 		/* sprawdzic czy dane z (tm == tm2) */
@@ -398,7 +364,7 @@ static logs_log_t *logs_log_new(logs_log_t *l, const char *session, const char *
 static void logs_window_new(window_t *w) {
 	const char *uid;
 
-	if (!w->target || !w->session || w->id == 1000)
+	if (!w->target || !w->session || w->id == WINDOW_CONTACTS_ID) /* XXX w->id in WINDOW_RESERVED_ID ??? */
 		return;
 
 	uid = get_uid_any(w->session, w->target);
@@ -471,7 +437,8 @@ static int logs_print_window(session_t *s, window_t *w, const char *line, time_t
 	fstr = fstring_new_format(line);
 	fstr->ts = ts;
 
-	query_emit_id(ui_plugin, UI_WINDOW_PRINT, &w, &fstr);
+	query_emit(ui_plugin, "ui-window-print", &w, &fstr);
+	fstring_free(fstr);
 	return 0;
 }
 
@@ -535,7 +502,7 @@ static int logs_buffer_raw_display(const char *file, int items) {
 
 	if (w) {
 		w->lock--;
-		query_emit_id(NULL, UI_WINDOW_REFRESH);
+		query_emit(NULL, "ui-window-refresh");
 	}
 
 	xfree(bs);
@@ -624,7 +591,7 @@ attach:
 
 static FILE* logs_open_file(char *path, int ff) {
 	char fullname[PATH_MAX];
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 	int zlibmode = 0;
 #endif
 	if (ff != LOG_FORMAT_IRSSI && ff != LOG_FORMAT_SIMPLE && ff != LOG_FORMAT_XML && ff != LOG_FORMAT_RAW) {
@@ -666,14 +633,14 @@ static FILE* logs_open_file(char *path, int ff) {
 		return NULL;
 	}
 
-	strlcpy(fullname, path, PATH_MAX);
+	g_strlcpy(fullname, path, PATH_MAX);
 
-	if (ff == LOG_FORMAT_IRSSI)		strlcat(fullname, ".log", PATH_MAX);
-	else if (ff == LOG_FORMAT_SIMPLE)	strlcat(fullname, ".txt", PATH_MAX);
-	else if (ff == LOG_FORMAT_XML)		strlcat(fullname, ".xml", PATH_MAX);
-	else if (ff == LOG_FORMAT_RAW)		strlcat(fullname, ".raw", PATH_MAX);
+	if (ff == LOG_FORMAT_IRSSI)		g_strlcat(fullname, ".log", PATH_MAX);
+	else if (ff == LOG_FORMAT_SIMPLE)	g_strlcat(fullname, ".txt", PATH_MAX);
+	else if (ff == LOG_FORMAT_XML)		g_strlcat(fullname, ".xml", PATH_MAX);
+	else if (ff == LOG_FORMAT_RAW)		g_strlcat(fullname, ".raw", PATH_MAX);
 
-#ifdef HAVE_ZLIB /* z log.c i starego ekg1. Wypadaloby zaimplementowac... */
+#ifdef HAVE_LIBZ /* z log.c i starego ekg1. Wypadaloby zaimplementowac... */
 	/* nawet je¶li chcemy gzipowane logi, a istnieje nieskompresowany log,
 	 * olewamy kompresjê. je¶li loga nieskompresowanego nie ma, dodajemy
 	 * rozszerzenie .gz i balujemy. */
@@ -693,7 +660,7 @@ static FILE* logs_open_file(char *path, int ff) {
 	}
 	if (zlibmode) {
 		/* XXX, ustawic jakas flage... */
-		strlcat(fullname, ".gz", PATH_MAX);
+		g_strlcat(fullname, ".gz", PATH_MAX);
 	}
 #endif
 
@@ -703,7 +670,8 @@ static FILE* logs_open_file(char *path, int ff) {
 		if (!fdesc) {
 			if (!(fdesc = fopen(fullname, "w+")))
 				return NULL;
-			fputs("<?xml version=\"1.0\"?>\n", fdesc);
+					/* XXX: what about old, locale-encoded logs? */
+			fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", fdesc);
 			fputs("<!DOCTYPE ekg2log PUBLIC \"-//ekg2log//DTD ekg2log 1.0//EN\" ", fdesc);
 			fputs("\"http://www.ekg2.org/DTD/ekg2log.dtd\">\n", fdesc);
 			fputs("<ekg2log xmlns=\"http://www.ekg2.org/DTD/\">\n", fdesc);
@@ -727,6 +695,9 @@ static void logs_simple(FILE *file, const char *session, const char *uid, const 
 	session_t *s = session_find((const char*)session);
 	const char *gotten_uid = get_uid(s, uid);
 	const char *gotten_nickname = get_nickname(s, uid);
+
+	const gchar *logsenc = config_logs_encoding ? config_logs_encoding : console_charset;
+	GString *tmp;
 
 	if (!file)
 		return;
@@ -758,15 +729,19 @@ static void logs_simple(FILE *file, const char *session, const char *uid, const 
 	 * status,<numer>,<nick>,[<ip>],<time>,<status>,<descr>
 	 */
 
-	fputs(gotten_uid, file);      fputc(',', file);
-	fputs(gotten_nickname, file); fputc(',', file);
+	tmp = g_string_new(gotten_uid);
+	ekg_recode_gstring_to(logsenc, tmp);
+	fputs(tmp->str, file);      fputc(',', file);
+	g_string_assign(tmp, gotten_nickname);
+	ekg_recode_gstring_to(logsenc, tmp);
+	fputs(tmp->str, file); fputc(',', file);
 	if (class == EKG_MSGCLASS_PRIV_STATUS) {
 		userlist_t *u = userlist_find(s, gotten_uid);
 		int __ip = u ? user_private_item_get_int(u, "ip") : INADDR_NONE;
 
 		fputs(inet_ntoa(*((struct in_addr*) &__ip)), file);
 		fputc(':', file);
-		fputs(itoa(u ? user_private_item_get_int(u, "port") : 0), file); 
+		fputs(ekg_itoa(u ? user_private_item_get_int(u, "port") : 0), file); 
 		fputc(',', file);
 	}
 
@@ -780,10 +755,15 @@ static void logs_simple(FILE *file, const char *session, const char *uid, const 
 		fputs(status, file); 
 		fputc(',', file);
 	}
-	if (textcopy) fputs(textcopy, file);
+	if (textcopy) {
+		g_string_assign(tmp, textcopy);
+		ekg_recode_gstring_to(logsenc, tmp);
+		fputs(tmp->str, file);
+	}
 	fputs("\n", file);
 
 	xfree(textcopy);
+	g_string_free(tmp, TRUE);
 	fflush(file);
 }
 
@@ -880,6 +860,7 @@ static void logs_gaim()
 
 static void logs_irssi(FILE *file, const char *session, const char *uid, const char *text, time_t sent, msgclass_t class) {
 	const char *nuid = NULL;	/* get_nickname(session_find(session), uid) */
+	gchar *tmp, *enc;
 
 	if (!file)
 		return;
@@ -890,22 +871,26 @@ static void logs_irssi(FILE *file, const char *session, const char *uid, const c
 			userlist_t *u = userlist_find(session_find(session), uid);
 			int __ip = u ? user_private_item_get_int(u, "ip") : INADDR_NONE;
 
-			fprintf(file, "%s * %s reports status: %s [~notirc@%s:%s] /* {status} */\n", prepare_timestamp_format(config_logs_timestamp, sent), nuid ? nuid : __(uid), __(text), inet_ntoa(*((struct in_addr*) &__ip)), itoa(u ? user_private_item_get_int(u, "port") : 0));
+			tmp = g_strdup_printf("%s * %s reports status: %s [~notirc@%s:%s] /* {status} */\n", prepare_timestamp_format(config_logs_timestamp, sent), nuid ? nuid : __(uid), __(text), inet_ntoa(*((struct in_addr*) &__ip)), ekg_itoa(u ? user_private_item_get_int(u, "port") : 0));
 			break;
 		}
 
 		case EKG_MSGCLASS_SYSTEM: /* other messages like session started, session closed and so on */
-			fprintf(file, "%s\n", __(text));
+			tmp = g_strdup_printf("%s\n", __(text));
 			break;
 
 		case EKG_MSGCLASS_MESSAGE:	/* just normal message */
-			fprintf(file, "%s <%s> %s\n", prepare_timestamp_format(config_logs_timestamp, sent), nuid ? nuid : __(uid), __(text));
+			tmp = g_strdup_printf("%s <%s> %s\n", prepare_timestamp_format(config_logs_timestamp, sent), nuid ? nuid : __(uid), __(text));
 			break;
 
 		default: /* everythink else */
 			debug("[LOGS_IRSSI] UTYPE = %d\n", class);
 			return; /* to avoid flushisk file */
 	}
+	enc = ekg_recode_to(config_logs_encoding, tmp);
+	fputs(enc, file);
+	g_free(tmp);
+	g_free(enc);
 	fflush(file);
 }
 
@@ -920,7 +905,7 @@ static const char *prepare_timestamp_format(const char *format, time_t t)  {
 	static int i = 0;
 
 	if (!format)
-		return itoa(t);
+		return ekg_itoa(t);
 
 	if (!format[0])
 		return "";
@@ -942,7 +927,7 @@ static QUERY(logs_handler) {
 	char *uid	= *(va_arg(ap, char**));
 	char **rcpts	= *(va_arg(ap, char***));
 	char *text	= *(va_arg(ap, char**));
-		uint32_t **UNUSED(format)	= va_arg(ap, uint32_t**);
+		guint32 **UNUSED(format)	= va_arg(ap, guint32**);
 	time_t	 sent	= *(va_arg(ap, time_t*));
 	int  class	= *(va_arg(ap, int*));
 		char **UNUSED(seq)		= va_arg(ap, char**);
@@ -964,7 +949,7 @@ static QUERY(logs_handler) {
 
 	/* XXX, think more about conferences-logging */
 	if (class < EKG_MSGCLASS_SENT) {
-		int recipients_count = array_count((char **) rcpts);
+		int recipients_count = g_strv_length((char **) rcpts);
 
 		if (recipients_count > 0) {
 			struct conference *c;
@@ -1154,8 +1139,10 @@ static QUERY(logs_handler_newwin) {
 		}
 
 		/* XXX, in fjuczer it can be gzipped file, WARN HERE */
-		while ((line = read_file(f, 0)))
+		while ((line = read_file(f, 0))) {
+			ekg_fix_utf8(line);
 			buffer_add_str(&buffer_lograw, path, line);
+		}
 
 		ftruncate(fileno(f), 0);	/* works? */
 		fclose(f);
@@ -1197,16 +1184,18 @@ EXPORT int logs_plugin_init(int prio) {
 
 	plugin_register(&logs_plugin, prio);
 	
-	query_connect_id(&logs_plugin, SET_VARS_DEFAULT,logs_setvar_default, NULL);
-	query_connect_id(&logs_plugin, PROTOCOL_MESSAGE_POST, logs_handler, NULL);
-	query_connect_id(&logs_plugin, IRC_PROTOCOL_MESSAGE, logs_handler_irc, NULL);
-	query_connect_id(&logs_plugin, UI_WINDOW_NEW,	logs_handler_newwin, NULL);
-	query_connect_id(&logs_plugin, UI_WINDOW_PRINT,	logs_handler_raw, NULL);
-	query_connect_id(&logs_plugin, UI_WINDOW_KILL,	logs_handler_killwin, NULL);
-	query_connect_id(&logs_plugin, PROTOCOL_STATUS, logs_status_handler, NULL);
-	query_connect_id(&logs_plugin, CONFIG_POSTINIT, logs_postinit, NULL);
+	query_connect(&logs_plugin, "set-vars-default",logs_setvar_default, NULL);
+	query_connect(&logs_plugin, "protocol-message-post", logs_handler, NULL);
+	query_connect(&logs_plugin, "irc-protocol-message", logs_handler_irc, NULL);
+	query_connect(&logs_plugin, "ui-window-new",	logs_handler_newwin, NULL);
+	query_connect(&logs_plugin, "ui-window-print",	logs_handler_raw, NULL);
+	query_connect(&logs_plugin, "ui-window-kill",	logs_handler_killwin, NULL);
+	query_connect(&logs_plugin, "protocol-status", logs_status_handler, NULL);
+	query_connect(&logs_plugin, "config-postinit", logs_postinit, NULL);
 	/* XXX, implement UI_WINDOW_TARGET_CHANGED, IMPORTANT!!!!!! */
 
+		/* we need to reopen files on change and that's what logs_changed_path() does */
+	variable_add(&logs_plugin, ("encoding"), VAR_STR, 1, &config_logs_encoding, &logs_changed_path, NULL, NULL);
 	/* TODO: maksymalna ilosc plikow otwartych przez plugin logs */
 	variable_add(&logs_plugin, ("log_max_open_files"), VAR_INT, 1, &config_logs_max_files, NULL /* XXX: logs_changed_maxfd */, NULL, NULL); 
 	variable_add(&logs_plugin, ("log"), VAR_MAP, 1, &config_logs_log, &logs_changed_path, 

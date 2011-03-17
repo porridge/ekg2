@@ -18,7 +18,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,24 +31,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "debug.h"
-#include "dynstuff.h"
-#include "sessions.h"
-#include "stuff.h"
-#include "themes.h"
-#include "userlist.h"
-#include "vars.h"
-#include "windows.h"
-#include "xmalloc.h"
-
-#include "dynstuff_inline.h"
 #include "objects.h"
-
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
-
-#include "queries.h"
 
 session_t *sessions = NULL;
 
@@ -192,7 +175,7 @@ session_t *session_add(const char *uid) {
 		}
 	}
 
-	query_emit_id(NULL, SESSION_ADDED, &(s->uid));		/* It's read-only query, XXX */
+	query_emit(NULL, "session-added", &(s->uid));		/* It's read-only query, XXX */
 
 	for (w = windows; w; w = w->next) {
 /* previous version was unacceptable. So we do now this trick:
@@ -299,18 +282,11 @@ int session_remove(const char *uid)
 
 	}
 
-	{
-		struct timer *t;
-
-		for (t = timers; t; t = t->next) {
-			if (t->is_session && t->data == s)
-				t = timers_removei(t);
-		}
-	}
+	ekg_source_remove_by_data(s, NULL);
 
 	tmp = xstrdup(uid);
-	query_emit_id(NULL, SESSION_CHANGED);
-	query_emit_id(NULL, SESSION_REMOVED, &tmp);
+	query_emit(NULL, "session-changed");
+	query_emit(NULL, "session-removed", &tmp);
 	xfree(tmp);
 
 	sessions_remove(s);
@@ -332,7 +308,7 @@ int session_status_set(session_t *s, status_t status)
 		char *__session = xstrdup(s->uid);
 		int __status = status;
 
-		query_emit_id(NULL, SESSION_STATUS, &__session, &__status);
+		query_emit(NULL, "session-status", &__session, &__status);
 
 		xfree(__session);
 	}
@@ -478,7 +454,7 @@ const char *session_password_get(session_t *s)
 	if (!tmp)
 		return "";
 	
-	strlcpy(buf, tmp, sizeof(buf));
+	g_strlcpy(buf, tmp, sizeof(buf));
 	xfree(tmp);
 	
 	return buf;
@@ -542,16 +518,14 @@ static inline const status_t session_statusdescr_split(const char **statusdescr)
 }
 
 static inline status_t session_status_nearest(session_t *s, status_t status) {
-	plugin_t						*p		= s->plugin;
-	struct protocol_plugin_priv		*pp		= p->priv;
-	const status_t					*ast;
-	const int						dir		= (status < EKG_STATUS_AVAIL);
+	plugin_t			*p	= s->plugin;
+	struct protocol_plugin_priv	*pp	= (struct protocol_plugin_priv *)p->priv;
+	const status_t			*ast;
+	const int			dir	= (status < EKG_STATUS_AVAIL);
 
-	if (p->pclass != PLUGIN_PROTOCOL) {
-		debug_wtf("session_status_nearest(), session '%s' on non-protocol plugin '%s'!\n", session_uid_get(s), p->name);
-		return EKG_STATUS_NULL;
-	} else if (!p->priv) {
-		debug_warn("session_status_nearest(), plugin '%s' doesn't declared supported statuses.\n", p->name);
+	g_assert(p->pclass == PLUGIN_PROTOCOL);
+	if (!p->priv) {
+		debug_warn("session_status_nearest(), plugin '%s' didn't declare supported statuses.\n", p->name);
 		return status;
 	}
 
@@ -676,7 +650,7 @@ const char *session_get(session_t *s, const char *key) {
 	if (!(v = variable_find(key)) || (v->type != VAR_INT && v->type != VAR_BOOL))
 		return NULL;
 	
-	return itoa(*(int*)(v->ptr));
+	return ekg_itoa(*(int*)(v->ptr));
 }
 
 /*
@@ -751,7 +725,7 @@ int session_set(session_t *s, const char *key, const char *value) {
 		 */
 
 		tmp = xstrdup((value) ? value : s->uid);
-		query_emit_id(NULL, SESSION_RENAMED, &tmp);
+		query_emit(NULL, "session-renamed", &tmp);
 		xfree(tmp);
 
 		goto notify;
@@ -816,7 +790,7 @@ notify:
  */
 int session_int_set(session_t *s, const char *key, int value)
 {
-	return session_set(s, key, itoa(value));
+	return session_set(s, key, ekg_itoa(value));
 }
 
 /*
@@ -824,14 +798,14 @@ int session_int_set(session_t *s, const char *key, int value)
  *
  * czyta informacje o sesjach z pliku.
  */
-int session_read(const char *filename) {
-	char *line;
-	FILE *f;
+int session_read(const gchar *plugin_name) {
+	gchar *line;
+	GDataInputStream *f;
 	session_t *s = NULL;
 	int ret = 0;
 
-	if (!filename) {
-		plugin_t *p;
+	if (!plugin_name) {
+		GSList *pl;
 
 		if (!in_autoexec) {
 			session_t *sf;
@@ -842,25 +816,25 @@ int session_read(const char *filename) {
 			debug("	 flushed sessions\n");
 		}
 
-		for (p = plugins; p; p = p->next) {
-			const char *tmp;
+		for (pl = plugins; pl; pl = pl->next) {
+			const plugin_t *p = pl->data;
 
 			if (!p || p->pclass != PLUGIN_PROTOCOL)
 				continue;
 
-			if ((tmp = prepare_pathf("sessions-%s", p->name)))
-				ret = session_read(tmp);
+			ret += session_read(p->name);
 		}
 		return ret;
 	}
 
-	if (!(f = fopen(filename, "r"))) {
-		debug("Error opening file %s\n", filename);
+	if (!(f = G_DATA_INPUT_STREAM(config_open("sessions-%s", "r", plugin_name))))
 		return -1;
-	}
 
-	while ((line = read_file(f, 0))) {
+	while ((line = read_line(f))) {
 		char *tmp;
+
+		if (line[0] == '#' || line[0] == ';' || (line[0] == '/' && line[1] == '/'))
+			continue;
 
 		if (line[0] == '[') {
 			tmp = xstrchr(line, ']');
@@ -891,7 +865,7 @@ int session_read(const char *filename) {
 		}
 	}
 
-	fclose(f);
+	g_object_unref(f);
 	return ret;
 }
 
@@ -900,31 +874,19 @@ int session_read(const char *filename) {
  *
  * writes information about sessions in files
  */
-int session_write()
+void session_write()
 {
-	plugin_t *p;
-	FILE *f = NULL;
-	int ret = 0;
+	GSList *pl;
+	GOutputStream *f = NULL;
 
-	if (!prepare_path(NULL, 1))	/* try to create ~/.ekg2 */
-		return -1;
-
-	for (p = plugins; p; p = p->next) {
+	for (pl = plugins; pl; pl = pl->next) {
+		const plugin_t *p = pl->data;
 		session_t *s;
-		const char *tmp;
 
 		if (p->pclass != PLUGIN_PROTOCOL) continue; /* skip no protocol plugins */
 
-		if (!(tmp = prepare_pathf("sessions-%s", p->name))) {
-			ret = -1;
-			continue;
-		}
-		
-		if (!(f = fopen(tmp, "w"))) {
-			debug("Error opening file %s\n", tmp);
-			ret = -1;
-			continue;
-		}
+		if (!(f = G_OUTPUT_STREAM(config_open("sessions-%s", "w", p->name))))
+			break;
 
 		for (s = sessions; s; s = s->next) {
 			int i;
@@ -932,20 +894,19 @@ int session_write()
 			if (s->plugin != p)
 				continue;
 
-			userlist_write(s);
-			fprintf(f, "[%s]\n", s->uid);
+			ekg_fprintf(f, "[%s]\n", s->uid);
 			if (s->alias)
-				fprintf(f, "alias=%s\n", s->alias);
+				ekg_fprintf(f, "alias=%s\n", s->alias);
 			if (s->status && config_keep_reason != 2)
-				fprintf(f, "status=%s\n", ekg_status_string(s->autoaway ? s->last_status : s->status, 0));
+				ekg_fprintf(f, "status=%s\n", ekg_status_string(s->autoaway ? s->last_status : s->status, 0));
 			if (s->descr && config_keep_reason) {
 				char *myvar = (s->autoaway ? s->last_descr : s->descr);
 				xstrtr(myvar, '\n', '\002');
-				fprintf(f, "descr=%s\n", myvar);
+				ekg_fprintf(f, "descr=%s\n", myvar);
 				xstrtr(myvar, '\002', '\n');
 			}
 			if (s->password && config_save_password)
-				fprintf(f, "password=\001%s\n", s->password);
+				ekg_fprintf(f, "password=\001%s\n", s->password);
 
 			if (!p->params) 
 				continue;
@@ -953,13 +914,17 @@ int session_write()
 			for (i = 0; (p->params[i].key /* && p->params[i].id != -1 */); i++) {
 				if (!s->values[i]) 
 					continue;
-				fprintf(f, "%s=%s\n", p->params[i].key, s->values[i]);
+				ekg_fprintf(f, "%s=%s\n", p->params[i].key, s->values[i]);
 			}
 			/* We don't save _local_ variables */
 		}
-		fclose(f);
+
+		for (s = sessions; s; s = s->next) {
+			if (s->plugin != p)
+				continue;
+			userlist_write(s);
+		}
 	}
-	return ret;
 }
 
 /*
@@ -989,7 +954,7 @@ const char *session_format(session_t *s)
 	else
 		tmp = format_string(format_find("session_format_alias"), s->alias, uid);
 	
-	strlcpy(buf, tmp, sizeof(buf));
+	g_strlcpy(buf, tmp, sizeof(buf));
 	
 	xfree(tmp);
 
@@ -1035,7 +1000,7 @@ const char *session_name(session_t *s)
 	static char buf[150];
 	char *tmp = format_string(format_find("session_name"), s ? (s->alias) ? s->alias : s->uid : "?");
 
-	strlcpy(buf, tmp, sizeof(buf));
+	g_strlcpy(buf, tmp, sizeof(buf));
 
 	xfree(tmp);
 	return buf;
@@ -1059,7 +1024,7 @@ int session_unidle(session_t *s)
 
 	s->activity = time(NULL);
 
-	if (s->autoaway)
+	if (s->autoaway && session_int_get(s, "auto_back") == 1)
 		command_exec(NULL, s, ("/_autoback"), 0);
 
 	return 0;
@@ -1164,7 +1129,7 @@ COMMAND(session_command)
 		session_t *s;
 		
 		if (!params[1]) {
-			printq("invalid_params", name);
+			printq("not_enough_params", name);
 			return -1;		
 		}
 		if (!(s = session_find(params[1]))) {
@@ -1176,10 +1141,7 @@ COMMAND(session_command)
 		if (window_current->target && (window_current->id != 0))
 			command_exec(NULL, NULL, "/window switch 1", 2);
 
-		window_current->session = s;
-		session_current = s;
-
-		query_emit_id(NULL, SESSION_CHANGED);
+		window_session_set(window_current, s);
 
 		return 0;
 	}
@@ -1240,7 +1202,7 @@ COMMAND(session_command)
 	if (match_arg(params[0], 's', ("set"), 2)) {
 		
 		if (!params[1]) {
-			printq("invalid_params", name);
+			printq("not_enough_params", name);
 			return -1;
 		}	
 		
@@ -1297,7 +1259,7 @@ COMMAND(session_command)
 				return 0;
 			}
 			
-			printq("invalid_params", name);
+			printq("invalid_params", name, params[1]);	/* XXX */
 			return -1;
 		}
 		
@@ -1340,7 +1302,7 @@ COMMAND(session_command)
 			return 0;
 		}
 
-		printq("invalid_params", name);
+		printq("invalid_params", name, params[1]);	/* XXX */
 		return -1;
 	}
 
@@ -1526,7 +1488,7 @@ COMMAND(session_command)
 		return 0;
 	}
 
-	printq("invalid_params", name);
+	printq("invalid_params", name, params[0]);
 	
 	return -1;
 }
@@ -1538,7 +1500,6 @@ COMMAND(session_command)
 void sessions_free() {
 	session_t *s;
 
-	struct timer *t;
 	window_t *wl;
 	list_t l;
 
@@ -1553,18 +1514,14 @@ void sessions_free() {
 			watch_free(w);
 	}
 
-	for (t = timers; t; t = t->next) {
-		if (t->is_session)
-			t = timers_removei(t);
-	}
-
 /* it's sessions, not 'l' because we emit SESSION_REMOVED, which might want to search over sessions list...
  * This bug was really time-wasting ;(
  */
 /* mg: I modified it so it'll first emit all the events, and then start to free everything
  * That shouldn't be a problem, should it? */
 	for (s = sessions; s; s = s->next) {
-		query_emit_id(s->plugin, SESSION_REMOVED, &(s->uid));	/* it notify only that plugin here, to free internal data. 
+		ekg_source_remove_by_data(s, NULL);
+		query_emit(s->plugin, "session-removed", &(s->uid));	/* it notify only that plugin here, to free internal data. 
 									 * ui-plugin already removed.. other plugins @ quit.
 									 * shouldn't be aware about it. too...
 									 * XXX, think about it?
@@ -1590,9 +1547,9 @@ void sessions_free() {
  */
 void session_help(session_t *s, const char *name)
 {
-	FILE *f;
-	char *line, *type = NULL, *def = NULL, *tmp;
-	char *plugin_name;
+	GDataInputStream *f;
+	gchar *type = NULL, *def = NULL, *tmp;
+	const gchar *line, *plugin_name;
 
 	string_t str;
 	int found = 0;
@@ -1611,12 +1568,12 @@ void session_help(session_t *s, const char *name)
 
 	do {
 		/* first try to find the variable in plugins' session file */
-		if (!(f = help_path("session", plugin_name))) {
+		if (!(f = help_open("session", plugin_name))) {
 			sessfilnf = 1;
 			break;
 		}
 
-		while ((line = read_file_iso(f, 0))) {
+		while ((line = read_line(f))) {
 			if (!xstrcasecmp(line, name)) {
 				found = 1;
 				break;
@@ -1628,12 +1585,12 @@ void session_help(session_t *s, const char *name)
 		do {
 			/* then look for them inside global session file */
 			if (!sessfilnf)
-				fclose(f);
+				g_object_unref(f);
 			
-			if (!(f = help_path("session", NULL)))
+			if (!(f = help_open("session", NULL)))
 				break;
 
-			while ((line = read_file_iso(f, 0))) {
+			while ((line = read_line(f))) {
 				if (!xstrcasecmp(line, name)) {
 					found = 1;
 					break;
@@ -1645,7 +1602,7 @@ void session_help(session_t *s, const char *name)
 
 	if (!found) {
 		if (f)
-			fclose(f);
+			g_object_unref(f);
 		if (sessfilnf)
 			print("help_session_file_not_found", plugin_name);
 		else
@@ -1653,14 +1610,14 @@ void session_help(session_t *s, const char *name)
 		return;
 	}
 
-	line = read_file_iso(f, 0);
+	line = read_line(f);
 
 	if ((tmp = xstrstr(line, (": "))))
 		type = xstrdup(tmp + 2);
 	else
 		type = xstrdup(("?"));
 
-	line = read_file_iso(f, 0);
+	line = read_line(f);
 	if ((tmp = xstrstr(line, (": "))))
 		def = xstrdup(tmp + 2);
 	else
@@ -1672,10 +1629,10 @@ void session_help(session_t *s, const char *name)
 	xfree(def);
 
 	if (tmp)		/* je¶li nie jest to ukryta zmienna... */
-		read_file_iso(f, 0);	/* ... pomijamy liniê */
+		read_line(f);	/* ... pomijamy liniê */
 
 	str = string_init(NULL);
-	while ((line = read_file_iso(f, 0))) {
+	while ((line = read_line(f))) {
 		if (line[0] != '\t')
 			break;
 
@@ -1703,7 +1660,7 @@ void session_help(session_t *s, const char *name)
 	if (xstrcmp(format_find("help_session_footer"), ""))
 		print("help_session_footer", name);
 
-	fclose(f);
+	g_object_unref(f);
 }
 
 /**

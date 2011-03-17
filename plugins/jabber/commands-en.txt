@@ -1,25 +1,38 @@
-// opis komend dla protoko³u jabber
+// descripton for jabber-plugin proceedings
 // (c) copyright 2001-2003 wojtek kaniewski <wojtekka@irc.pl>
 // (c) copyright      2004 piotr kupisiewicz <deletek@ekg2.org>
 // (c) copyright      2004 tomasz torcz <zdzichu@ekg2.org>
 
 _autoaway
-	parameters: 
+	parameters:
 	short description: changes status to away
 
 _autoback
-	parameters: 
+	parameters:
 	short description: changes status to available
 
 add
 	parameters: <JID> [name]
 	short description: adds user to our roster while asking for authorization
 
+admin
+	parameters: [conference field value]
+	short description: alter chatroom configuration
+	
+	Alter MUC chatroom configuration: Set `field` to `value` for `conference`
+	chatroom.
+	
+	Invoke it with no argmunets to see all fields and their values for the
+	current chatroom.
+	
+	Example (make room persistent):
+	  /admin xmpp:test@conference.example.com --muc#roomconfig_persistentroom 1
+
 auth
-	parameters: <options> <JID> 
+	parameters: <options> <JID>
 	short description: authorization support
 	
-	<action> <JID> 
+	<action> <JID>
 	
 	  -a, --accept <JID>    authorize JID
 	
@@ -29,11 +42,11 @@ auth
 	
 	  -c, --cancel <JID>    cancel authorization
 	
-	  -j, --reject <JID>	reject authorization request
+	  -j, --reject <JID>    reject authorization request
 	
-	  -l, --list		display pending requests
+	  -l, --list	    display pending requests
 	
-	  -p, --probe		request presence information
+	  -p, --probe	    request presence information
 
 away
 	parameters: [description/-]
@@ -56,8 +69,42 @@ ban
 	If no JID is specified, command lists all jids banned from given
 	conference. Otherwise it bans specified JID from the given conference.
 
+bookmark
+	parameters: <action> <options> <JID/URL> -- <name>
+	short description: edit bookmarks on server
+	
+	<actions>
+	
+	  --add		add bookmark
+	
+	  --remove		remove bookmark
+	
+	  --clear		remove all bookmarks
+	
+	  --modify		modify selected bookmark
+	
+	  --display		display all bookmarks
+	
+	
+	<options>
+	
+	  --conf            <conf>
+	
+	  --url             <url>
+	
+	  --autojoin        <bool>
+	
+	  --nick            <nick>
+	
+	  --pass            <pass>
+	
+	
+	example:
+	
+	  /bookmark --add --conf my@conference.server.domain --autojoin 1 --nick nick --pass pass -- #conference
+
 change
-	parameters:  <options>
+	parameters: <options>
 	short description: changes data in vcard
 	
 	  -f, --fullname <full name>
@@ -78,11 +125,17 @@ change
 	vCard. Giving ,,%T-%n'' will clear %Tall%n fields.
 
 chat
-	parameters: 
+	parameters: <name>
 	short description: sends chat message
+	
+	using * instead of user's name will create queries with all your contacts
+
+config
+	parameters:
+	short description:
 
 connect
-	parameters: 
+	parameters:
 	short description: connects with server
 
 del
@@ -105,7 +158,7 @@ devoice
 
 disconnect
 	parameters:  [description/-]
-	short description: roz³±cza siê od serwera
+	short description: rozÅ‚Ä…cza siÄ™ od serwera
 	
 	If description wasn't given, random description will be looked for.
 	Giving ,,%T-%n'' instead of description will clear description.
@@ -123,6 +176,10 @@ ffc
 	
 	If description wasn't given, random description will be looked for.
 	Giving ,,%T-%n'' instead of description will clear description.
+
+find
+	parameters: <alias/jid>
+	short description: finds a buddy and shows his vcard
 
 invisible
 	parameters: [description/-]
@@ -142,11 +199,11 @@ kick
 	short description: kick nick off the conference
 
 lastseen
-	parameters: 
+	parameters: <jid>
 	short description: retrieves information on last logout time for given jid
 
 msg
-	parameters: 
+	parameters: <alias>
 	short description: sends message
 	
 	All receivers are marked by *. Preceding multiline message with string
@@ -154,19 +211,26 @@ msg
 	message.
 
 modify
-	parameters:  <alias> <options>
+	parameters: <alias> <options>
 	short description: changes roster entries
 	
 	Possible options:
 	
 	-n, --nickname <nickname>     contact nickname
 
+nick
+	parameters: [conference] <nick>
+	short description: change nick
+	
+	Change nick on a given conference. If no conference provided, use
+	conference in current window.
+
 op
 	parameters: <conference> <nick>
 	short description: Gives moderator privileges to the specified nick
 
 passwd
-	parameters: 
+	parameters:
 	short description: changes password
 
 part
@@ -174,8 +238,18 @@ part
 	short description: leaves conference
 
 reconnect
-	parameters: 
+	parameters:
 	short description: disconnects and connects again
+
+register
+	parameters: <jid> <options>
+	short description: registers on server\transport
+	
+	<options>
+	
+	  --username		<nickname>
+	
+	  --password		<password>
 
 reply
 	parameters: #id ...
@@ -195,12 +269,24 @@ topic
 	parameters: [uid] <new topic>
 	short description: set MUC topic
 
+transpinfo
+	parameters: <jid>
+	short description: shows you information about given server\transport
+
+transports
+	parameters: <jid>
+	short description: shows list of transports at given server
+
 unban
 	parameters: <conference> <JID>
 	short description: unban given JID from the muc conference
 
+unregister
+	parameters:
+	short description: deletes your account from server
+
 userinfo
-	parameters: 
+	parameters:
 	short description: retrieves Jabber Directory info about given jid
 
 userlist
@@ -209,19 +295,24 @@ userlist
 	
 	Depending on arg:
 	
-	-c, --clear			clears current userlist (equal to 'del *')
+	-c, --clear				clears current userlist (equal to 'del *')
 	
 	-g, --get [filename]		imports userlist from file
 	
 	-p, --put [filename]		exports userlist to file
 	
-	-G, --replace [filename]	clear userlist & import new from file
+	-G, --replace [filename]		clear userlist & import new from file
+	
 	
 	Userlist export file format is same as with JRU
 	(http://jru.jabberstudio.org).
 
+vacation
+	parameters:
+	short description: function is not implemented yet
+
 ver
-	parameters: 
+	parameters:
 	short description: retrieves information about OS and client of given jid
 
 voice
@@ -239,7 +330,7 @@ xa
 	Giving ,,%T-%n'' instead of description will clear description.
 
 xml
-	parameters: 
+	parameters:
 	short description: sends xml stream
 	
 	Command must be UTF-8 encoded, all XML special characters have to be

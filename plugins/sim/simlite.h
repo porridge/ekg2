@@ -20,10 +20,6 @@
 #ifndef __SIMLITE_H
 #define __SIMLITE_H
 
-#ifndef __AC_STDINT_H
-#include <stdint.h>
-#endif 
-
 extern char *sim_key_path;
 extern int sim_errno;
 
@@ -44,8 +40,8 @@ typedef enum {
 
 typedef struct {
 	unsigned char init[8];
-	uint16_t magic;
-	uint8_t flags;
+	guint16 magic;
+	guint8 flags;
 }
 #ifdef __GNUC__
 __attribute__ ((packed))

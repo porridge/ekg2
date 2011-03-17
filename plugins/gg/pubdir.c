@@ -18,18 +18,11 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "ekg2.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/recode.h>
-#include <ekg/themes.h>
-#include <ekg/stuff.h>
-#include <ekg/queries.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
 
 #include <libgadu.h>
 
@@ -89,7 +82,7 @@ static WATCHER(gg_handle_register)	/* tymczasowy */
 		goto fail;
 	}
 
-	print("register", itoa(p->uin));
+	print("register", ekg_itoa(p->uin));
 	gg_register_done = 1;
 
 	tmp = saprintf("gg:%d", p->uin);
@@ -196,7 +189,7 @@ static WATCHER(gg_handle_unregister)	/* tymczasowy */
 		goto fail;
 	}
 
-	print("unregister", itoa(s->uin));
+	print("unregister", ekg_itoa(s->uin));
 
 fail:
 	list_remove(&gg_unregisters, h, 0);
@@ -531,9 +524,9 @@ int gg_userlist_set(session_t *session, const char *contacts)
 	for (i = 0; entries[i]; i++)
 		userlist_add_entry(session, entries[i]);
 
-	array_free(entries);
+	g_strfreev(entries);
 
-	query_emit_id(NULL, USERLIST_REFRESH);
+	query_emit(NULL, "userlist-refresh");
 
 	return 0;
 }

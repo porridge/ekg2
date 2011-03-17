@@ -25,12 +25,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-#ifndef __USE_POSIX
-    #define __USE_POSIX 1	/* glibc 2.8 */
-#endif
-#ifndef _XOPEN_SOURCE
-	#define _XOPEN_SOURCE 600
-#endif
 #include <limits.h>
 
 #define __(x) (x ? x : "(null)")
@@ -65,16 +59,15 @@ typedef unsigned int socklen_t;
 
 #ifndef EKG2_WIN32_NOFUNCTION
 
-void ekg_oom_handler();
-
+#ifndef EKG_NO_DEPRECATED
 void *xcalloc(size_t nmemb, size_t size);
 void *xmalloc(size_t size);
 void xfree(void *ptr);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *s);
-size_t xstrnlen(const char *s, size_t n);
 char *xstrndup(const char *s, size_t n);
-void *xmemdup(void *ptr, size_t size);
+#endif
+char *utf8ndup(const char *s, size_t n);
 
 int xstrcasecmp(const char *s1, const char *s2);
 char *xstrcat(char *dest, const char *src);
@@ -83,7 +76,6 @@ int xstrcmp(const char *s1, const char *s2);
 int xstrcoll(const char *s1, const char *s2);
 char *xstrcpy(char *dest, const char *src);
 size_t xstrcspn(const char *s, const char *reject);
-char *xstrfry(char *string);
 size_t xstrlen(const char *s);
 int xstrncasecmp_pl(const char *s1, const char *s2, size_t n);
 char *xstrncat(char *dest, const char *src, size_t n);
@@ -102,6 +94,8 @@ char *xstrtok(char *s, const char *delim);
 char *xindex(const char *s, int c);
 char *xrindex(const char *s, int c);
 
+#ifndef EKG_NO_DEPRECATED
+
 char *vsaprintf(const char *format, va_list ap);
 
 	/* stuff.h */
@@ -112,6 +106,7 @@ char *saprintf(const char *format, ...);
 #endif
 #endif
 
+#endif
 
 #endif /* __EKG_XMALLOC_H */
 

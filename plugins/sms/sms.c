@@ -21,7 +21,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <sys/types.h>
 
@@ -31,16 +31,6 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include <ekg/commands.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/userlist.h>
-#include <ekg/xmalloc.h>
-#include <ekg/stuff.h>
-#include <ekg/vars.h>
-#include <ekg/themes.h>
-
-#include <ekg/queries.h>
 
 typedef struct {
 	char *uid;
@@ -56,18 +46,13 @@ static int config_sms_max_length = 100;
 
 static int sms_theme_init();
 PLUGIN_DEFINE(sms, PLUGIN_GENERIC, sms_theme_init);
-#ifdef EKG2_WIN32_SHARED_LIB
-	EKG2_WIN32_SHARED_LIB_HELPER
-#endif
 
-static void sms_child_handler(child_t *c, int pid, const char *name, int status, void *data)
+static void sms_child_handler(GPid pid, gint status, gpointer data)
 {
 	char *number = data;
 
-	if (number) {
+	if (number)
 		print((!status) ? "sms_sent" : "sms_failed", number);
-		xfree(number);
-	}
 }
 
 /*
@@ -80,7 +65,6 @@ static void sms_child_handler(child_t *c, int pid, const char *name, int status,
 static int sms_send(const char *recipient, const char *message)
 {
 	int pid, fd[2] = { 0, 0 };
-	char *tmp;
 
 	if (!config_sms_app) {
 		errno = EINVAL;
@@ -117,10 +101,8 @@ static int sms_send(const char *recipient, const char *message)
 
 	close(fd[1]);
 
-	tmp = saprintf(("%s %s %s"), config_sms_app, recipient, message);
-	child_add(&sms_plugin, pid, tmp, sms_child_handler, xstrdup(recipient));
-	xfree(tmp);
-
+	ekg_child_add(&sms_plugin, "%s %s %s", pid, sms_child_handler, g_strdup(recipient), g_free,
+			config_sms_app, recipient, message);
 	return 0;
 }
 
@@ -340,8 +322,8 @@ int sms_plugin_init(int prio)
 	variable_add(&sms_plugin, ("sms_max_length"), VAR_INT, 1, &config_sms_max_length, NULL, NULL, dd_sms);
 	variable_add(&sms_plugin, ("sms_number"), VAR_STR, 1, &config_sms_number, NULL, NULL, dd_sms);
 
-	query_connect_id(&sms_plugin, PROTOCOL_MESSAGE, sms_protocol_message, NULL);
-	query_connect_id(&sms_plugin, SESSION_STATUS, sms_session_status, NULL);
+	query_connect(&sms_plugin, "protocol-message", sms_protocol_message, NULL);
+	query_connect(&sms_plugin, "session-status", sms_session_status, NULL);
 
 	return 0;
 }

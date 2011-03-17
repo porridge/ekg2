@@ -3,24 +3,14 @@
 
 #undef VERSION
 
-#ifndef __FreeBSD__
-#define __EXTENSIONS__
-#endif
-
-#include <ekg/scripts.h>
-
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/userlist.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
-#include <ekg/vars.h>
+#include "ekg2.h"
 
 #undef _
 #include "../perl_ekg.h"
+
+#ifdef bool
+#define HAS_BOOL
+#endif
 
 #include <EXTERN.h>
 #include <perl.h>
@@ -40,7 +30,7 @@ typedef window_t	*Ekg2__Window;
 typedef plugin_t	*Ekg2__Plugin;
 typedef watch_t		*Ekg2__Watch;
 
-typedef struct timer	*Ekg2__Timer;
+typedef ekg_timer_t	Ekg2__Timer;
 
 typedef userlist_t	*Ekg2__User;
 

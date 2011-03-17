@@ -23,7 +23,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#define _XOPEN_SOURCE 600
+#include "ekg2.h"
+
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
@@ -38,9 +39,6 @@
 #include <time.h>
 
 #include "simlite.h"
-#include <ekg/debug.h>
-#include <ekg/recode.h>
-#include <ekg/xmalloc.h>
 
 char *sim_key_path = NULL;
 int sim_errno = 0;
@@ -497,7 +495,7 @@ cleanup:
 		RSA_free(private_key);
 	if (buf)
 		free(buf);
-	return ekg_cp_to_locale(res);	/* XXX, what if message isn't encoded in cp-1250? */
+	return ekg_cp_to_core(res);	/* XXX, what if message isn't encoded in cp-1250? */
 }
 
 /*

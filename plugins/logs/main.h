@@ -21,11 +21,7 @@
 #ifndef __logs_h__
 #define __logs_h__
 
-#include "ekg2-config.h"
 #include <stdio.h>
-#include <ekg/sessions.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
 
 typedef struct {
 	int   logformat; 
@@ -82,5 +78,6 @@ static int config_logs_remind_number = 0;
 static int config_logs_max_files = 7;
 static char *config_logs_path;
 static char *config_logs_timestamp;
+static gchar *config_logs_encoding;
 
 #endif

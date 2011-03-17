@@ -18,7 +18,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -31,14 +31,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/protocol.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/userlist.h>
-#include <ekg/xmalloc.h>
-
 #include <libgadu.h>
 
 #include "images.h"
@@ -49,7 +41,7 @@ int gg_config_image_size;
 int gg_config_get_images;
 char *gg_config_images_dir;
 
-static image_t *image_add_queue(const char *filename, char *data, uint32_t size, uint32_t crc32);
+static image_t *image_add_queue(const char *filename, char *data, guint32 size, guint32 crc32);
 
 /* 
  * gg_changed_images()
@@ -74,10 +66,11 @@ COMMAND(gg_command_image)
 {
 	gg_private_t *g = session_private_get(session);
 	FILE *f;
-	uint32_t size, crc32;
+	guint32 size, crc32;
 	int i;
 	const char *filename	= params[1];
-	char *data, *uid;
+	char *data;
+	const char *uid;
 
 	struct gg_msg_richtext_format_img {
 		struct gg_msg_richtext rt;
@@ -134,7 +127,7 @@ COMMAND(gg_command_image)
  * 
  * data should be given as already allocated pointer 
  */
-static image_t *image_add_queue(const char *filename, char *data, uint32_t size, uint32_t crc32)
+static image_t *image_add_queue(const char *filename, char *data, guint32 size, guint32 crc32)
 {
 	image_t *i = xmalloc(sizeof(image_t));
 

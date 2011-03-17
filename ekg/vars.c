@@ -20,8 +20,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
-#include "win32.h"
+#include "ekg2.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -29,29 +28,22 @@
 #include <string.h>
 #include <unistd.h>
 
-#if HAVE_LANGINFO_CODESET
-#include <langinfo.h>
-#endif
-
-#include "debug.h"
-#include "dynstuff.h"
-#include "recode.h"
-#include "stuff.h"
-#include "themes.h"
-#include "vars.h"
-#include "xmalloc.h"
-#include "plugins.h"
-
-#include "dynstuff_inline.h"
-#include "queries.h"
-
 void changed_session_locks(const char *varname); /* sessions.c */
-char *console_charset;
+gboolean console_charset_is_utf8;
+const char *console_charset;
 
-static LIST_ADD_COMPARE(variable_add_compare, variable_t *) { return xstrcasecmp(data1->name, data2->name); }
-static __DYNSTUFF_LIST_ADD_SORTED(variables, variable_t, variable_add_compare);	/* variables_add() */
+GSList *variables = NULL;
 
-variable_t *variables = NULL;
+static gint variable_compare(gconstpointer a, gconstpointer b) {
+	variable_t *data1 = (variable_t *) a;
+	variable_t *data2 = (variable_t *) b;
+
+	return xstrcasecmp(data1->name, data2->name);
+}
+
+static void variables_add(variable_t *v) {
+	variables = g_slist_insert_sorted(variables, v, variable_compare);
+}
 
 /*
  * dd_*()
@@ -83,10 +75,6 @@ void variable_init() {
 	variable_add(NULL, ("completion_notify"), VAR_MAP, 1, &config_completion_notify, NULL, variable_map(4, 0, 0, "none", 1, 2, "add", 2, 1, "addremove", 4, 0, "away"), NULL);
 		/* It's very, very special variable; shouldn't be used by user */
 	variable_add(NULL, ("config_version"), VAR_INT, 2, &config_version, NULL, NULL, NULL);
-		/* XXX, warn here. user should change only console_charset if it's really nesessary... we should make user know about his terminal
-		 *	encoding... and give some tip how to correct this... it's just temporary
-		 */
-	variable_add(NULL, ("console_charset"), VAR_STR, 1, &config_console_charset, changed_console_charset, NULL, NULL);
 	variable_add(NULL, ("dcc_dir"), VAR_STR, 1, &config_dcc_dir, NULL, NULL, NULL); 
 	variable_add(NULL, ("debug"), VAR_BOOL, 1, &config_debug, NULL, NULL, NULL);
 /*	variable_add(NULL, ("default_protocol"), VAR_STR, 1, &config_default_protocol, NULL, NULL, NULL); */
@@ -108,18 +96,11 @@ void variable_init() {
 	variable_add(NULL, ("keep_reason"), VAR_INT, 1, &config_keep_reason, NULL, NULL, NULL);
 	variable_add(NULL, ("last"), VAR_MAP, 1, &config_last, NULL, variable_map(4, 0, 0, "none", 1, 2, "all", 2, 1, "separate", 4, 0, "sent"), NULL);
 	variable_add(NULL, ("last_size"), VAR_INT, 1, &config_last_size, NULL, NULL, NULL);
-	variable_add(NULL, ("lastlog_display_all"), VAR_INT, 1, &config_lastlog_display_all, NULL, variable_map(3, 
-			0, 0, "current window",
-			1, 2, "current window + configured",
-			2, 1, "all windows + configured"), NULL);
-	variable_add(NULL, ("lastlog_matchcase"), VAR_BOOL, 1, &config_lastlog_case, NULL, NULL, NULL);
-	variable_add(NULL, ("lastlog_noitems"), VAR_BOOL, 1, &config_lastlog_noitems, NULL, NULL, NULL);
 	variable_add(NULL, ("nickname"), VAR_STR, 1, &config_nickname, NULL, NULL, NULL);
 	variable_add(NULL, ("make_window"), VAR_MAP, 1, &config_make_window, changed_make_window, variable_map(4, 0, 0, "none", 1, 2, "usefree", 2, 1, "always", 4, 0, "chatonly"), NULL);
 	variable_add(NULL, ("mesg"), VAR_INT, 1, &config_mesg, changed_mesg, variable_map(3, 0, 0, "no", 1, 2, "yes", 2, 1, "default"), NULL);
 	variable_add(NULL, ("query_commands"), VAR_BOOL, 1, &config_query_commands, NULL, NULL, NULL);
 	variable_add(NULL, ("quit_reason"), VAR_STR, 1, &config_quit_reason, NULL, NULL, NULL);
-	variable_add(NULL, ("reason_limit"), VAR_BOOL, 1, &config_reason_limit, NULL, NULL, NULL);
 	variable_add(NULL, ("save_password"), VAR_BOOL, 1, &config_save_password, NULL, NULL, NULL);
 	variable_add(NULL, ("save_quit"), VAR_INT, 1, &config_save_quit, NULL, NULL, NULL);
 	variable_add(NULL, ("session_default"), VAR_STR, 1, &config_session_default, NULL, NULL, NULL);
@@ -155,13 +136,11 @@ void variable_init() {
  */
 void variable_set_default() {
 	xfree(config_timestamp);
+	xfree(config_completion_char);
 	xfree(config_display_color_map);
 	xfree(config_subject_prefix);
 	xfree(config_subject_reply_prefix);
-	xfree(config_console_charset);
 	xfree(config_dcc_dir);
-
-	xfree(console_charset);
 
 	config_slash_messages = 1;
 	config_history_savedups = 1;		/* save lines matching the previous history entry */
@@ -169,30 +148,11 @@ void variable_set_default() {
 	config_dcc_dir = NULL;
 
 	config_timestamp = xstrdup("\\%H:\\%M:\\%S");
+	config_completion_char = xstrdup(":");
 	config_display_color_map = xstrdup("nTgGbBrR");
 	config_subject_prefix = xstrdup("## ");
 	config_subject_reply_prefix = xstrdup("Re: ");
-#if HAVE_LANGINFO_CODESET
-	console_charset = xstrdup(nl_langinfo(CODESET));
-#endif
-
-	if (console_charset) 
-		config_console_charset = xstrdup(console_charset);
-	else
-		config_console_charset = xstrdup("ISO-8859-2"); /* Default: ISO-8859-2 */
-#if USE_UNICODE
-	if (!config_use_unicode && xstrcasecmp(console_charset, "UTF-8")) {
-		debug("nl_langinfo(CODESET) == %s swapping config_use_unicode to 0\n", console_charset);
-		config_use_unicode = 0;
-	} else	config_use_unicode = 1;
-#else
-	config_use_unicode = 0;
-	if (!xstrcasecmp(console_charset, "UTF-8")) {
-		debug("Warning, nl_langinfo(CODESET) reports that you are using utf-8 encoding, but you didn't compile ekg2 with (experimental/untested) --enable-unicode\n");
-		debug("\tPlease compile ekg2 with --enable-unicode or change your enviroment setting to use not utf-8 but iso-8859-1 maybe? (LC_ALL/LC_CTYPE)\n");
-	}
-#endif
-	config_use_iso = !xstrncasecmp(console_charset, "ISO-8859-", 9);
+	console_charset_is_utf8 = g_get_charset(&console_charset);
 }
 
 /*
@@ -203,7 +163,7 @@ void variable_set_default() {
  * - name.
  */
 variable_t *variable_find(const char *name) {
-	variable_t *v;
+	GSList *vl;
 	int hash;
 
 	if (!name)
@@ -211,7 +171,8 @@ variable_t *variable_find(const char *name) {
 
 	hash = variable_hash(name);
 
-	for (v = variables; v; v = v->next) {
+	for (vl = variables; vl; vl = vl->next) {
+		variable_t *v = vl->data;
 		if (v->name_hash == hash && !xstrcasecmp(v->name, name))
 			return v;
 	}
@@ -274,7 +235,7 @@ variable_t *variable_add(plugin_t *plugin, const char *name, int type, int displ
 	if (!name)
 		return NULL;
 
-	if (plugin)
+	if (plugin && !xstrchr(name, ':'))
 		__name = saprintf("%s:%s", plugin->name, name);
 	else
 		__name = xstrdup(name);
@@ -301,22 +262,45 @@ variable_t *variable_add(plugin_t *plugin, const char *name, int type, int displ
  */
 int variable_remove(plugin_t *plugin, const char *name) {
 	int hash;
-	variable_t *v;
+	GSList *vl;
 
 	if (!name)
 		return -1;
 
 	hash = ekg_hash(name);
 
-	for (v = variables; v; v = v->next) {
+	for (vl = variables; vl; vl = vl->next) {
+		variable_t *v = vl->data;
 		if (!v->name)
 			continue;
 		
 		if (hash == v->name_hash && plugin == v->plugin && !xstrcasecmp(name, v->name)) {
-			(void) variables_removei(v);
+			variables_remove(v);
 			return 0;
 		}
 	}
+	return -1;
+}
+
+/**
+ * on_off()
+ *
+ * @return	 1 - If @a value is one of: <i>on</i>, <i>true</i>, <i>yes</i>, <i>tak</i>, <i>1</i>	[case-insensitive]<br>
+ *		 0 - If @a value is one of: <i>off</i>, <i>false</i>, <i>no</i>, <i>nie</i>, <i>0</i>	[case-insensitive]<br>
+ *		else -1
+ */
+
+static int on_off(const char *value)
+{
+	if (!value)
+		return -1;
+
+	if (!xstrcasecmp(value, "on") || !xstrcasecmp(value, "true") || !xstrcasecmp(value, "yes") || !xstrcasecmp(value, "tak") || !xstrcmp(value, "1"))
+		return 1;
+
+	if (!xstrcasecmp(value, "off") || !xstrcasecmp(value, "false") || !xstrcasecmp(value, "no") || !xstrcasecmp(value, "nie") || !xstrcmp(value, "0"))
+		return 0;
+
 	return -1;
 }
 
@@ -334,6 +318,7 @@ int variable_remove(plugin_t *plugin, const char *name) {
 int variable_set(const char *name, const char *value) {
 	variable_t *v = variable_find(name);
 	char *tmpname;
+	int changed = 0;
 
 	if (!v)
 		return -1;
@@ -353,7 +338,7 @@ int variable_set(const char *name, const char *value) {
 
 				for (i = 0; v->map[i].label; i++)
 					if (!xstrcasecmp(v->map[i].label, value))
-						value = itoa(v->map[i].value);
+						value = ekg_itoa(v->map[i].value);
 			}
 
 			if (v->map && v->type == VAR_MAP && !xisdigit(*p)) {
@@ -391,14 +376,14 @@ int variable_set(const char *name, const char *value) {
 					}
 
 					if (!found) {
-						array_free(args);
+						g_strfreev(args);
 						return -2;
 					}
 				}
 
-				array_free(args);
+				g_strfreev(args);
 
-				value = itoa(k);
+				value = ekg_itoa(k);
 			}
 
 			p = value;
@@ -426,9 +411,10 @@ int variable_set(const char *name, const char *value) {
 				}
 			}
 
+			changed = (*(int*)(v->ptr) != tmp);
 			*(int*)(v->ptr) = tmp;
 
-			goto notify;
+			break;
 		}
 
 		case VAR_BOOL:
@@ -441,9 +427,10 @@ int variable_set(const char *name, const char *value) {
 			if ((tmp = on_off(value)) == -1)
 				return -2;
 
+			changed = (*(int*)(v->ptr) != tmp);
 			*(int*)(v->ptr) = tmp;
 
-			goto notify;
+			break;
 		}
 		case VAR_THEME:
 		case VAR_FILE:
@@ -451,9 +438,9 @@ int variable_set(const char *name, const char *value) {
 		case VAR_STR:
 		{
 			char **tmp = (char**)(v->ptr);
-			
-			xfree(*tmp);
-			
+
+			char *oldval = *tmp;
+
 			if (value) {
 				if (*value == 1)
 					*tmp = base64_decode(value + 1);
@@ -462,24 +449,30 @@ int variable_set(const char *name, const char *value) {
 			} else
 				*tmp = NULL;
 	
-			goto notify;
+			changed = xstrcmp(oldval, *tmp);
+			xfree(oldval);
+			break;
 		}
+		default:
+			return -1;
 	}
 
-	return -1;
-
-notify:
 	if (v->notify)
 		(v->notify)(v->name);
 
+	if (!changed)
+		return 1;
+
 	tmpname = xstrdup(v->name);
-	query_emit_id(NULL, VARIABLE_CHANGED, &tmpname);
+	query_emit(NULL, "variable-changed", &tmpname);
 	xfree(tmpname);
 			
 	return 0;
 }
 
-LIST_FREE_ITEM(variable_list_freeone, variable_t *) {
+static void variable_free(void *_data) {
+	variable_t *data = (variable_t *) _data;
+
 	xfree(data->name);
 
 	switch (data->type) {
@@ -503,10 +496,17 @@ LIST_FREE_ITEM(variable_list_freeone, variable_t *) {
 
 		xfree(data->map);
 	}
+	xfree(data);
 }
 
-__DYNSTUFF_LIST_REMOVE_ITER(variables, variable_t, variable_list_freeone);	/* variables_removei() */
-__DYNSTUFF_LIST_DESTROY(variables, variable_t, variable_list_freeone);	/* variables_destroy() */
+void variables_remove(variable_t *v) {
+	variables = g_slist_remove(variables, v);
+	variable_free(v);
+}
+
+void variables_destroy(void) {
+	g_slist_free_full(variables, variable_free);
+}
 
 /*
  * variable_help()
@@ -517,9 +517,9 @@ __DYNSTUFF_LIST_DESTROY(variables, variable_t, variable_list_freeone);	/* variab
  * name - name of the variable
  */
 void variable_help(const char *name) {
-	FILE *f; 
-	char *line, *type = NULL, *def = NULL, *tmp;
-	const char *seeking_name;
+	GDataInputStream *f; 
+	gchar *type = NULL, *def = NULL, *tmp;
+	const gchar *line, *seeking_name;
 	string_t s;
 	int found = 0;
 	variable_t *v = variable_find(name);
@@ -532,7 +532,7 @@ void variable_help(const char *name) {
 	if (v->plugin && v->plugin->name) {
 		char *tmp2;
 
-		if (!(f = help_path("vars", v->plugin->name))) {
+		if (!(f = help_open("vars", v->plugin->name))) {
 			print("help_set_file_not_found_plugin", v->plugin->name);
 			return;
 		}
@@ -543,7 +543,7 @@ void variable_help(const char *name) {
 		else
 			seeking_name = name;
 	} else {
-		if (!(f = help_path("vars", NULL))) {
+		if (!(f = help_open("vars", NULL))) {
 			print("help_set_file_not_found");
 			return;
 		}
@@ -551,7 +551,7 @@ void variable_help(const char *name) {
 		seeking_name = name;
 	}
 
-	while ((line = read_file_iso(f, 0))) {
+	while ((line = read_line(f))) {
 		if (!xstrcasecmp(line, seeking_name)) {
 			found = 1;
 			break;
@@ -559,19 +559,19 @@ void variable_help(const char *name) {
 	}
 
 	if (!found) {
-		fclose(f);
+		g_object_unref(f);
 		print("help_set_var_not_found", name);
 		return;
 	}
 
-	line = read_file_iso(f, 0);
+	line = read_line(f);
 	
 	if ((tmp = xstrstr(line, (": "))))
 		type = xstrdup(tmp + 2);
 	else
 		type = xstrdup(("?"));
 	
-	line = read_file_iso(f, 0);
+	line = read_line(f);
 	if ((tmp = xstrstr(line, (": "))))
 		def = xstrdup(tmp + 2);
 	else
@@ -583,9 +583,9 @@ void variable_help(const char *name) {
 	xfree(def);
 
 	if (tmp)		/* je¶li nie jest to ukryta zmienna... */
-		read_file_iso(f, 0);	/* ... pomijamy liniê */
+		read_line(f);	/* ... pomijamy liniê */
 	s = string_init(NULL);
-	while ((line = read_file_iso(f, 0))) {
+	while ((line = read_line(f))) {
 		if (line[0] != '\t')
 			break;
 
@@ -613,7 +613,7 @@ void variable_help(const char *name) {
 	if (format_exists("help_set_footer"))
 		print("help_set_footer", name);
 
-	fclose(f);
+	g_object_unref(f);
 }
 
 /*

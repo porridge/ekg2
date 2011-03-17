@@ -1,5 +1,6 @@
 /*
  *  (C) Copyright 2005 Jakub Zawadzki <darkjames@darkjames.ath.cx>
+ *                2010 Wies³aw Ochmiñski <wiechu@wiechu.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License Version 2 as
@@ -15,23 +16,13 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __FreeBSD__
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
-#endif
-
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <sys/types.h>
 #include <stdlib.h>
 
-#include <ekg/plugins.h>
 #include <ekg/scripts.h>
 
-#include <ekg/commands.h>
-#include <ekg/themes.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
 #undef _
 
 // #include "perl_ekg.h"

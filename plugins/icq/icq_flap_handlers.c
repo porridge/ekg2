@@ -2,6 +2,10 @@
  *  (C) Copyright 2006-2008 Jakub Zawadzki <darkjames@darkjames.ath.cx>
  *		       2008 Wies³aw Ochmiñski <wiechu@wiechu.com>
  *
+ * Protocol description with author's permission from: http://iserverd.khstu.ru/oscar/
+ *  (C) Copyright 2000-2005 Alexander V. Shutko <AVShutko@mail.khstu.ru>
+ *
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License Version 2 as
  *  published by the Free Software Foundation.
@@ -16,7 +20,9 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <stdint.h>
+
+#include "ekg2.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,13 +34,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/protocol.h>
-#include <ekg/sessions.h>
-#include <ekg/plugins.h>
-#include <ekg/xmalloc.h>
-
 #include "icq.h"
 #include "misc.h"
 #include "miscicq.h"
@@ -42,23 +41,23 @@
 #include "icq_flap_handlers.h"
 #include "icq_snac_handlers.h"
 
-static inline char *_icq_makeflap(uint8_t cmd, uint16_t id, uint16_t len) {
+static inline char *_icq_makeflap(guint8 cmd, guint16 id, guint16 len) {
 	static char buf[FLAP_PACKET_LEN];
-	string_t tempstr;
+	GString *tempstr;
 
-	tempstr = icq_pack("CCWW", (uint32_t) 0x2a, (uint32_t) cmd, (uint32_t) id, (uint32_t) len);
+	tempstr = icq_pack("CCWW", (guint32) 0x2a, (guint32) cmd, (guint32) id, (guint32) len);
 	if (tempstr->len != FLAP_PACKET_LEN) {
 		debug_error("_icq_makeflap() critical error\n");
 		return NULL;
 	}
 	memcpy(buf, tempstr->str, FLAP_PACKET_LEN);
-	string_free(tempstr, 1);
+	g_string_free(tempstr, TRUE);
 	return buf;
 }
 
 // static inline void _icq_decodeflap();
 
-void icq_makeflap(session_t *s, string_t pkt, uint8_t cmd) {
+void icq_makeflap(session_t *s, GString *pkt, guint8 cmd) {
 	icq_private_t *j;
 
 	if (!s || !(j = s->priv) || !pkt)
@@ -71,7 +70,7 @@ void icq_makeflap(session_t *s, string_t pkt, uint8_t cmd) {
 	j->flap_seq &= 0x7fff;
 
 	debug_function("icq_makeflap() 0x%x\n", cmd);
-	string_insert_n(pkt, 0, _icq_makeflap(cmd, j->flap_seq, pkt->len), FLAP_PACKET_LEN);
+	g_string_prepend_len(pkt, _icq_makeflap(cmd, j->flap_seq, pkt->len), FLAP_PACKET_LEN);
 }
 
 #define ICQ_FLAP_HANDLER(x) int x(session_t *s, unsigned char *buf, int len)
@@ -80,7 +79,7 @@ typedef int (*flap_handler_t)	  (session_t * , unsigned char *    , int    );
 #define ICQ_FLAP_LOGIN	0x01
 static ICQ_FLAP_HANDLER(icq_flap_login) {
 	struct {
-		uint32_t id;				/* LOGIN PACKET: 0x00 00 00 01 */
+		guint32 id;				/* LOGIN PACKET: 0x00 00 00 01 */
 		unsigned char *buf;			/* extra data ? */
 	} login;
 
@@ -111,6 +110,8 @@ static ICQ_FLAP_HANDLER(icq_flap_login) {
 		 * ways server could return error or authorization cookie + BOS address.
 		 */
 
+		GString *str = icq_pack("I", (guint32) 1);			/* protocol version number */
+
 		if (session_int_get(s, "plaintext_passwd") == 1) {
 			/*
 			 * Client use this packet in FLAP channel 0x01 based authorization sequence.
@@ -118,22 +119,12 @@ static ICQ_FLAP_HANDLER(icq_flap_login) {
 			 * srv_cookie packet, containing BOS address/cookie or via auth_failed
 			 * packet, containing error code.
 			 */
-
-			string_t str;
 			char *password;
 
 			debug("icq_flap_login(1) PLAINTEXT\n");
 
 			// Start channel 0x01 authorization
-
-			str = string_init(NULL);
-
-			icq_pack_append(str, "I", (uint32_t) 1);			/* spkt.flap.pkt.login.id CLI_HELLO */
-
-			/* TLVs */
 			icq_pack_append(str, "T", icq_pack_tlv_str(1, s->uid + 4));			// TLV(0x01) - uin
-
-			/* XXX, miranda assume hash has got max 20 chars? */
 			password = icq_encryptpw(session_get(s, "password"));
 			icq_pack_append(str, "T", icq_pack_tlv_str(2, password));			// TLV(0x02) - roasted password
 			xfree(password);
@@ -144,29 +135,22 @@ static ICQ_FLAP_HANDLER(icq_flap_login) {
 			icq_send_pkt(s, str);	str = NULL;		// Send CLI_IDENT packet
 
 		} else {
-			// Second way is MD5 based where password is MD5 crypted.
-			/*
-			 * This is the first snac in md5 crypted login sequence. Client use this snac
-			 * to request login random key from server. It contain screenname and some
-			 * unknown stuff. Server should reply with SNAC(17,07), containing auth key string.
-			 */
-
-			string_t str;
+			/* Second way is MD5 based where password is MD5 crypted */
 
 			debug("icq_flap_login(1) MD5\n");
 
-			str = icq_pack("I", (uint32_t) 1);			/* spkt.flap.pkt.login.id CLI_HELLO */
 			icq_pack_append(str, "tI", icq_pack_tlv_dword(0x8003, 0x00100000));		/* unknown */
 			icq_makeflap(s, str, ICQ_FLAP_LOGIN);
 			icq_send_pkt(s, str);	str = NULL;
 
-			/*
+			/* SNAC(17,06) CLI_AUTH_REQUEST	Request md5 authkey
+			 *
 			 * This is the first snac in md5 crypted login sequence. Client use this
 			 * snac to request login random key from server. Server could return SNAC(17,07)
+			 * containing auth key string.
 			 */
-			// Send CLI_AUTH_REQUEST
 			icq_send_snac(s, 0x17, 6, 0, 0,
-				    "T", icq_pack_tlv_str(1, s->uid + 4));	/* uid */
+				    "T", icq_pack_tlv_str(0x01, s->uid + 4));	/* Send CLI_AUTH_REQUEST */
 		}
 
 	}
@@ -177,7 +161,7 @@ static ICQ_FLAP_HANDLER(icq_flap_login) {
 		 * packet named CLI_COOKIE. In reply server will return list of supported services - SNAC(01,03).
 		 */
 
-		string_t str;
+		GString *str;
 
 		debug("icq_flap_login(2) s=0x%x cookie=0x%x cookielen=%d\n", s, j->cookie, j->cookie ? j->cookie->len : -1);
 
@@ -186,13 +170,14 @@ static ICQ_FLAP_HANDLER(icq_flap_login) {
 			return -2;
 		}
 
-		str = icq_pack("I", (uint32_t) 1);			/* spkt.flap.pkt.login.id CLI_HELLO */
+		str = icq_pack("I", (guint32) 1);			/* spkt.flap.pkt.login.id CLI_HELLO */
 		icq_pack_append(str, "T", icq_pack_tlv(0x06, j->cookie->str, j->cookie->len));
 
 		icq_makeflap(s, str, ICQ_FLAP_LOGIN);
 		icq_send_pkt(s, str); str = NULL;			// Send CLI_COOKIE
 
-		string_free(j->cookie, 1); j->cookie = NULL;
+		g_string_free(j->cookie, TRUE);
+		j->cookie = NULL;
 	}
 	else {
 		debug_error("icq_flap_login(%d) XXX?\n", s->connecting);
@@ -213,19 +198,19 @@ static ICQ_FLAP_HANDLER(icq_flap_data) {
 	if (!ICQ_UNPACK(&(snac.data), "WWWI", &(snac.family), &(snac.cmd), &(snac.flags), &(snac.ref)))
 		return -1;
 
-	data = snac.data;
-
-	debug_white("icq_flap_data() SNAC pkt, fam=0x%x cmd=0x%x flags=0x%x ref=0x%x (len=%d)\n", snac.family, snac.cmd, snac.flags, snac.ref, len);
 #if ICQ_SNAC_NAMES_DEBUG
 	{
-	const char *tmp = icq_snac_name(snac.family, snac.cmd);
-	if (tmp)
-		debug_white("icq_flap_data() //  SNAC(0x%x, 0x%x) -- %s\n", snac.family, snac.cmd, tmp);
+		const char *tmp = icq_snac_name(snac.family, snac.cmd);
+		debug_white("icq_flap_data() SNAC(0x%x,0x%x) (flags=0x%x ref=0x%x len=%d) // %s\n", snac.family, snac.cmd, snac.flags, snac.ref, len, tmp?tmp:"");
 	}
+#else
+	debug_white("icq_flap_data() SNAC(0x%x,0x%x) (flags=0x%x ref=0x%x len=%d)\n", snac.family, snac.cmd, snac.flags, snac.ref, len);
 #endif
 
+	data = snac.data;
+
 	if (snac.flags & 0x8000) {
-		uint16_t skip_len;
+		guint16 skip_len;
 
 		if (!icq_unpack(data, &data, &len, "W", &skip_len))
 			return -1;
@@ -263,8 +248,6 @@ int icq_flap_close_helper(session_t *s, unsigned char *buf, int len) {
 	struct icq_tlv_list *tlvs;
 	icq_tlv_t *login_tlv;
 
-	/* XXX, icq_handle_disconnect() */
-
 	if (!(tlvs = icq_unpack_tlvs(&buf, &len, 0)))
 		return -1;
 
@@ -272,7 +255,7 @@ int icq_flap_close_helper(session_t *s, unsigned char *buf, int len) {
 		icq_tlv_t *cookie_tlv = icq_tlv_get(tlvs, 0x06);
 		char *login_str = xstrndup((char *) login_tlv->buf, login_tlv->len);
 		struct sockaddr_in sin;
-		string_t pkt;
+		GString *pkt;
 		char *tmp;
 		int port;
 		int fd;
@@ -297,16 +280,18 @@ int icq_flap_close_helper(session_t *s, unsigned char *buf, int len) {
 
 		debug("icq_flap_close() Redirect to server %s:%d\n", login_str, port);
 
-		string_free(j->cookie, 1);
-		j->cookie = string_init(NULL);
-		string_append_raw(j->cookie, (char *) cookie_tlv->buf, cookie_tlv->len);
+		j->cookie = g_string_new(NULL);
+		g_string_append_len(j->cookie, (char *) cookie_tlv->buf, cookie_tlv->len);
 
-		/* FlapCliGoodbye() */
-		pkt = string_init(NULL);
-		icq_makeflap(s, pkt, ICQ_FLAP_CLOSE);
-		icq_send_pkt(s, pkt); pkt = NULL;
+		if (!j->migrate) {
+			/* FlapCliGoodbye() */
+			pkt = g_string_new(NULL);
+			icq_makeflap(s, pkt, ICQ_FLAP_CLOSE);
+			icq_send_pkt(s, pkt); pkt = NULL;
+		}
 
 		s->connecting = 2;
+		j->migrate = 0;
 
 		// Client disconnects from authorizer
 		if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -320,7 +305,7 @@ int icq_flap_close_helper(session_t *s, unsigned char *buf, int len) {
 
 		sin.sin_family		= AF_INET;
 		sin.sin_addr.s_addr	= inet_addr(login_str);
-		sin.sin_port		= ntohs(port);
+		sin.sin_port		= g_htons(port);
 
 		if (connect(fd, (struct sockaddr *) &sin, sizeof(sin))) {
 			int err = errno;
@@ -369,64 +354,6 @@ int icq_flap_close_helper(session_t *s, unsigned char *buf, int len) {
 	icq_tlvs_destroy(&tlvs);
 
 	return 0;
-#if 0	/* Miranda code: */
-
-	oscar_tlv_chain* chain = NULL;
-	WORD wError;
-
-	icq_sendCloseConnection(); // imitate icq5 behaviour
-
-	if (!(chain = readIntoTLVChain(&buf, datalen, 0)))
-	{
-		NetLog_Server("Error: Missing chain on close channel");
-		NetLib_CloseConnection(&hServerConn, TRUE);
-		return; // Invalid data
-	}
-
-	// TLV 8 errors (signon errors?)
-	wError = getWordFromChain(chain, 0x08, 1);
-	if (wError)
-	{
-		handleSignonError(wError);
-
-		// we return only if the server did not gave us cookie (possible to connect with soft error)
-		if (!getLenFromChain(chain, 0x06, 1))
-		{
-			disposeChain(&chain);
-			SetCurrentStatus(ID_STATUS_OFFLINE);
-			NetLib_CloseConnection(&hServerConn, TRUE);
-			return; // Failure
-		}
-	}
-
-	// We are in the login phase and no errors were reported.
-	// Extract communication server info.
-	info->newServer = (char*)getStrFromChain(chain, 0x05, 1);
-	info->cookieData = getStrFromChain(chain, 0x06, 1);
-	info->cookieDataLen = getLenFromChain(chain, 0x06, 1);
-
-	// We dont need this anymore
-	disposeChain(&chain);
-
-	if (!info->newServer || !info->cookieData)
-	{
-		icq_LogMessage(LOG_FATAL, LPGEN("You could not sign on because the server returned invalid data. Try again."));
-
-		SAFE_FREE((void**)&info->newServer);
-		SAFE_FREE((void**)&info->cookieData);
-		info->cookieDataLen = 0;
-
-		SetCurrentStatus(ID_STATUS_OFFLINE);
-		NetLib_CloseConnection(&hServerConn, TRUE);
-		return; // Failure
-	}
-
-	NetLog_Server("Authenticated.");
-	info->newServerReady = 1;
-
-	return;
-
-#endif
 }
 
 static ICQ_FLAP_HANDLER(icq_flap_close) {
@@ -438,8 +365,8 @@ static ICQ_FLAP_HANDLER(icq_flap_close) {
 #define ICQ_FLAP_PING	0x05
 static ICQ_FLAP_HANDLER(icq_flap_ping) {
 	struct {
-		uint16_t seq;		/* XXX, BE/LE? */
-		uint16_t len;		/* XXX, BE/LE? */
+		guint16 seq;		/* XXX, BE/LE? */
+		guint16 len;		/* XXX, BE/LE? */
 		unsigned char *data;
 	} ping;
 
@@ -456,7 +383,7 @@ static ICQ_FLAP_HANDLER(icq_flap_ping) {
 	return 0;
 }
 
-int icq_flap_handler(session_t *s, string_t buffer) {
+int icq_flap_handler(session_t *s, GString *buffer) {
 	unsigned char *buf = (unsigned char *) buffer->str;
 	int next_flap = 0;
 	int len = buffer->len;

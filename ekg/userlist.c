@@ -19,13 +19,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
-#include "win32.h"
-
-#ifndef __FreeBSD__
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
-#endif
+#include "ekg2.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,27 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include "commands.h"
-#include "dynstuff.h"
-#ifndef HAVE_STRLCAT
-#  include "compat/strlcat.h"
-#endif
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
-#include "plugins.h"
-#include "stuff.h"
-#include "themes.h"
-#include "userlist.h"
-#include "vars.h"
-#include "windows.h"
-#include "xmalloc.h"
-#include "log.h"
-
-#include "debug.h"
-#include "dynstuff_inline.h"
-#include "queries.h"
 
 static void userlist_private_free(userlist_t *u);
 
@@ -100,11 +73,12 @@ DYNSTUFF_LIST_DECLARE_SORTED(ekg_resources, ekg_resource_t, userlist_resource_co
 	static __DYNSTUFF_DESTROY)		/* ekg_resources_destroy() */
 
 /* userlist: */
-static LIST_ADD_COMPARE(userlist_compare, userlist_t *) { return xstrcasecmp(data1->nickname, data2->nickname); }
+static LIST_ADD_COMPARE(userlist_compare, userlist_t *) { return xstrcoll(data1->nickname, data2->nickname); }
 static LIST_FREE_ITEM(userlist_free_item, userlist_t *) {
 	userlist_private_free(data);
 	private_items_destroy(&data->priv_list);
-	xfree(data->uid); xfree(data->nickname); xfree(data->descr); xfree(data->foreign); xfree(data->last_descr);
+	xfree((void *) data->uid); xfree(data->nickname); xfree(data->descr); xfree(data->foreign); xfree(data->last_descr);
+	xfree(data->descr1line);
 	ekg_groups_destroy(&(data->groups));
 	ekg_resources_destroy(&(data->resources));
 }
@@ -123,8 +97,8 @@ void userlist_add_entry(session_t *session, const char *line) {
 	userlist_t *u;
 	int count, i;
 
-	if ((count = array_count(entry)) < 7) {
-		array_free(entry);
+	if ((count = g_strv_length(entry)) < 7) {
+		g_strfreev(entry);
 		return;
 	}
 
@@ -134,13 +108,13 @@ void userlist_add_entry(session_t *session, const char *line) {
 	{
 		int function = EKG_USERLIST_PRIVHANDLER_READING;
 
-		query_emit_id(NULL, USERLIST_PRIVHANDLE, &u, &function, &entry, &count);
+		query_emit(NULL, "userlist-privhandle", &u, &function, &entry, &count);
 	}
 
 	if (valid_plugin_uid(session->plugin, u->uid) != 1) {
 		debug_error("userlist_add_entry() wrong uid: %s for session: %s [plugin: 0x%x]\n", u->uid, session->uid, session->plugin);
 		array_free_count(entry, count);
-		xfree(u->uid);
+		xfree((void *) u->uid);
 		xfree(u);
 		return;
 	}
@@ -180,26 +154,22 @@ void userlist_add_entry(session_t *session, const char *line) {
  * @return 0 on success, -1 file not found
  */
 int userlist_read(session_t *session) {
-	const char *filename;
 	char *buf;
-	FILE *f;
+	GDataInputStream *f;
 
-	if (!(filename = prepare_pathf("%s-userlist", session->uid)))
-		return -1;
-	
-	if (!(f = fopen(filename, "r")))
+	if (!(f = G_DATA_INPUT_STREAM(config_open("%s-userlist", "r", session->uid))))
 		return -1;
 			
-	while ((buf = read_file(f, 0))) {
+	while ((buf = read_line(f))) {
 		if (buf[0] == '#' || (buf[0] == '/' && buf[1] == '/'))
 			continue;
 		
 		userlist_add_entry(session, buf);
 	}
 
-	query_emit_id(NULL, USERLIST_REFRESH);	/* XXX, wywolywac tylko kiedy dodalismy przynajmniej 1 */
+	query_emit(NULL, "userlist-refresh");	/* XXX, wywolywac tylko kiedy dodalismy przynajmniej 1 */
 
-	fclose(f);
+	g_object_unref(f);
 		
 	return 0;
 } 
@@ -219,21 +189,12 @@ int userlist_read(session_t *session) {
  *		-2 if we fail to create/open userlist file in rw mode
  */
 
-int userlist_write(session_t *session) {
-	const char *filename;
-	FILE *f;
+void userlist_write(session_t *session) {
+	GOutputStream *f;
 	userlist_t *ul;
 
-	if (!prepare_path(NULL, 1))	/* try to create ~/.ekg2 dir */
-		return -1;
-
-	if (!(filename = prepare_pathf("%s-userlist", session->uid)))
-		return -1;
-	
-	if (!(f = fopen(filename, "w"))) {
-		return -2;
-	}
-	fchmod(fileno(f), 0600);
+	if (!(f = G_OUTPUT_STREAM(config_open("%s-userlist", "w", session->uid))))
+		return;
 
 	/* userlist_dump() */
 	for (ul = session->userlist; ul; ul = ul->next) {
@@ -252,21 +213,18 @@ int userlist_write(session_t *session) {
 		{
 			int function = EKG_USERLIST_PRIVHANDLER_WRITING;
 
-			query_emit_id(NULL, USERLIST_PRIVHANDLE, &u, &function, &entry);
+			query_emit(NULL, "userlist-privhandle", &u, &function, &entry);
 		}
 
 		line = array_join_count(entry, ";", 7);
 
-		fprintf(f, "%s%s\n", 
+		ekg_fprintf(f, "%s%s\n", 
 			line,					/* look upper */
 			u->foreign ? u->foreign : "");		/* backwards compatibility */
 
 		xfree(line);
 		array_free_count(entry, 7);
 	}
-
-	fclose(f);
-	return 0;
 }
 
 /**
@@ -324,7 +282,7 @@ static void userlist_private_free(userlist_t *u) {
 	if (u->priv) {
 		int func = EKG_USERLIST_PRIVHANDLER_FREE;
 
-		query_emit_id(NULL, USERLIST_PRIVHANDLE, &u, &func);
+		query_emit(NULL, "userlist-privhandle", &u, &func);
 	}
 }
 
@@ -332,7 +290,7 @@ void *userlist_private_get(plugin_t *plugin, userlist_t *u) {
 	int func = EKG_USERLIST_PRIVHANDLER_GET;
 	void *up = NULL;
 
-	query_emit_id(plugin, USERLIST_PRIVHANDLE, &u, &func, &up);
+	query_emit(plugin, "userlist-privhandle", &u, &func, &up);
 
 	return up;
 }
@@ -580,7 +538,7 @@ userlist_t *userlist_find_u(userlist_t **userlist, const char *uid) {
 
 		/* porównujemy resource; if (len > 0) */
 
-		if (!(tmp = xstrchr(uid, '/')) || (xstrncmp(uid, "xmpp:", 5)))
+		if (!(tmp = xstrchr(uid, '/')) || (xstrncmp(uid, "tlen:", 5) && xstrncmp(uid, "xmpp:", 5)) )
 			continue;
 
 		len = (int)(tmp - uid);
@@ -637,7 +595,7 @@ int valid_uid(const char *uid) {
 	char *tmp;
 	tmp = xstrdup(uid);
 
-	query_emit_id(NULL, PROTOCOL_VALIDATE_UID, &tmp, &valid);
+	query_emit(NULL, "protocol-validate-uid", &tmp, &valid);
 	xfree(tmp);
 
 	return (valid > 0);
@@ -669,7 +627,7 @@ int valid_plugin_uid(plugin_t *plugin, const char *uid) {
 
 	tmp = xstrdup(uid);
 
-	query_emit_id(plugin, PROTOCOL_VALIDATE_UID, &tmp, &valid);
+	query_emit(plugin, "protocol-validate-uid", &tmp, &valid);
 	xfree(tmp);
 
 	return (valid > 0);
@@ -688,8 +646,8 @@ int valid_plugin_uid(plugin_t *plugin, const char *uid) {
  * @return If we found proper uid for @a text, than return it. Otherwise NULL
  */
 
-char *get_uid_any(session_t *session, const char *text) {
-	char *uid = get_uid(session, text);
+const char *get_uid_any(session_t *session, const char *text) {
+	const char *uid = get_uid(session, text);
 
 	if (!session) 
 		return uid;
@@ -697,7 +655,7 @@ char *get_uid_any(session_t *session, const char *text) {
 	if (!uid && !xstrcmp(text, "$"))
 		text = window_current->target;
 
-	return uid ? uid : valid_uid(text) ? (char *) text : NULL;
+	return uid ? uid : valid_uid(text) ? text : NULL;
 }
 
 /**
@@ -725,14 +683,14 @@ char *get_uid_any(session_t *session, const char *text) {
  * @return If we found proper uid for @a text, than return it. Otherwise NULL
  */
 
-char *get_uid(session_t *session, const char *text) {
+const char *get_uid(session_t *session, const char *text) {
 	userlist_t *u;
 
 	if (text && !xstrcmp(text, "$"))
 		text = window_current->target;
 
 	if (!session)
-		return valid_uid(text) ? (char *) text : NULL;
+		return valid_uid(text) ? text : NULL;
 
 	u = userlist_find(session, text);
 
@@ -740,7 +698,7 @@ char *get_uid(session_t *session, const char *text) {
 		return u->uid;
 
 	if (valid_plugin_uid(session->plugin, text) == 1)
-		return (char *)text;
+		return text;
 
 	return NULL;
 }
@@ -753,14 +711,14 @@ char *get_uid(session_t *session, const char *text) {
  * no nickname it returns uid, else if contacts doesnt exist
  * it returns text if it is a correct uid, else NULL
  */
-char *get_nickname(session_t *session, const char *text) {
+const char *get_nickname(session_t *session, const char *text) {
 	userlist_t *u;
 
 	if (text && !xstrcmp(text, "$"))
 		text = window_current->target;
 
 	if (!session)
-		return valid_uid(text) ? (char *) text : NULL;
+		return valid_uid(text) ? text : NULL;
 
 	u = userlist_find(session, text);
 
@@ -771,7 +729,7 @@ char *get_nickname(session_t *session, const char *text) {
 		return u->uid;
 
 	if (valid_plugin_uid(session->plugin, text) == 1)
-		return (char *)text;
+		return text;
 
 	return NULL;
 }
@@ -785,7 +743,7 @@ char *get_user_name(userlist_t *u) {
 	char *name;
 	if (!u)
 		return NULL;
-	name = user_private_item_get(u, "first_name");
+	name = (char *)user_private_item_get(u, "first_name");
 	return (name && *name) ? name : u->nickname;
 }
 
@@ -807,7 +765,7 @@ const char *format_user(session_t *session, const char *uid) {
 	else
 		tmp = format_string(format_find("known_user"), u->nickname, uid);
 	
-	strlcpy(buf, tmp, sizeof(buf));
+	g_strlcpy(buf, tmp, sizeof(buf));
 	
 	xfree(tmp);
 
@@ -849,12 +807,12 @@ int ignored_remove(session_t *session, const char *uid) {
 
 	tmps	= xstrdup(session->uid);
 	tmp	= xstrdup(u->uid);
-	query_emit_id(NULL, PROTOCOL_IGNORE, &tmps, &tmp, &level, &tmp2);
+	query_emit(NULL, "protocol-ignore", &tmps, &tmp, &level, &tmp2);
 	xfree(tmps);
 	xfree(tmp);
 
 	if ((level & IGNORE_STATUS || level & IGNORE_STATUS_DESCR)) {
-		query_emit_id(NULL, PROTOCOL_UNIGNORE, &u, &session);
+		query_emit(NULL, "protocol-unignore", &u, &session);
 	}
 
 	return 0;
@@ -893,7 +851,7 @@ int ignored_add(session_t *session, const char *uid, ignore_t level) {
 
 	tmps	= xstrdup(session->uid);
 	tmp	= xstrdup(u->uid);
-	query_emit_id(NULL, PROTOCOL_IGNORE, &tmps, &tmp, &oldlevel, &level);
+	query_emit(NULL, "protocol-ignore", &tmps, &tmp, &oldlevel, &level);
 	xfree(tmps);
 	xfree(tmp);
 	
@@ -962,7 +920,7 @@ int ignore_flags(const char *str) {
 				ret |= ignore_labels[y].level;
 	}
 
-	array_free(arr);
+	g_strfreev(arr);
 
 	return ret;
 }
@@ -992,9 +950,9 @@ const char *ignore_format(int level) {
 	for (i = 0; ignore_labels[i].name; i++) {
 		if (level & ignore_labels[i].level) {
 			if (comma++)
-				strlcat(buf, ",", sizeof(buf));
+				g_strlcat(buf, ",", sizeof(buf));
 
-			strlcat(buf, ignore_labels[i].name, sizeof(buf));
+			g_strlcat(buf, ignore_labels[i].name, sizeof(buf));
 		}
 	}
 
@@ -1112,7 +1070,7 @@ struct ekg_group *group_init(const char *names) {
 		g->name = groups[i];
 		ekg_groups_add(&gl, g);
 	}
-	/* NOTE: we don't call here array_free() cause we use items of this
+	/* NOTE: we don't call here g_strfreev() cause we use items of this
 	 *	array @ initing groups. We don't use strdup()
 	 */
 	xfree(groups);

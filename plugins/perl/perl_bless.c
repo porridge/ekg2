@@ -1,16 +1,6 @@
-#ifndef __FreeBSD__
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
-#endif
+#include "ekg2.h"
 
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
 #include <ekg/scripts.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/userlist.h>
-#include <ekg/windows.h>
-#include <ekg/vars.h>
 
 #include <plugins/irc/irc.h>
 #undef _
@@ -33,7 +23,7 @@ void ekg2_bless_irc_server(HV *hv, session_t *session)
 {
 	irc_private_t *j = irc_private(session);
 	connector_t   *s = NULL;
-	if (xstrncasecmp( session_uid_get( (session_t *) s), IRC4, 4)) {
+	if (xstrncasecmp( session_uid_get( (session_t *) session), IRC4, 4)) {
 		debug("[perl_ierror] not irc session in ekg2_bless_irc_server!\n");
 		return;
 	}
@@ -115,13 +105,13 @@ void ekg2_bless_command(HV *hv, command_t *command)
 	char *temp;
 	debug_bless("blessing command %s\n", command->name);
 	(void) hv_store(hv, "name",  4, new_pv(command->name), 0);
-	temp = array_join(command->params, " ");	(void) hv_store(hv, "param", 5, new_pv(temp), 0); xfree(temp);
-	temp = array_join(command->possibilities, " ");	(void) hv_store(hv, "poss",  4, new_pv(temp), 0); xfree(temp);
+	temp = g_strjoinv(" ", command->params);	(void) hv_store(hv, "param", 5, new_pv(temp), 0); xfree(temp);
+	temp = g_strjoinv(" ", command->possibilities);	(void) hv_store(hv, "poss",  4, new_pv(temp), 0); xfree(temp);
 }
 
 void ekg2_bless_fstring(HV *hv, fstring_t *fstr)
 {
-	(void) hv_store(hv, "str", 3, new_pv(fstr->str.b), 0);
+	(void) hv_store(hv, "str", 3, new_pv(fstr->str), 0);
 	(void) hv_store(hv, "ts",  2, newSViv(fstr->ts), 0);
 	(void) hv_store(hv, "attr",4, create_sv_ptr(fstr->attr), 0);
 }
@@ -130,7 +120,6 @@ void ekg2_bless_watch(HV *hv, watch_t *watch)
 {
 	(void) hv_store(hv, "fd", 2, newSViv(watch->fd), 0);
 	(void) hv_store(hv, "type", 4, newSViv(watch->type), 0);
-	(void) hv_store(hv, "removed", 7, newSViv(watch->removed), 0);
 	(void) hv_store(hv, "timeout", 7, newSViv(watch->timeout), 0);
 	(void) hv_store(hv, "plugin", 6, ekg2_bless(BLESS_PLUGIN, 0, watch->plugin), 0);
 	(void) hv_store(hv, "started", 7, newSViv(watch->started), 0);
@@ -149,7 +138,7 @@ void ekg2_bless_window(HV *hv, window_t *window)
 
 }
 
-static inline char *inet_ntoa_u(uint32_t ip) {
+static inline char *inet_ntoa_u(guint32 ip) {
 	struct in_addr in;
 	in.s_addr = ip;
 	return inet_ntoa(in);
@@ -177,12 +166,14 @@ void ekg2_bless_session(HV *hv, session_t *session)
 	(void) hv_store(hv, "alias",	  5, new_pv(session->alias), 0);
 }
 
-void ekg2_bless_timer(HV *hv, struct timer *timer)
+void ekg2_bless_timer(HV *hv, ekg_timer_t timer)
 {
-	debug_bless("blessing timer %s\n", timer->name);
+	debug_bless("blessing timer 0x%08x", GPOINTER_TO_UINT(timer));
+#if 0 /* XXX? */
 	(void) hv_store(hv, "name", 4, new_pv(timer->name), 0);
 	(void) hv_store(hv, "freq",  4, newSViv(timer->period / 1000), 0);
 	(void) hv_store(hv, "freq_ms",  4, newSViv(timer->period), 0);
+#endif
 }
 
 void ekg2_bless_plugin(HV *hv, plugin_t *plugin)

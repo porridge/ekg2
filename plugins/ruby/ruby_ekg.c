@@ -1,10 +1,6 @@
-#include "ekg2-config.h"
+#include "ekg2.h"
 
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
 #include <ekg/scripts.h>
-#include <ekg/xmalloc.h>
 
 #undef __
 #undef _
@@ -107,7 +103,7 @@ static VALUE ruby_command_bind(int argc, VALUE *argv, VALUE self) {
 	Check_Type(argv[0], T_STRING);
 	Check_Type(argv[1], T_STRING);
 
-	script_command_bind(&ruby_lang, scr, RSTRING(argv[0])->ptr, xstrdup(RSTRING(argv[1])->ptr));	/* XXX, memleak */
+	script_command_bind(&ruby_lang, scr, RSTRING(argv[0])->ptr, "?", NULL, xstrdup(RSTRING(argv[1])->ptr));	/* XXX, memleak */
 
 	return Qnil;
 }
@@ -388,17 +384,17 @@ static int ruby_query(script_t *scr, script_query_t *scr_que, void *args[]) {
 		argv = ALLOCA_N(VALUE, scr_que->argc);
 
 		for (i=0; i < scr_que->argc; i++) {
-			switch ( scr_que->argv_type[i] ) {
+			switch ( scr_que->argv_type[i] & QUERY_ARG_TYPES ) {
 				case (QUERY_ARG_INT):	/* int */
-					argv[i] = INT2FIX( *(int  *) args[i] );	/* XXX ? */
+					argv[i] = INT2FIX( *(int *) args[i]);	/* XXX ? */
 					break;
 				case (QUERY_ARG_CHARP):  /* char * */
-					argv[i] = rb_str_new2(*(char **) args[i]);
+					argv[i] = rb_str_new2( *(char **) args[i] );
 					break;
 
 #if 0
 				case (QUERY_ARG_CHARPP): {/* char ** */
-					 char *tmp = array_join((char **) args[i], " ");
+					 char *tmp = g_strjoinv(" ", (char **) args[i]);
 					 if (xstrlen(tmp)) 
 					 perlarg = new_pv(tmp);
 					 xfree(tmp);
@@ -435,7 +431,7 @@ static int ruby_query(script_t *scr, script_query_t *scr_que, void *args[]) {
 static int ruby_commands(script_t *scr, script_command_t *comm, char **params) {
 	ruby_helper_t ruby_command;
 	VALUE *argv;
-	int argc = array_count(params);
+	int argc = g_strv_length(params);
 	int i;
 
 	argv = ALLOCA_N(VALUE, argc);
@@ -458,6 +454,9 @@ static int ruby_commands(script_t *scr, script_command_t *comm, char **params) {
 static int ruby_watches(script_t *scr, script_watch_t *scr_wat, int type, int fd, long int watch) {
 	ruby_helper_t ruby_watch;
 	VALUE argv[3];
+	/* This is normally done by SCRIPT_DEFINE macro call, but the ruby
+	 * plugin does not use it. */
+	BUILD_BUG_ON(sizeof(void *) > sizeof(long));
 
 	argv[0] = INT2FIX(type);
 	argv[1] = INT2FIX(fd);	/* XXX, temporary we pass fd instad of T_FILE */

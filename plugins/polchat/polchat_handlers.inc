@@ -1,13 +1,6 @@
 #if 0
 
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/userlist.h>
-#include <ekg/xmalloc.h>
-
-#include <ekg/themes.h>	/* ? */
-
-#include <ekg/queries.h>
+#include "ekg2.h"
 
 #endif
 
@@ -288,7 +281,7 @@ POLCHAT_HANDLER(polchat_join) {
 		if ((u = userlist_add(s, uid, strings[0]))) {
 			u->status = polchat_mode_to_ekg_mode(headers[1]);
 
-			query_emit_id(NULL, USERLIST_REFRESH);
+			query_emit(NULL, "userlist-refresh");
 		}
 
 		xfree(uid);
@@ -302,7 +295,7 @@ POLCHAT_HANDLER(polchat_part) {
 	if (nheaders == 1 && nstrings == 1) {
 		userlist_remove(s, userlist_find(s, strings[0]));
 
-		query_emit_id(NULL, USERLIST_REFRESH);
+		query_emit(NULL, "userlist-refresh");
 
 		return 0;
 	}
@@ -422,7 +415,7 @@ POLCHAT_HANDLER(polchat_nicklist) {
 			xfree(uid);
 		}
 
-		query_emit_id(NULL, USERLIST_REFRESH);
+		query_emit(NULL, "userlist-refresh");
 		return 0;
 	}
 	return 1;
@@ -473,7 +466,7 @@ POLCHAT_HANDLER(polchat_nick_update) {
 		}
 		
 		u->status = polchat_mode_to_ekg_mode(headers[1]);
-		query_emit_id(NULL, USERLIST_REFRESH);
+		query_emit(NULL, "userlist-refresh");
 
 		return 0;
 	}
@@ -537,7 +530,7 @@ void polchat_processpkt(session_t *s, unsigned short nheaders, unsigned short ns
 
 		if (len < strlen+1) goto invalid_packet; len -= (strlen+1);
 
-		strings[i] = ekg_utf8_to_locale(xstrndup((char*) &data[2], strlen));
+		strings[i] = ekg_utf8_to_core(xstrndup((char*) &data[2], strlen));
 		data += (2 + strlen + 1);
 	}
 
@@ -578,7 +571,7 @@ invalid_packet:
 		debug_error("polchat_processpkt() invalid len packet!! exploit warning?\n");
 
 	xfree(headers);
-	array_free(strings);
+	g_strfreev(strings);
 }
 
 // vim:syn=c

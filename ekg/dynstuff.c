@@ -19,15 +19,13 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "ekg2.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-
-#include "dynstuff.h"
-#include "dynstuff_inline.h"
-#include "xmalloc.h"
 
 /*
  * list_add_sorted()
@@ -330,7 +328,7 @@ void *list_remove3i(list_t *list, list_t elem, void (*func)(list_t data)) {
 	tmp = *list;
 	if (tmp && tmp == elem) {
 		*list = tmp->next;
-		ret = list;
+		ret = list; /* GiM: this seems like a fail to me */
 	} else {
 		for (; tmp && tmp != elem; tmp = tmp->next)
 			last = tmp;
@@ -538,29 +536,6 @@ int list_destroy(list_t list, int free_data) {
 	return list_destroy2(list, free_data ? xfree : NULL);
 }
 
-/*
- * string_realloc()
- *
- * upewnia siê, ¿e w stringu bêdzie wystarczaj±co du¿o miejsca.
- *
- *  - s - ci±g znaków,
- *  - count - wymagana ilo¶æ znaków (bez koñcowego '\0').
- */
-static void string_realloc(string_t s, int count)
-{
-	char *tmp;
-	
-	if (s->str && (count + 1) <= s->size)
-		return;
-	
-	tmp = xrealloc(s->str, count + 81);
-	if (!s->str)
-		*tmp = 0;
-	tmp[count + 80] = 0;
-	s->size = count + 81;
-	s->str = tmp;
-}
-
 /**
  * string_append_c()
  *
@@ -575,16 +550,8 @@ static void string_realloc(string_t s, int count)
 
 int string_append_c(string_t s, char c)
 {
-	if (!s) {
-		errno = EFAULT;
-		return -1;
-	}
-	
-	string_realloc(s, s->len + 1);
-
-	s->str[s->len + 1] = 0;
-	s->str[s->len++] = c;
-
+	string_t tmp = g_string_append_c(s, c);
+	g_assert(tmp == s);
 	return 0;
 }
 
@@ -607,21 +574,14 @@ int string_append_c(string_t s, char c)
 
 int string_append_n(string_t s, const char *str, int count)
 {
-	if (!s || !str) {
-		errno = EFAULT;
-		return -1;
-	}
+	string_t tmp;
+	gssize sl = xstrlen(str);
 
-	if (count == -1)
-		count = xstrlen(str);
-
-	string_realloc(s, s->len + count);
-
-	s->str[s->len + count] = 0;
-	xstrncpy(s->str + s->len, str, count);
-
-	s->len += count;
-
+	if (count > sl || count == -1)
+		tmp = g_string_append(s, str);
+	else
+		tmp = g_string_append_len(s, str, count);
+	g_assert(tmp == s);
 	return 0;
 }
 
@@ -647,22 +607,11 @@ int string_append_n(string_t s, const char *str, int count)
 
 int string_append_format(string_t s, const char *format, ...) {
 	va_list ap;
-	char *formatted;
-
-	if (!s || !format) {
-		errno = EFAULT;
-		return -1;
-	}
 
 	va_start(ap, format);
-	formatted = vsaprintf(format, ap);
+	g_string_append_vprintf(s, format, ap);
 	va_end(ap);
-	
-	if (!formatted) 
-		return 0;
-	
-	string_append_n(s, formatted, -1);
-	xfree(formatted);
+
 	return 0;
 }
 
@@ -676,20 +625,8 @@ int string_append_format(string_t s, const char *format, ...) {
  */
 
 int string_append_raw(string_t s, const char *str, int count) {
-	if (!s || !str) {
-		errno = EFAULT;
-		return -1;
-	}
-
-	if (count == -1) return string_append_n(s, str, -1);
-
-	string_realloc(s, s->len + count);
-
-	s->str[s->len + count] = 0;
-	memcpy(s->str + s->len, str, count);
-
-	s->len += count;
-
+	string_t tmp = g_string_append_len(s, str, count);
+	g_assert(tmp == s);
 	return 0;
 }
 
@@ -719,21 +656,14 @@ int string_append(string_t s, const char *str)
  */
 void string_insert_n(string_t s, int index, const char *str, int count)
 {
-	if (!s || !str)
-		return;
+	string_t tmp;
+	gssize sl = xstrlen(str);
 
-	if (count == -1)
-		count = xstrlen(str);
-
-	if (index > s->len)
-		index = s->len;
-	
-	string_realloc(s, s->len + count);
-
-	memmove(s->str + index + count, s->str + index, s->len + 1 - index);
-	memmove(s->str + index, str, count);
-
-	s->len += count;
+	if (count > sl || count == -1)
+		tmp = g_string_insert(s, index, str);
+	else
+		tmp = g_string_insert_len(s, index, str, count);
+	g_assert(tmp == s);
 }
 
 /**
@@ -765,19 +695,7 @@ void string_insert(string_t s, int index, const char *str)
  *  @return pointer to allocated string_t struct.
  */
 string_t string_init(const char *value) {
-	string_t tmp = xmalloc(sizeof(struct string));
-	size_t valuelen;
-
-	if (!value)
-		value = "";
-
-	valuelen = xstrlen(value);
-
-	tmp->str = xstrdup(value);
-	tmp->len = valuelen;
-	tmp->size = valuelen + 1;
-
-	return tmp;
+	return g_string_new(value);
 }
 
 /**
@@ -792,18 +710,7 @@ string_t string_init(const char *value) {
  */
 string_t string_init_n(int n)
 {
-	string_t tmp;
-
-	/* this is an error */
-	if (n <= 0)
-		return NULL;
-
-	tmp = xmalloc(sizeof(struct string));
-	tmp->str = (char *)xmalloc(n);
-	tmp->len = 0;
-	tmp->size = n;
-
-	return tmp;
+	return g_string_sized_new(n);
 }
 
 /**
@@ -814,19 +721,9 @@ string_t string_init_n(int n)
  */
 
 void string_remove(string_t s, int count) {
-	if (!s || count <= 0)
-		return;
-	
-	if (count >= s->len) {
-		/* string_clear() */
-		s->str[0]	= '\0';
-		s->len		= 0;
-
-	} else {
-		memmove(s->str, s->str + count, s->len - count);
-		s->len -= count;
-		s->str[s->len] = '\0';
-	}
+	/* XXX: potential breakage */
+	string_t tmp = g_string_erase(s, 0, count);
+	g_assert(tmp == s);
 }
 
 /**
@@ -841,15 +738,8 @@ void string_remove(string_t s, int count) {
 
 void string_clear(string_t s)
 {
-	if (!s)
-		return;
-	if (s->size > 160) {
-		s->str = xrealloc(s->str, 80);
-		s->size = 80;
-	}
-
-	s->str[0] = 0;
-	s->len = 0;
+	string_t tmp = g_string_truncate(s, 0);
+	g_assert(tmp == s);
 }
 
 /**
@@ -867,23 +757,11 @@ void string_clear(string_t s)
 
 char *string_free(string_t s, int free_string)
 {
-	char *tmp = NULL;
-
-	if (!s)
-		return NULL;
-
-	if (free_string)
-		xfree(s->str);
-	else
-		tmp = s->str;
-
-	xfree(s);
-
-	return tmp;
+	return g_string_free(s, free_string);
 }
 
 /*
- * itoa()
+ * ekg_itoa()
  *
  * prosta funkcja, która zwraca tekstow± reprezentacjê liczby. w obrêbie
  * danego wywo³ania jakiej¶ funkcji lub wyra¿enia mo¿e byæ wywo³ania 10
@@ -894,7 +772,7 @@ char *string_free(string_t s, int free_string)
  *
  * zwraca adres do bufora, którego _NIE_NALE¯Y_ zwalniaæ.
  */
-const char *itoa(long int i)
+const char *ekg_itoa(long int i)
 {
 	static char bufs[10][16];
 	static int index = 0;
@@ -923,7 +801,7 @@ const char *itoa(long int i)
  *	       apostrofach z escapowanymi znakami.
  *
  * zaalokowan± tablicê z zaalokowanymi ci±gami znaków, któr± nale¿y
- * zwolniæ funkcj± array_free()
+ * zwolniæ funkcj± g_strfreev()
  */
 char **array_make(const char *string, const char *sep, int max, int trim, int quotes)
 {
@@ -1021,26 +899,6 @@ failure:
 	return result;
 }
 
-/*
- * array_count()
- *
- * zwraca ilo¶æ elementów tablicy.
- */
-int array_count(char **array)
-{
-	int result = 0;
-
-	if (!array)
-		return 0;
-
-	while (*array) {
-		result++;
-		array++;
-	}
-
-	return result;
-}
-
 /* 
  * array_add()
  *
@@ -1048,7 +906,7 @@ int array_count(char **array)
  */
 int array_add(char ***array, char *string)
 {
-	int count = array_count(*array);
+	int count = *array ? g_strv_length(*array) : 0;
 
 	*array = xrealloc(*array, (count + 2) * sizeof(char*));
 	(*array)[count + 1] = NULL;
@@ -1077,35 +935,6 @@ int array_add_check(char ***array, char *string, int casesensitive)
 	else
 		xfree(string);
 	return 0;
-}
-
-/*
- * array_join()
- *
- * ³±czy elementy tablicy w jeden string oddzielaj±c elementy odpowiednim
- * separatorem.
- *
- *  - array - wska¼nik do tablicy,
- *  - sep - seperator.
- *
- * zwrócony ci±g znaków nale¿y zwolniæ.
- */
-char *array_join(char **array, const char *sep)
-{
-	string_t s = string_init(NULL);
-	int i;
-
-	if (!array)
-		return string_free(s, 0);
-
-	for (i = 0; array[i]; i++) {
-		if (i)
-			string_append(s, sep);
-
-		string_append(s, array[i]);
-	}
-
-	return string_free(s, 0);
 }
 
 char *array_join_count(char **array, const char *sep, int count) {
@@ -1187,7 +1016,7 @@ char *array_shift(char ***array)
 	int count;
 	char *out;
 
-	if (!(count = array_count(*array)))
+	if (!(count = g_strv_length(*array)))
 		return NULL;
 
 	out = (*array)[0];
@@ -1199,24 +1028,6 @@ char *array_shift(char ***array)
 		*array = NULL;
 	}
 	return out;
-}
-
-/*
- * array_free()
- *
- * zwalnia pamieæ zajmowan± przez tablicê.
- */
-void array_free(char **array)
-{
-	char **tmp;
-
-	if (!array)
-		return;
-
-	for (tmp = array; *tmp; tmp++)
-		xfree(*tmp);
-
-	xfree(array);
 }
 
 void array_free_count(char **array, int count) {
@@ -1495,8 +1306,18 @@ void private_item_set(private_data_t **data, const char *item_name, const char *
 }
 
 void private_item_set_int(private_data_t **data, const char *item_name, int value) {
-	private_item_set(data, item_name, itoa(value));
+	private_item_set(data, item_name, value?ekg_itoa(value):NULL);
 }
+
+#if !GLIB_CHECK_VERSION(2, 28, 0)
+void g_slist_free_full(GSList *list, GDestroyNotify free_func) {
+	GSList *it;
+
+	for (it = list; it; it = it->next)
+		free_func(it->data);
+	g_slist_free(list);
+}
+#endif
 
 /*
  * Local Variables:

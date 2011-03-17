@@ -20,7 +20,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #ifdef HAVE_LIBGIF
 # define GIF_OCR
@@ -31,11 +31,6 @@
 
 #ifdef __APPLE__
 #include <netinet/in.h>
-#endif
-
-#ifndef __FreeBSD__
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
 #endif
 
 #include <sys/types.h>
@@ -55,21 +50,6 @@
 
 #include <libgadu.h>
 
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/msgqueue.h>
-#include <ekg/protocol.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/userlist.h>
-#include <ekg/themes.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
-#include <ekg/log.h>
-
-#include <ekg/queries.h>
-
 #ifdef HAVE_JPEGLIB_H
 #  include <jpeglib.h>
 #endif
@@ -85,6 +65,32 @@
 #include "pubdir.h"
 #include "pubdir50.h"
 #include "token.h"
+
+/*
+ * session_descr_sync()
+ *
+ * For the given session, set (from new_reason) or delete (if "-" is passed or
+ * NULL is passed while config_keep_reason is off) the description.
+ * Return what is the session description from now on (NULL or newly allocated
+ * string).
+ *
+ *  - session - pointer to a session_t object
+ *  - new_reason - string containing the new description, or NULL, if the user
+ *    has not expressed a will to change the description
+ */
+static char* session_descr_sync(session_t* session, const char* new_reason) {
+	char* myreason;
+	if (new_reason) {
+		if (!xstrcmp(new_reason, "-"))	myreason = NULL;
+		else				myreason = xstrdup(new_reason);
+		session_descr_set(session, myreason);
+	} else {
+		if (!config_keep_reason)
+			session_descr_set(session, NULL);
+		myreason = xstrdup(session_descr_get(session));
+	}
+	return myreason;
+}
 
 static COMMAND(gg_command_connect) {
 	int isreconnect = !xstrcmp(name, "reconnect");
@@ -105,21 +111,15 @@ static COMMAND(gg_command_connect) {
 				printq("not_connected", session_name(session));
 
 		} else {
-			const char *__reason = params[0];
 			char *myreason;
 			char *tmp;
 
 			if (session->autoaway)
 				session_status_set(session, EKG_STATUS_AUTOBACK);
-			if (__reason) {
-				if (!xstrcmp(__reason, "-"))	myreason = NULL;
-				else				myreason = xstrdup(__reason);
-				tmp = locale_to_gg_dup(session, myreason);
-				session_descr_set(session, tmp ? myreason : NULL);
-			} else {
-				myreason = xstrdup(session_descr_get(session));
-				tmp = locale_to_gg_dup(session, myreason);
-			}
+
+			myreason = session_descr_sync(session, params[0]);
+			tmp = locale_to_gg_dup(session, myreason);
+
 			if (tmp)
 				gg_change_status_descr(g->sess, GG_STATUS_NOT_AVAIL_DESCR, tmp);
 			else
@@ -156,7 +156,7 @@ static COMMAND(gg_command_connect) {
 			return -1;
 
 		if (local_ip == NULL)
-			gg_local_ip = htonl(INADDR_ANY);
+			gg_local_ip = g_htonl(INADDR_ANY);
 		else {
 #ifdef HAVE_INET_PTON
 			int tmp = inet_pton(AF_INET, local_ip, &gg_local_ip);
@@ -165,7 +165,7 @@ static COMMAND(gg_command_connect) {
 				print("invalid_local_ip", session_name(session));
 				session_set(session, "local_ip", NULL);
 				config_changed = 1;
-				gg_local_ip = htonl(INADDR_ANY);
+				gg_local_ip = g_htonl(INADDR_ANY);
 			}
 #else
 			gg_local_ip = inet_addr(local_ip);
@@ -185,7 +185,11 @@ static COMMAND(gg_command_connect) {
 		if ((session_status_get(session) == EKG_STATUS_NA))
 			session_status_set(session, EKG_STATUS_AVAIL);
 
-		_status = gg_text_to_status(session_status_get(session), session_descr_get(session));
+		{
+			char *current_descr = session_descr_sync(session, params[0]);
+			_status = gg_text_to_status(session_status_get(session), current_descr);
+			xfree(current_descr);
+		}
 		
 		/* dcc */
 		if (gg_config_dcc) {
@@ -229,6 +233,9 @@ static COMMAND(gg_command_connect) {
 #endif
 #ifdef GG_FEATURE_DND_FFC
 			p.protocol_features = GG_FEATURE_STATUS80 | GG_FEATURE_DND_FFC;
+#endif
+#ifdef GG_FEATURE_TYPING_NOTIFICATION
+			p.protocol_features |= GG_FEATURE_TYPING_NOTIFICATION;
 #endif
 		}
 
@@ -290,7 +297,7 @@ static COMMAND(gg_command_connect) {
 			auth = array_make(tmp, "@", 0, 0, 0);
 		
 			if (!auth[0] || !xstrcmp(auth[0], "")) {
-				array_free(auth);
+				g_strfreev(auth);
 				goto noproxy;
 			}
 	
@@ -310,9 +317,9 @@ static COMMAND(gg_command_connect) {
 			gg_proxy_host = xstrdup(hostport[0]);
 			gg_proxy_port = (hostport[1]) ? atoi(hostport[1]) : 8080;
 	
-			array_free(hostport);
-			array_free(userpass);
-			array_free(auth);
+			g_strfreev(hostport);
+			g_strfreev(userpass);
+			g_strfreev(auth);
 		}
 noproxy:
 
@@ -330,7 +337,7 @@ noproxy:
 
 			xfree(fwd);
 		}
-		
+
 		/* moved this further, because of locale_to_gg() allocation */
 		p.status = _status;
 		p.status_descr = locale_to_gg_dup(session, session_descr_get(session));
@@ -424,12 +431,12 @@ static COMMAND(gg_command_away) {
 
 	if (params0) {
 		char *tmp = locale_to_gg_dup(session, params0);
-		if (xstrlen(tmp) > GG_STATUS_DESCR_MAXSIZE && config_reason_limit) {
+		if (xstrlen(tmp) > GG_STATUS_DESCR_MAXSIZE) {
 			if (!timeout) {
-				char *descr_poss = xstrndup(params0, GG_STATUS_DESCR_MAXSIZE);
-				char *descr_not_poss = xstrdup(params0 + GG_STATUS_DESCR_MAXSIZE);
+				char *descr_poss = utf8ndup(params0, GG_STATUS_DESCR_MAXSIZE);
+				char *descr_not_poss = xstrdup(params0 + xstrlen(descr_poss));
 
-				printq("descr_too_long", itoa(xstrlen(tmp) - GG_STATUS_DESCR_MAXSIZE), descr_poss, descr_not_poss);
+				printq("descr_too_long", ekg_itoa(xstrlen(descr_not_poss)), descr_poss, descr_not_poss); /* XXX add new function utf8len() */
 				g->scroll_op = 0;
 
 				xfree(tmp);
@@ -454,7 +461,7 @@ static COMMAND(gg_command_away) {
 		}
 	}
 
-	reason_changed = 1;
+	ekg2_reason_changed = 1;
 	if (!session_descr_get(session))
 		autoscroll = timeout = 0;
 
@@ -542,8 +549,8 @@ static COMMAND(gg_command_msg) {
 	char *raw_msg = NULL;
 	unsigned char *format = NULL;
 	char *cpmsg = NULL;
-	const char *seq;
-	uint32_t *ekg_format = NULL;
+	const char *seq = NULL;
+	guint32 *ekg_format = NULL;
 	userlist_t *u;
 	gg_private_t *g = session_private_get(session);
 
@@ -621,7 +628,7 @@ static COMMAND(gg_command_msg) {
 				printq("group_empty", tmp[i] + 1);
 		}
 
-		array_free(tmp);
+		g_strfreev(tmp);
 	}
 
 	if (!nicks) {
@@ -629,22 +636,22 @@ static COMMAND(gg_command_msg) {
 		return 0;
 	}
 
-	if (gg_config_split_messages && xstrlen(params[1]) > 1989) {
+	if (gg_config_split_messages && xstrlen(params[1]) > GG_MSG_MAXSIZE) {
 		int i, len = xstrlen(params[1]);
 		
-		for (i = 1; i * 1989 <= len; i++) {
-			char *tmp = (i != len) ? xstrndup(params[1] + (i - 1) * 1989, 1989) : xstrdup(params[1] + (i - 1) * 1989);
+		for (i = 1; i * GG_MSG_MAXSIZE <= len; i++) {
+			char *tmp = (i != len) ? xstrndup(params[1] + (i - 1) * GG_MSG_MAXSIZE, GG_MSG_MAXSIZE) : xstrdup(params[1] + (i - 1) * GG_MSG_MAXSIZE);
 			command_exec_format(target, session, 0, ("/%s %s %s"), name, target, tmp);
 			xfree(tmp);
 		}
 	
 		return 0;
 
-	} else if (xstrlen(params[1]) > 1989) {
+	} else if (xstrlen(params[1]) > GG_MSG_MAXSIZE) {
 	      printq("message_too_long");
 	}
 
-	msg = (unsigned char *) xstrmid(params[1], 0, 1989);
+	msg = (unsigned char *) xstrmid(params[1], 0, GG_MSG_MAXSIZE);
 	ekg_format = ekg_sent_message_format((char *) msg);
 
 	/* analize tekstu zrobimy w osobnym bloku dla porzdku */
@@ -752,7 +759,7 @@ static COMMAND(gg_command_msg) {
 	raw_msg = xstrdup((char *) msg);
 	cpmsg = locale_to_gg(session, (char *) msg);
 
-	count = array_count(nicks);
+	count = g_strv_length(nicks);
 
 	for (p = nicks; *p; p++) {
 		const char *uid;
@@ -778,13 +785,13 @@ static COMMAND(gg_command_msg) {
 
 			secure = 0;
 			
-			query_emit_id(NULL, MESSAGE_ENCRYPT, &sid, &uid_tmp, &__msg, &secure);
+			query_emit(NULL, "message-encrypt", &sid, &uid_tmp, &__msg, &secure);
 
 			xfree(sid);
 			xfree(uid_tmp);
 
 			if (g->sess)
-				seq = itoa(gg_send_message_richtext(g->sess, (chat) ? GG_CLASS_CHAT : GG_CLASS_MSG, uin, 
+				seq = ekg_itoa(gg_send_message_richtext(g->sess, (chat) ? GG_CLASS_CHAT : GG_CLASS_MSG, uin, 
 						(unsigned char *) __msg, (unsigned char *) format, formatlen));
 			else
 				seq = "offline";
@@ -809,7 +816,7 @@ static COMMAND(gg_command_msg) {
 		}
 
 		if (g->sess) 
-			seq = itoa(gg_send_message_confer_richtext(g->sess, GG_CLASS_CHAT, realcount, uins, (unsigned char *) cpmsg, format, formatlen));
+			seq = ekg_itoa(gg_send_message_confer_richtext(g->sess, GG_CLASS_CHAT, realcount, uins, (unsigned char *) cpmsg, format, formatlen));
 		else
 			seq = "offline";
 
@@ -848,7 +855,7 @@ static COMMAND(gg_command_msg) {
 	xfree(nick);
 	xfree(ekg_format);
 
-	array_free(nicks);
+	g_strfreev(nicks);
 
 	return 0;
 }
@@ -937,7 +944,7 @@ static COMMAND(gg_command_block) {
  */
 
 static COMMAND(gg_command_unblock) {
-	char *uid;
+	const char *uid;
 	int ret;
 
 	if (!xstrcmp(params[0], "*")) {
@@ -969,16 +976,19 @@ static COMMAND(gg_command_unblock) {
 		return -1;
 	}
 
-	uid = xstrdup(uid);
+	{
+		/* TODO: Explain why we need a copy. */
+		char *uid_copy = xstrdup(uid);
 
-	if ( ( ret = gg_blocked_remove(session, uid) ) == -1)
-		printq("error_not_blocked", format_user(session, uid));
-	else {		
-		printq("blocked_deleted", format_user(session, uid));
-		config_changed = 1;
+		if ( ( ret = gg_blocked_remove(session, uid_copy) ) == -1)
+			printq("error_not_blocked", format_user(session, uid_copy));
+		else {
+			printq("blocked_deleted", format_user(session, uid_copy));
+			config_changed = 1;
+		}
+
+		xfree(uid_copy);
 	}
-
-	xfree(uid);
 
 	return ret;
 }
@@ -1358,7 +1368,7 @@ static WATCHER(gg_handle_token)
 		goto fail;
 	}
 
-	if (query_emit(NULL, ("gg-display-token"), &file) == -1) goto fail;
+	if (query_emit(NULL, "gg-display-token", &file) == -1) goto fail;
 
 #ifdef GIF_OCR
 	if (gg_config_display_token) {
@@ -1561,14 +1571,14 @@ static COMMAND(gg_command_modify) {
 			tmp1 = xstrdup(u->nickname);
 			tmp2 = xstrdup(argv[++i]);
 
-			query_emit_id(NULL, USERLIST_RENAMED, &tmp1, &tmp2);
+			query_emit(NULL, "userlist-renamed", &tmp1, &tmp2);
 			xfree(tmp1);
 				
 			xfree(u->nickname);
 			u->nickname = tmp2;
 
 			userlist_replace(session, u);
-			query_emit_id(NULL, USERLIST_REFRESH);
+			query_emit(NULL, "userlist-refresh");
 			
 			modified = 1;
 			continue;
@@ -1625,9 +1635,9 @@ static COMMAND(gg_command_modify) {
 				}
 
 			if (chg)
-				query_emit_id(NULL, USERLIST_REFRESH);
+				query_emit(NULL, "userlist-refresh");
 
- 			array_free(tmp);
+ 			g_strfreev(tmp);
 			continue;
 		}
 		
@@ -1638,14 +1648,14 @@ static COMMAND(gg_command_modify) {
 
 			if (valid_plugin_uid(&gg_plugin, argv[i + 1]) != 1) {
 				printq("invalid_uid");
-				array_free(argv);
+				g_strfreev(argv);
 				return -1;
 			}
 
 			if ((existing = userlist_find(session, argv[i + 1]))) {
 				if (existing->nickname) {
 					printq("user_exists_other", argv[i + 1], format_user(session, existing->uid), session_name(session));
-					array_free(argv);
+					g_strfreev(argv);
 					return -1;
 				} else {
 					char *egroups = group_to_string(existing->groups, 1, 0);
@@ -1657,7 +1667,7 @@ static COMMAND(gg_command_modify) {
 						for (i = 0; arr[i]; i++)
 							ekg_group_add(u, arr[i]);
 
-						array_free(arr);
+						g_strfreev(arr);
 					}
 
 					userlist_remove(session, existing);
@@ -1666,16 +1676,16 @@ static COMMAND(gg_command_modify) {
 
 			tmp1 = xstrdup(u->uid);
 			tmp2 = xstrdup(argv[i + 1]);
-			query_emit_id(NULL, USERLIST_REMOVED, &tmp1, &tmp2, &q);
+			query_emit(NULL, "userlist-removed", &tmp1, &tmp2, &q);
 			xfree(tmp1);
 			xfree(tmp2);
 
 			userlist_clear_status(session, u->uid);
 
 			tmp1 = xstrdup(argv[++i]);
-			query_emit_id(NULL, USERLIST_ADDED, &tmp1, &tmp1, &q);
+			query_emit(NULL, "userlist-added", &tmp1, &tmp1, &q);
 
-			xfree(u->uid);
+			xfree((void *) u->uid);
 			u->uid = tmp1;
 
 			modified = 1;
@@ -1683,19 +1693,19 @@ static COMMAND(gg_command_modify) {
 		}
 
 		if (match_arg(argv[i], 'o', ("offline"), 2)) {
-			query_emit(NULL, ("user-offline"), &u, &session);
+			query_emit(NULL, "user-offline", &u, &session);
 			modified = 2;
 			continue;
 		}
 
 		if (match_arg(argv[i], 'O', ("online"), 2)) {
-			query_emit(NULL, ("user-online"), &u, &session);
+			query_emit(NULL, "user-online", &u, &session);
 			modified = 2;
 			continue;
 		} 
 		
-		printq("invalid_params", name);
-		array_free(argv);
+		printq("invalid_params", name, argv[i]);
+		g_strfreev(argv);
 		return -1;
 	}
 
@@ -1714,7 +1724,7 @@ static COMMAND(gg_command_modify) {
 	} else
 		config_changed = 1;
 
-	array_free(argv);
+	g_strfreev(argv);
 
 	return res;
 }
@@ -1744,7 +1754,7 @@ static TIMER(gg_checked_timer_handler)
 					int port	= 0;
 					time_t when	= time(NULL);
 					
-					query_emit(NULL, ("protocol-status"), &session, &uid, &status, &descr, &host, &port, &when, NULL);
+					query_emit(NULL, "protocol-status", &session, &uid, &status, &descr, &host, &port, &when, NULL);
 					
 					xfree(session);
 					xfree(uid);
@@ -1806,7 +1816,7 @@ static COMMAND(gg_command_check_conn) {
 	c.uid = c_timer->uid;
 	c.session = session;
 
-	list_add(&gg_currently_checked, xmemdup(&c, sizeof(c)));
+	list_add(&gg_currently_checked, g_memdup(&c, sizeof(c)));
 
 	/* if there is no reply after 15 secs user is not connected */
 	timer_add(&gg_plugin, NULL, 15, 0, gg_checked_timer_handler, c_timer);
@@ -1821,9 +1831,9 @@ void gg_register_commands()
 #define GG_FLAGS_TARGET GG_FLAGS | COMMAND_ENABLEREQPARAMS | COMMAND_PARAMASTARGET
 
 	command_add(&gg_plugin, ("gg:add"), "!U ? p", gg_command_modify,	COMMAND_ENABLEREQPARAMS, "-f --find");
-	command_add(&gg_plugin, ("gg:connect"), NULL, gg_command_connect,	GG_ONLY, NULL);
+	command_add(&gg_plugin, ("gg:connect"), "r", gg_command_connect,	GG_ONLY, NULL);
 	command_add(&gg_plugin, ("gg:disconnect"), "r", gg_command_connect,	GG_ONLY, NULL);
-	command_add(&gg_plugin, ("gg:reconnect"), NULL, gg_command_connect,	GG_ONLY, NULL);
+	command_add(&gg_plugin, ("gg:reconnect"), "r", gg_command_connect,	GG_ONLY, NULL);
 	command_add(&gg_plugin, ("gg:msg"), "!uUC !", gg_command_msg,		GG_ONLY | COMMAND_ENABLEREQPARAMS | COMMAND_PARAMASTARGET, NULL);
 	command_add(&gg_plugin, ("gg:chat"), "!uUC !", gg_command_msg,		GG_ONLY | COMMAND_ENABLEREQPARAMS | COMMAND_PARAMASTARGET, NULL);
 	command_add(&gg_plugin, ("gg:"), "?", gg_command_inline_msg,		GG_ONLY | COMMAND_PASS_UNCHANGED, NULL);

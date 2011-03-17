@@ -16,17 +16,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/recode.h>
-#include <ekg/queries.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/userlist.h>
-#include <ekg/xmalloc.h>
-#include <ekg/vars.h>
+#include "ekg2.h"
 
 #define JOGGER_DATE "2007-05-04"
 
@@ -231,7 +221,7 @@ static int jogger_theme_init(void) {
 	format_add("jogger_warning", _("%) %|During QA check of the entry, following warnings have been issued:"), 1);
 	format_add("jogger_warning_brokenheader", _("%> %|* Header with broken syntax found at: %c%1%n"), 1);
 	format_add("jogger_warning_wrong_key", _("%> %|* Header contains unknown/wrong key at: %c%1%n"), 1);
-	format_add("jogger_warning_wrong_key_spaces", _("%> %|* Key in header mustn't be followed or preceeded by spaces at: %c%1%n"), 1);
+	format_add("jogger_warning_wrong_key_spaces", _("%> %|* Key in header mustn't be followed or preceded by spaces at: %c%1%n"), 1);
 	format_add("jogger_warning_deprecated_miniblog", _("%> %|* Key %Tminiblog%n is deprecated in favor of such category at: %c%1%n"), 1);
 	format_add("jogger_warning_miniblog_techblog", _("%> %|* Miniblog entry will be posted to Techblog at: %c%1%n"), 1);
 	format_add("jogger_warning_techblog_only", _("%> * Entries posted to Techblog should have also some normal category: %c%1%n"), 1);
@@ -276,13 +266,13 @@ int jogger_plugin_init(int prio) {
 	jogger_plugin.params	= jogger_plugin_vars;
 	jogger_plugin.priv		= &jogger_priv;
 
-	query_connect_id(&jogger_plugin, PLUGIN_PRINT_VERSION, jogger_print_version, NULL);
-	query_connect_id(&jogger_plugin, PROTOCOL_VALIDATE_UID, jogger_validate_uid, NULL);
-	query_connect_id(&jogger_plugin, PROTOCOL_STATUS, jogger_statuschanged, NULL);
-	query_connect_id(&jogger_plugin, PROTOCOL_DISCONNECTED, jogger_statuscleanup, NULL);
-	query_connect_id(&jogger_plugin, PROTOCOL_MESSAGE, jogger_msghandler, NULL);
-	query_connect_id(&jogger_plugin, SESSION_ADDED, jogger_newsession, NULL);
-	query_connect_id(&jogger_plugin, CONFIG_POSTINIT, jogger_postconfig, NULL);
+	query_connect(&jogger_plugin, "plugin-print-version", jogger_print_version, NULL);
+	query_connect(&jogger_plugin, "protocol-validate-uid", jogger_validate_uid, NULL);
+	query_connect(&jogger_plugin, "protocol-status", jogger_statuschanged, NULL);
+	query_connect(&jogger_plugin, "protocol-disconnected", jogger_statuscleanup, NULL);
+	query_connect(&jogger_plugin, "protocol-message", jogger_msghandler, NULL);
+	query_connect(&jogger_plugin, "session-added", jogger_newsession, NULL);
+	query_connect(&jogger_plugin, "config-postinit", jogger_postconfig, NULL);
 
 #define JOGGER_CMDFLAGS SESSION_MUSTBELONG
 #define JOGGER_CMDFLAGS_TARGET SESSION_MUSTBELONG|COMMAND_ENABLEREQPARAMS|COMMAND_PARAMASTARGET

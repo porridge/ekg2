@@ -23,30 +23,46 @@
 
 #include "ekg2-config.h"
 
+#include <glib.h>
+
 #include "commands.h"
 #include "dynstuff.h"
 #include "sessions.h"
 #include "themes.h"
 
-#ifdef HAVE_REGEX_H
-#include <sys/types.h>
-#include <regex.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * Reserved window id: 1000-1999
+ * windows reverved for special use.
+ *	1000 - __contacts,
+ *	1001 - __lastlog
+ */
+typedef enum {
+	WINDOW_DEBUG_ID		= 0,
+	WINDOW_RESERVED_MIN_ID	= 1000,
+	WINDOW_CONTACTS_ID	= 1000,
+	WINDOW_LASTLOG_ID	= 1001,
+	WINDOW_RESERVED_MAX_ID	= 1999
+} window_reserved_id_t;
 
 typedef struct {
 	void *w;			/* window, if NULL it means current */
 	int casense		: 2;	/* 0 - ignore case; 1 - don't ignore case, -1 - use global variable */
 	unsigned int lock	: 1;	/* if 0, don't update */
 	unsigned int isregex	: 1;	/* 1 - in target regexp */
-#ifdef HAVE_REGEX_H
-	regex_t reg;			/* regexp compilated expression */
-#endif
+	GRegex *reg;			/* regexp compilated expression */
 	char *expression;		/* expression */
 } window_lastlog_t;
+
+typedef enum {
+	EKG_WINACT_NONE = 0,		/* No activity in window */
+	EKG_WINACT_JUNK,		/* Junks: status change, irc join/part, etc. */
+	EKG_WINACT_MSG,			/* Message, but not to us */
+	EKG_WINACT_IMPORTANT		/* important message */
+} winact_t;
 
 typedef struct window {
 	struct window *next;
@@ -61,10 +77,6 @@ typedef struct window {
 
 	unsigned int act	: 2;	/* activity: 1 - status/junk; 2 - msg ; 3 - msg to us */
 	unsigned int in_typing	: 1;	/* user is composing a message to us */
-	unsigned int in_active	: 1;	/* user has sent some kind of message,
-					   so we can start sending composing to him/her */
-	unsigned int out_active	: 1;	/* we 'started' sending messages to user (considered
-					   ourselves active), so we shall say goodbye when done */
 	unsigned int more	: 1;	/* pojawi³o siê co¶ poza ekranem */
 	unsigned int floating	: 1;	/* czy p³ywaj±ce? */
 	unsigned int doodle	: 1;	/* czy do gryzmolenia?		[we don't set it anywhere] */
@@ -75,6 +87,7 @@ typedef struct window {
 	unsigned int nowrap	: 1;	/* nie zawijamy linii */
 	unsigned int hide	: 1;	/* ukrywamy, bo jest zbyt du¿e */
 
+	unsigned int last_chatstate;	/* last chat state */
 	time_t last_update;		/* czas ostatniego uaktualnienia */
 	unsigned short lock;		/* blokowanie zmian w obrêbie komendy */
 
@@ -84,21 +97,12 @@ typedef struct window {
 	void *priv_data;			/* prywatne informacje ui */
 } window_t;
 
-typedef enum {
-	EKG_WINACT_NONE = 0,		/* No activity in window */
-	EKG_WINACT_JUNK,		/* Junks: status change, irc join/part, etc. */
-	EKG_WINACT_MSG,			/* Message, but not to us */
-	EKG_WINACT_IMPORTANT		/* important message */
-} winact_t;
-
 #ifndef EKG2_WIN32_NOFUNCTION
 
 extern window_t *windows;
 extern window_t *window_debug;
 extern window_t *window_status;
 extern window_t *window_current;
-
-extern window_lastlog_t *lastlog_current;
 
 window_t *window_find(const char *target);
 window_t *window_find_sa(session_t *session, const char *target, int session_null_means_no_session);

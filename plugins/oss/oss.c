@@ -1,4 +1,4 @@
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <stdlib.h>
 #include <sys/ioctl.h>
@@ -12,13 +12,6 @@
 
 #include <errno.h>
 
-#include <ekg/audio.h>
-#include <ekg/debug.h>
-#include <ekg/commands.h>
-#include <ekg/plugins.h>
-#include <ekg/vars.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
 
 char *config_audio_device = NULL;
 
@@ -225,9 +218,9 @@ AUDIO_CONTROL(oss_audio_control) {
 				char **value = va_arg(ap, char **);
 				debug("[oss_audio_control AUDIO_CONTROL_GET] attr: %s poi: 0x%x\n", attr, value);
 
-				if (!xstrcmp(attr, "freq"))		*value = xstrdup(itoa(dev->freq));
-				else if (!xstrcmp(attr, "sample"))	*value = xstrdup(itoa(dev->sample));
-				else if (!xstrcmp(attr, "channels"))	*value = xstrdup(itoa(dev->channels));
+				if (!xstrcmp(attr, "freq"))		*value = xstrdup(ekg_itoa(dev->freq));
+				else if (!xstrcmp(attr, "sample"))	*value = xstrdup(ekg_itoa(dev->sample));
+				else if (!xstrcmp(attr, "channels"))	*value = xstrdup(ekg_itoa(dev->channels));
 				else if (!xstrcmp(attr, "format"))	*value = xstrdup("pcm");
 				else					*value = NULL;
 			} else { 
@@ -339,14 +332,14 @@ static COMMAND(oss_cmd_record) {
 			continue;
 		}
 
-		printq("invalid_params", name);
-		array_free(array);
+		printq("invalid_params", name, array[i]);
+		g_strfreev(array);
 		return -1;
 	}
 
 	if (!filename) {
 		printq("not_enough_params", name);	/* XXX, need better */
-		array_free(array);
+		g_strfreev(array);
 		return -1;
 	}
 
@@ -356,7 +349,7 @@ static COMMAND(oss_cmd_record) {
 			__AINIT_F("stream", AUDIO_WRITE, "file", filename, "format", "guess"));
 	/* XXX, check for errors */
 
-	array_free(array);
+	g_strfreev(array);
 
 	return 0;
 }

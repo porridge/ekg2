@@ -20,8 +20,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
-#include <ekg/win32.h>
+#include "ekg2.h"
 
 #include <sys/types.h>
 
@@ -47,47 +46,30 @@
 #include <sys/filio.h>
 #endif
 
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 # include "zlib.h"
 #endif
 
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
 #include <ekg/net.h>
-#include <ekg/protocol.h>
-#include <ekg/recode.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/userlist.h>
-#include <ekg/themes.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
-#include <ekg/log.h>
-
-#include <ekg/queries.h>
 
 #include "jabber.h"
 #include "jabber-ssl.h"
 #include "jabber_dcc.h"
 
-#ifdef JABBER_HAVE_OPENSSL
+#ifdef HAVE_LIBSSL
 SSL_CTX *jabberSslCtx;
 #endif
 
 char *jabber_default_search_server = NULL;
 char *jabber_default_pubsub_server = NULL;
 int config_jabber_beep_mail = 0;
-int config_jabber_disable_chatstates = 6;
+int config_jabber_disable_chatstates = EKG_CHATSTATE_ACTIVE | EKG_CHATSTATE_GONE;
 const char *jabber_authtypes[] = { "none", "from", "to", "both" };
 
 static int session_postinit;
 static int jabber_theme_init();
 WATCHER_SESSION(jabber_handle_connect_ssl);
 PLUGIN_DEFINE(jabber, PLUGIN_PROTOCOL, jabber_theme_init);
-
-#ifdef EKG2_WIN32_SHARED_LIB
-	EKG2_WIN32_SHARED_LIB_HELPER
-#endif
 
 /**
  * jabber_session_init()
@@ -120,7 +102,7 @@ static QUERY(jabber_session_init) {
 	else
 		ekg_recode_iso2_inc();
 
-#ifdef JABBER_HAVE_GNUTLS
+#ifdef HAVE_LIBGNUTLS
 	gnutls_certificate_allocate_credentials(&(j->xcred));
 	/* XXX - ~/.ekg/certs/server.pem */
 	gnutls_certificate_set_x509_trust_file(j->xcred, "brak", GNUTLS_X509_FMT_PEM);
@@ -156,7 +138,7 @@ static QUERY(jabber_session_deinit) {
 		return 1;
 
 	s->priv = NULL;
-#ifdef JABBER_HAVE_GNUTLS
+#ifdef HAVE_LIBGNUTLS
 	gnutls_certificate_free_credentials(j->xcred);
 #endif
 	if (!j->istlen)
@@ -458,6 +440,7 @@ void jabber_handle_disconnect(session_t *s, const char *reason, int type) {
 		}
 
 		userlist_free(s);
+		query_emit(NULL, "userlist-refresh");
 	}
 
 	session_set(s, "__sasl_excepted", NULL);
@@ -561,7 +544,7 @@ static void xmlnode_handle_start(void *data, const char *name, const char **atts
 				m->next = newnode;
 			}
 		}
-		arrcount = array_count((char **) atts);
+		arrcount = g_strv_length((char **) atts);
 
 		if (arrcount > 0) {		/* we don't need to allocate table if arrcount = 0 */
 			newnode->atts = xmalloc((arrcount + 1) * sizeof(char *));
@@ -619,7 +602,7 @@ static WATCHER_SESSION(jabber_handle_stream) {
 	if (j->using_ssl && j->ssl_session) {
 
 		len = SSL_RECV(j->ssl_session, buf, BUFFER_LEN-1);
-#ifdef JABBER_HAVE_OPENSSL
+#ifdef HAVE_LIBSSL
 		if ((len == 0 && SSL_get_error(j->ssl_session, len) == SSL_ERROR_ZERO_RETURN)); /* connection shut down cleanly */
 		else if (len < 0) 
 			len = SSL_get_error(j->ssl_session, len);
@@ -649,7 +632,7 @@ static WATCHER_SESSION(jabber_handle_stream) {
 
 	switch (j->using_compress) {
 		case JABBER_COMPRESSION_ZLIB:
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 			uncompressed = jabber_zlib_decompress(buf, &rlen);
 #else
 			debug_error("[jabber] jabber_handle_stream() compression zlib, but no zlib support.. you're joking, right?\n");
@@ -911,7 +894,7 @@ XML_Parser jabber_parser_recreate(XML_Parser parser, void *data) {
  */
 
 static const char *jabber_ssl_cert_verify(const SSL_SESSION ssl) {
-#ifdef JABBER_HAVE_OPENSSL
+#ifdef HAVE_LIBSSL
 	X509 *peer_cert = SSL_get_peer_certificate(ssl);
 	long ret;
 
@@ -998,7 +981,7 @@ WATCHER_SESSION(jabber_handle_connect_ssl) {
 
 	if (type == -1) {
 		/* XXX here. old tls code do: j->parser = NULL. check if needed */
-#ifdef JABBER_HAVE_GNUTLS
+#ifdef HAVE_LIBGNUTLS
 		/* Allow connections to servers that have OpenPGP keys as well. */
 		const int cert_type_priority[3] = {GNUTLS_CRT_X509, GNUTLS_CRT_OPENPGP, 0};
 		const int comp_type_priority[3] = {GNUTLS_COMP_ZLIB, GNUTLS_COMP_NULL, 0};
@@ -1011,7 +994,7 @@ WATCHER_SESSION(jabber_handle_connect_ssl) {
 			return -1;
 		}
 
-#ifdef JABBER_HAVE_GNUTLS
+#ifdef HAVE_LIBGNUTLS
 		gnutls_set_default_priority(j->ssl_session);
 		gnutls_certificate_type_set_priority(j->ssl_session, cert_type_priority);
 		gnutls_credentials_set(j->ssl_session, GNUTLS_CRD_CERTIFICATE, j->xcred);
@@ -1037,7 +1020,7 @@ WATCHER_SESSION(jabber_handle_connect_ssl) {
 		return 0;
 
 	ret = SSL_HELLO(j->ssl_session);
-#ifdef JABBER_HAVE_OPENSSL
+#ifdef HAVE_LIBSSL
 	if (ret != -1)
 		goto handshake_ok;			/* ssl was ok */
 
@@ -1058,7 +1041,7 @@ WATCHER_SESSION(jabber_handle_connect_ssl) {
 		ekg_yield_cpu();
 		return -1;
 	} else {
-#ifdef JABBER_HAVE_GNUTLS
+#ifdef HAVE_LIBGNUTLS
 		if (ret >= 0) goto handshake_ok;	/* gnutls was ok */
 
 /* XXX, move it to jabber_handle_disconnect() */
@@ -1152,9 +1135,9 @@ static QUERY(jabber_status_show_handle) {
 
 	// serwer
 #ifdef JABBER_HAVE_SSL
-	print(j->using_ssl ? "show_status_server_tls" : "show_status_server", j->server, itoa(j->port));
+	print(j->using_ssl ? "show_status_server_tls" : "show_status_server", j->server, ekg_itoa(j->port));
 #else
-	print("show_status_server", j->server, itoa(j->port));
+	print("show_status_server", j->server, ekg_itoa(j->port));
 #endif
 
 	if (session_int_get(s, "__gpg_enabled") == 1)
@@ -1210,8 +1193,8 @@ static int jabber_theme_init() {
 	/* %1 - sessionname %2 - mucjid %3 - nickname %4 - text %5 - atr */
 	format_add("jabber_muc_recv",	"%B<%w%X%5%3%B>%n %4", 1);
 	format_add("jabber_muc_send",	"%B<%n%X%5%W%3%B>%n %4", 1);
-	format_add("jabber_muc_me",	"%y*%X%5%3%B%n	%4", 1);
-	format_add("jabber_muc_me_sent","%Y*%X%5%3%B%n	%4", 1);
+	format_add("jabber_muc_me",	"%y*%X%5%3%B%n %4", 1);
+	format_add("jabber_muc_me_sent","%Y*%X%5%3%B%n %4", 1);
 
 	/* %1 - sessionname, %2 - mucjid %3 - text */
 	format_add("jabber_muc_notice", "%n-%P%2%n- %3", 1);
@@ -1233,7 +1216,7 @@ static int jabber_theme_init() {
 
 	format_add("gmail_new_mail",	  _("%> (%1) Content of your mailbox have changed or new mail arrived."), 1);	/* sesja */
 	format_add("gmail_count",	  _("%> (%1) You have %T%2%n new thread(s) on your gmail account."), 1);	/* sesja, mail count */
-	format_add("gmail_mail",	  "%>	 %|%T%2%n - %g%3%n\n", 1);						/* sesja, from, topic, [UNUSED messages count in thread (?1)] */
+	format_add("gmail_mail",	  "%>	 %|%T%2%n - %g%3%n - %c%5%\n", 1);					/* sesja, from, topic, [UNUSED messages count in thread (?1)], snippet */
 	format_add("gmail_thread",	  "%>	 %|%T%2 [%4]%n - %g%3%n\n", 1);						/* sesja, from, topic, messages count in thread */
 	format_add("tlen_mail",		_("%> (%1) New mail from %T%2%n, with subject: %G%3%n"), 1);			/* sesja, from, topic */
 	format_add("tlen_alert",	_("%> (%1) %T%2%n sent us an alert ...%n"), 1);					/* sesja, from */
@@ -1322,18 +1305,18 @@ static int jabber_theme_init() {
 	format_add("jabber_userinfo_fullname",		_("%g|| %n   Full Name: %T%2"), 1);
 	format_add("jabber_userinfo_nickname",		_("%g|| %n     Nickame: %T%2"), 1);
 	format_add("jabber_userinfo_birthday",		_("%g|| %n    Birthday: %T%2"), 1);
-	format_add("jabber_userinfo_email",		_("%g|| %n	 Email: %T%2"), 1);
+	format_add("jabber_userinfo_email",		_("%g|| %n       Email: %T%2"), 1);
 	format_add("jabber_userinfo_url",		_("%g|| %n     Webpage: %T%2"), 1);
 	format_add("jabber_userinfo_desc",		_("%g|| %n Description: %T%2"), 1);
 	format_add("jabber_userinfo_telephone",		_("%g|| %n   Telephone: %T%2"), 1);
-	format_add("jabber_userinfo_title",		_("%g|| %n	 Title: %T%2"), 1);
+	format_add("jabber_userinfo_title",		_("%g|| %n       Title: %T%2"), 1);
 	format_add("jabber_userinfo_organization",	_("%g|| %nOrganization: %T%2"), 1);
 	
 	format_add("jabber_userinfo_adr",		_("%g|| ,+=%G----- (Next) %2 address"), 1);
-	format_add("jabber_userinfo_adr_street",	_("%g|| || %n	  Street: %T%2"), 1);
+	format_add("jabber_userinfo_adr_street",	_("%g|| || %n     Street: %T%2"), 1);
 	format_add("jabber_userinfo_adr_postalcode",	_("%g|| || %nPostal code: %T%2"), 1);
-	format_add("jabber_userinfo_adr_city",		_("%g|| || %n	    City: %T%2"), 1);
-	format_add("jabber_userinfo_adr_country",	_("%g|| || %n	 Country: %T%2"), 1);
+	format_add("jabber_userinfo_adr_city",		_("%g|| || %n       City: %T%2"), 1);
+	format_add("jabber_userinfo_adr_country",	_("%g|| || %n    Country: %T%2"), 1);
 	format_add("jabber_userinfo_adr_end",		_("%g|| %g`+=%G-----"), 1);
 
 	format_add("jabber_userinfo_photourl",		_("%g||\n%g|| %nYou can view attached photo at: %T%1"), 1);
@@ -1514,54 +1497,49 @@ static QUERY(jabber_userlist_priv_handler) {
 static QUERY(jabber_typing_out) {
 	const char *session	= *va_arg(ap, const char **);
 	const char *uid		= *va_arg(ap, const char **);
-	const int len		= *va_arg(ap, const int *);
-	int first		= *va_arg(ap, const int *);
+	int chatstate		= *va_arg(ap, const int *);
 
 	const char *jid		= uid + 5;
 	session_t *s		= session_find(session);
-	const int confbit	= (1 << (first <= 3 ? 0 : first - 3)) | (first == 3 ? 4 : 0);
 	jabber_private_t *j;
 
-	if (!first || !s || s->plugin != &jabber_plugin)
+	if (!s || s->plugin != &jabber_plugin)
 		return 0;
 
-	if ((config_jabber_disable_chatstates & confbit) == confbit) /* all bits must be set */
+	/* if user closes window while typing,
+	 * and we are prohibited to send <gone/>,
+	 * we just send standard <active/> */
+	if ((EKG_CHATSTATE_GONE==chatstate) && (config_jabber_disable_chatstates & EKG_CHATSTATE_GONE))
+		chatstate = EKG_CHATSTATE_ACTIVE;
+	else if (config_jabber_disable_chatstates & chatstate)
 		return -1;
-
-	/* first can be:
-	 *   1 - normal first change (or <paused/>),
-	 *   2 - <inactive/> [currently not used],
-	 *   3 - <gone/> from <composing/>,
-	 *   4 - <active/> on window switch,
-	 *   5 - <gone/> from <active/> */
 
 	j = jabber_private(s);
 
 	if (j->istlen) {
-		if (first >= 4)
+		if (!(chatstate & EKG_CHATSTATE_COMPOSING))
 			return -1;
 		watch_write(j->send_watch, "<m to=\"%s\" tp=\"%c\"/>",
-			jid, (len ? 't' : 'u'));
-	} else if (!newconference_find(s, uid) /* DON'T SEND CHATSTATES TO MUCS! */) {
-			/* if user closes window while typing,
-			 * and we are prohibited to send <gone/>,
-			 * we just send standard <active/> */
-		if (first == 3) {
-			if (config_jabber_disable_chatstates & 4)
-				first = 4;
-			else
-				first = 5;
+			jid, (chatstate==EKG_CHATSTATE_COMPOSING ? 't' : 'u'));
+		return 0;
+	}
+
+	if (!newconference_find(s, uid) /* DON'T SEND CHATSTATES TO MUCS! */) {
+		int len = 0;
+		char *csname;
+		switch (chatstate) {
+			case EKG_CHATSTATE_COMPOSING:	csname = "composing"; len = 1; break;
+			case EKG_CHATSTATE_ACTIVE:	csname = "active"; break;
+			case EKG_CHATSTATE_GONE:	csname = "gone"; break;
+			case EKG_CHATSTATE_PAUSED:	csname = "paused"; break;
+			case EKG_CHATSTATE_INACTIVE:	csname = "inactive"; break;
+			default: return -1;
 		}
 
 		watch_write(j->send_watch, "<message type=\"chat\" to=\"%s\">"
 			"<x xmlns=\"jabber:x:event\"%s>"
 			"<%s xmlns=\"http://jabber.org/protocol/chatstates\"/>"
-			"</message>\n", jid, (len ? "><composing/></x" : "/"),
-			(len ? "composing" :
-			 first == 5 ? "gone" :
-			 first == 4 ? "active" :
-			 first == 2 ? "inactive" :
-			 "paused"));
+			"</message>\n", jid, (len ? "><composing/></x" : "/"), csname);
 	}
 
 	return 0;
@@ -1652,26 +1630,29 @@ EXPORT int jabber_plugin_init(int prio) {
 
 	session_postinit = 0;
 
-	query_connect_id(&jabber_plugin, PROTOCOL_VALIDATE_UID,	jabber_validate_uid, NULL);
-	query_connect_id(&jabber_plugin, PLUGIN_PRINT_VERSION,	jabber_print_version, NULL);
-	query_connect_id(&jabber_plugin, SESSION_ADDED,		jabber_session_init, NULL);
-	query_connect_id(&jabber_plugin, SESSION_REMOVED,	jabber_session_deinit, NULL);
-	query_connect_id(&jabber_plugin, STATUS_SHOW,		jabber_status_show_handle, NULL);
-	query_connect_id(&jabber_plugin, UI_WINDOW_KILL,	jabber_window_kill, NULL);
-	query_connect_id(&jabber_plugin, PROTOCOL_IGNORE,	jabber_protocol_ignore, NULL);
-	query_connect_id(&jabber_plugin, CONFIG_POSTINIT,	jabber_dcc_postinit, NULL);
-	query_connect_id(&jabber_plugin, CONFIG_POSTINIT,	jabber_pgp_postinit, NULL);
-	query_connect_id(&jabber_plugin, USERLIST_INFO,		jabber_userlist_info, NULL);
-	query_connect_id(&jabber_plugin, USERLIST_PRIVHANDLE,	jabber_userlist_priv_handler, NULL);
-	query_connect_id(&jabber_plugin, PROTOCOL_TYPING_OUT,	jabber_typing_out, NULL);
+	query_connect(&jabber_plugin, "protocol-validate-uid",	jabber_validate_uid, NULL);
+	query_connect(&jabber_plugin, "plugin-print-version",	jabber_print_version, NULL);
+	query_connect(&jabber_plugin, "session-added",		jabber_session_init, NULL);
+	query_connect(&jabber_plugin, "session-removed",	jabber_session_deinit, NULL);
+	query_connect(&jabber_plugin, "status-show",		jabber_status_show_handle, NULL);
+	query_connect(&jabber_plugin, "ui-window-kill",	jabber_window_kill, NULL);
+	query_connect(&jabber_plugin, "protocol-ignore",	jabber_protocol_ignore, NULL);
+	query_connect(&jabber_plugin, "config-postinit",	jabber_dcc_postinit, NULL);
+	query_connect(&jabber_plugin, "config-postinit",	jabber_pgp_postinit, NULL);
+	query_connect(&jabber_plugin, "userlist-info",		jabber_userlist_info, NULL);
+	query_connect(&jabber_plugin, "userlist-privhandle",	jabber_userlist_priv_handler, NULL);
+	query_connect(&jabber_plugin, "protocol-typing-out",	jabber_typing_out, NULL);
 
-	variable_add(&jabber_plugin, ("beep_mail"), VAR_BOOL, 1, &config_jabber_beep_mail, NULL, NULL, NULL);
-	variable_add(&jabber_plugin, ("dcc"), VAR_BOOL, 1, &jabber_dcc, (void*) jabber_dcc_postinit, NULL, NULL);
-	variable_add(&jabber_plugin, ("dcc_ip"), VAR_STR, 1, &jabber_dcc_ip, NULL, NULL, NULL);
-	variable_add(&jabber_plugin, ("default_pubsub_server"), VAR_STR, 1, &jabber_default_pubsub_server, NULL, NULL, NULL);
-	variable_add(&jabber_plugin, ("default_search_server"), VAR_STR, 1, &jabber_default_search_server, NULL, NULL, NULL);
-	variable_add(&jabber_plugin, ("disable_chatstates"), VAR_MAP, 1, &config_jabber_disable_chatstates, NULL,
-			variable_map(4, 0, 0, "none", 1, 0, "composing", 2, 0, "active", 4, 0, "gone"), NULL); 
+	variable_add(&jabber_plugin, ("xmpp:beep_mail"), VAR_BOOL, 1, &config_jabber_beep_mail, NULL, NULL, NULL);
+	variable_add(&jabber_plugin, ("xmpp:dcc"), VAR_BOOL, 1, &jabber_dcc, (void*) jabber_dcc_postinit, NULL, NULL);
+	variable_add(&jabber_plugin, ("xmpp:dcc_ip"), VAR_STR, 1, &jabber_dcc_ip, NULL, NULL, NULL);
+	variable_add(&jabber_plugin, ("xmpp:default_pubsub_server"), VAR_STR, 1, &jabber_default_pubsub_server, NULL, NULL, NULL);
+	variable_add(&jabber_plugin, ("xmpp:default_search_server"), VAR_STR, 1, &jabber_default_search_server, NULL, NULL, NULL);
+	variable_add(&jabber_plugin, ("xmpp:disable_chatstates"), VAR_MAP, 1, &config_jabber_disable_chatstates, NULL,
+			variable_map(4, 0, 0, "none",
+					EKG_CHATSTATE_COMPOSING, 0, "composing",
+					EKG_CHATSTATE_ACTIVE, 0, "active",
+					EKG_CHATSTATE_GONE, 0, "gone"), NULL); 
 
 	jabber_register_commands();
 #ifdef JABBER_HAVE_SSL

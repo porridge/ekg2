@@ -21,15 +21,10 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <sys/types.h>
 #include <stdio.h>
-
-#include "dynstuff.h"
-#include "dynstuff_inline.h"
-#include "stuff.h"
-#include "xmalloc.h"
 
 typedef struct emoticon {
 	struct emoticon *next;
@@ -91,17 +86,13 @@ static int emoticon_add(const char *name, const char *value) {
  * 0/-1
  */
 int emoticon_read() {
-	const char *filename;
 	char *buf;
-	FILE *f;
+	GDataInputStream *f;
 
-	if (!(filename = prepare_pathf("emoticons")))
-		return -1;
-	
-	if (!(f = fopen(filename, "r")))
+	if (!(f = G_DATA_INPUT_STREAM(config_open("emoticons", "r"))))
 		return -1;
 
-	while ((buf = read_file(f, 0))) {
+	while ((buf = read_line(f))) {
 		char **emot;
 	
 		if (buf[0] == '#')
@@ -109,13 +100,13 @@ int emoticon_read() {
 
 		emot = array_make(buf, "\t", 2, 1, 1);
 	
-		if (array_count(emot) == 2)
+		if (g_strv_length(emot) == 2)
 			emoticon_add(emot[0], emot[1]);
 
-		array_free(emot);
+		g_strfreev(emot);
 	}
 	
-	fclose(f);
+	g_object_unref(f);
 	
 	return 0;
 }

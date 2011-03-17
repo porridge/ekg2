@@ -1,7 +1,4 @@
-#include <ekg/debug.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/xmalloc.h>
+#include "ekg2.h"
 #define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
 #include "dbus.h"
@@ -36,11 +33,9 @@ static EKG2_DBUS_IFACE_HANDLER(ekg2_dbus_iface_im_ekg2_getSessions)
 		EKG2_DBUS_ADD_STRING(&tmp);
 		/* XXX convert to utf before sending, d-bus sux? XXX */
 		tmp = (char *)session_descr_get(s);
-		tmp = xstrdup(tmp?tmp:"");
-		tmp_descr = ekg_convert_string (tmp, NULL, "utf-8");
-		EKG2_DBUS_ADD_STRING(tmp_descr ? &tmp_descr : &tmp);
+		tmp_descr = ekg_locale_to_utf8_dup(tmp ? tmp : "");
+		EKG2_DBUS_ADD_STRING(&tmp_descr);
 		xfree(tmp_descr);
-		xfree(tmp);
 	}
 	EKG2_DBUS_SEND_REPLY;
 	

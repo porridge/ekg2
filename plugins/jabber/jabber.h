@@ -3,14 +3,6 @@
 #ifndef __EKG_JABBER_JABBER_H
 #define __EKG_JABBER_JABBER_H
 
-#include <ekg2-config.h>
-
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>		/* XXX, protocol_uid() */
-#include <ekg/sessions.h>
-#include <ekg/userlist.h>
-
 #ifdef HAVE_EXPAT_H
  #include <expat.h>
 #endif
@@ -143,14 +135,14 @@ typedef struct {
 #ifdef JABBER_HAVE_SSL
 	unsigned char using_ssl	: 2;	/**< 1 if we're using SSL, 2 if we're using TLS, else 0 */
 	SSL_SESSION ssl_session;	/**< SSL session */
-#ifdef JABBER_HAVE_GNUTLS
+#ifdef HAVE_LIBGNUTLS
 	gnutls_certificate_credentials xcred;	/**< gnutls credentials (?) */
 #endif
 #endif
 	int id;				/**< queries ID */
 	XML_Parser parser;		/**< expat instance */
 	char *server;			/**< server name */
-	uint16_t port;			/**< server's port number */
+	guint16 port;			/**< server's port number */
 	unsigned int sasl_connecting :1;/**< whether we're connecting over SASL */
 	char *resource;			/**< resource used when connecting to daemon */
 	char *last_gmail_result_time;	/**< last time we're checking mail (this seems not to work correctly ;/) */
@@ -208,7 +200,7 @@ const char *jabber_iq_send(session_t *s, const char *prefix, jabber_iq_type_t iq
 char *jabber_digest(const char *sid, const char *password, int istlen);
 char *jabber_sha1_generic(char *buf, int len);
 char *jabber_dcc_digest(char *sid, char *initiator, char *target);
-char *jabber_challange_digest(const char *sid, const char *password, const char *nonce, const char *cnonce, const char *xmpp_temp, const char *realm);
+char *jabber_challenge_digest(const char *sid, const char *password, const char *nonce, const char *cnonce, const char *xmpp_temp, const char *realm);
 void jabber_iq_auth_send(session_t *s, const char *username, const char *passwd, const char *stream_id);
 
 char *jabber_attr(char **atts, const char *att);
@@ -234,7 +226,7 @@ void xmlnode_handle_cdata(void *data, const char *text, int len);
 void jabber_handle_disconnect(session_t *s, const char *reason, int type);
 
 char *jabber_openpgp(session_t *s, const char *fromto, enum jabber_opengpg_type_t way, char *message, char *key, char **error);
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 char *jabber_zlib_decompress(const char *buf, int *len);
 char *jabber_zlib_compress(const char *buf, int *len);
 #endif
@@ -243,7 +235,7 @@ int jabber_conversation_find(jabber_private_t *j, const char *uid, const char *s
 jabber_conversation_t *jabber_conversation_get(jabber_private_t *j, const int n);
 char *jabber_thread_gen(jabber_private_t *j, const char *uid);
 
-uint32_t *jabber_msg_format(const char *plaintext, const xmlnode_t *html);
+guint32 *jabber_msg_format(const char *plaintext, const xmlnode_t *html);
 #endif /* __EKG_JABBER_JABBER_H */
 
 /*

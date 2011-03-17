@@ -54,7 +54,7 @@ extern "C" {
 typedef struct userlist {
 	struct userlist	*next;
 
-	char		*uid;		/**< uin in form protocol:id */
+	const char	*uid;		/**< uin in form protocol:id */
 	char		*nickname;	/**< nickname */
 	struct ekg_group *groups;	/**< list_t with ekg_group<br>
 					 *	Groups to which this user belongs like: work, friends, family..<br>
@@ -62,6 +62,7 @@ typedef struct userlist {
 	
 	status_t	status;		/**< current status */
 	char		*descr;		/**< description of status. */
+	char		*descr1line;	/**< description of status without \r\n. */
 	struct ekg_resource *resources;	/**< list_t with ekg_resource_t<br>It's used to handle Jabber resources, and also by irc friendlist. */
 
 	time_t		last_seen;	/**< Last time when user was available [when u->status was > notavail] */
@@ -154,7 +155,7 @@ extern struct ignore_label ignore_labels[IGNORE_LABELS_MAX];
 #ifndef EKG2_WIN32_NOFUNCTION
 
 int userlist_read(session_t* session);
-int userlist_write(session_t *session);
+void userlist_write(session_t *session);
 void userlist_write_crash();
 void userlist_clear_status(session_t *session, const char *uid);
 userlist_t *userlist_add(session_t *session, const char *uid, const char *nickname);
@@ -191,9 +192,9 @@ struct ekg_group *group_init(const char *groups);
 int valid_nick(const char *nick);
 int valid_plugin_uid(plugin_t *plugin, const char *uid);
 const char *format_user(session_t *session, const char *uid);
-char *get_uid(session_t *session, const char *text);
-char *get_uid_any(session_t *session, const char *text);
-char *get_nickname(session_t *session, const char *text);
+const char *get_uid(session_t *session, const char *text);
+const char *get_uid_any(session_t *session, const char *text);
+const char *get_nickname(session_t *session, const char *text);
 char *get_user_name(userlist_t *u);
 
 #endif

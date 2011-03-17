@@ -1,17 +1,8 @@
+#include "ekg2.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/vars.h>
-#include <ekg/stuff.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
-
-#include <ekg/queries.h>
 
 typedef struct {
 	char *session;
@@ -173,7 +164,7 @@ static COMMAND(command_key) {
 		int i;
 
 		if (!params[1]) {
-			printq("invalid_params", name);
+			printq("not_enough_params", name);
 			return -1;
 		}
 
@@ -191,8 +182,8 @@ static COMMAND(command_key) {
 		}
 
 		if (!target) {
-			printq("invalid_params", name);
-			array_free(arr);
+			printq("not_enough_params", name);
+			g_strfreev(arr);
 			return -1;
 		}
 
@@ -209,14 +200,14 @@ static COMMAND(command_key) {
 			printq("rot_list", 
 				k->session ? k->session : "*",
 				k->target ? k->target : "*", 
-				xstrcmp(k->rot, "?") ? k->rot : itoa(config_default_rot),
-				xstrcmp(k->drot, "?") ? k->drot : itoa(config_default_drot));
+				xstrcmp(k->rot, "?") ? k->rot : ekg_itoa(config_default_rot),
+				xstrcmp(k->drot, "?") ? k->drot : ekg_itoa(config_default_drot));
 
 		}
 		return 0;
 	}
 
-	printq("invalid_params", name);
+	printq("invalid_params", name, params[0]);
 	return -1;
 }
 
@@ -235,7 +226,7 @@ static QUERY(rot13_setvar_default) {
 				xfree(arr);
 			} else {
 				debug("rot13_setvar_default() failed to parse line: %s\n", tmp);
-				array_free(arr);
+				g_strfreev(arr);
 			}
 		}
 		fclose(f);
@@ -262,9 +253,9 @@ EXPORT int rot13_plugin_init(int prio) {
 
 	plugin_register(&rot13_plugin, prio);
 
-	query_connect_id(&rot13_plugin, SET_VARS_DEFAULT, rot13_setvar_default, NULL);
-	query_connect_id(&rot13_plugin, MESSAGE_ENCRYPT, message_parse, (void *) 1);
-	query_connect_id(&rot13_plugin, MESSAGE_DECRYPT, message_parse, (void *) 0);
+	query_connect(&rot13_plugin, "set-vars-default", rot13_setvar_default, NULL);
+	query_connect(&rot13_plugin, "message-encrypt", message_parse, (void *) 1);
+	query_connect(&rot13_plugin, "message-decrypt", message_parse, (void *) 0);
 
 	command_add(&rot13_plugin, "rot13", "! ? ?", command_rot, 0, NULL);
 	command_add(&rot13_plugin, "rot:key", ("puUC uUC"), command_key, 0, "-a --add -m --modify -d --delete -l --list");

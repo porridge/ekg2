@@ -1,10 +1,5 @@
 
-#include "ekg2-config.h"
-
-#ifndef __FreeBSD__
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
-#endif
+#include "ekg2.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -15,18 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "debug.h"
-#include "dynstuff.h"
-#include "dynstuff_inline.h"
 #include "scripts.h"
-#include "xmalloc.h"
-
-#include "commands.h"	/* commands */
-#include "protocol.h"	/* queries */
-#include "stuff.h"	/* timer */
-#include "vars.h"	/* vars */
-
-#include "queries.h"
 
 /* TODO && BUGS 
  * - cleanup.
@@ -433,33 +417,37 @@ int script_load(scriptlang_t *s, char *tname)
 }
 
 int script_variables_read() {
-	FILE *f;
+	GDataInputStream *f;
 	char *line;
 
-	if (!(f = fopen(prepare_path("scripts-var", 0), "r"))) {
+	if (!(f = G_DATA_INPUT_STREAM(config_open("scripts-var", "r")))) {
 		debug("Error opening script variable file..\n");
 		return -1;
 	}
 	
-	while ((line = read_file(f, 0)))
-		script_var_add(NULL, NULL, line, NULL, NULL);
+	while ((line = read_line(f))) {
+		if (line[0] == '#' || line[0] == ';' || (line[0] == '/' && line[1] == '/'))
+			continue;
 
-	fclose(f);
+		script_var_add(NULL, NULL, line, NULL, NULL);
+	}
+
+	g_object_unref(f);
 	return 0;
 }
 
-int script_variables_free(int free) {
-	FILE *f = fopen(prepare_path("scripts-var", 0), "w");
+void script_variables_free(int free) {
+	GOutputStream *f = G_OUTPUT_STREAM(config_open("scripts-var", "w"));
 	list_t l;
 	
 	if (!f && !free) 
-		return -1;
-	
+		return;
+
 	for (l = script_vars; l; l = l->next) {
 		script_var_t *v = l->data;
 		
 		if (f)
-			fprintf(f, "%s\n", v->name);
+			ekg_fprintf(f, "%s\n", v->name);
 		if (free) {
 /*			xfree(v->value); variables_free() free it. */
 			xfree(v->priv_data); /* should be NULL here. */
@@ -467,16 +455,14 @@ int script_variables_free(int free) {
 			xfree(v);
 		}
 	}
-	if (f)
-		fclose(f);
-	
+
 	if (free)
 		list_destroy(script_vars, 0);
-	return 0;
+	return;
 }
 
-int script_variables_write() {
-	return script_variables_free(0);
+void script_variables_write() {
+	script_variables_free(0);
 }
 
 script_command_t *script_command_find(const char *name)
@@ -551,8 +537,8 @@ int script_timer_unbind(script_timer_t *temp, int remove)
 {
 	if (temp->removed) return -1;
 	temp->removed = 1;
-	if (remove) 
-		timers_remove(temp->self);
+	if (remove)
+		ekg_source_remove(temp->self);
 	SCRIPT_UNBIND_HANDLER(SCRIPT_TIMERTYPE, temp->priv_data);
 	return list_remove(&script_timers, temp, 0 /* 0 is ok */);
 }
@@ -598,10 +584,10 @@ script_var_t *script_var_add(scriptlang_t *s, script_t *scr, char *name, char *v
 	return tmp;
 }
 
-script_command_t *script_command_bind(scriptlang_t *s, script_t *scr, char *command, void *handler) 
+script_command_t *script_command_bind(scriptlang_t *s, script_t *scr, char *command, char *params, char *possibilities, void *handler) 
 {
 	SCRIPT_BIND_HEADER(script_command_t);
-	temp->self = command_add(NULL, command, ("?"), script_command_handlers, COMMAND_ISSCRIPT, NULL);
+	temp->self = command_add(NULL, command, params, script_command_handlers, COMMAND_ISSCRIPT, possibilities);
 	SCRIPT_BIND_FOOTER(script_commands);
 }
 
@@ -655,23 +641,20 @@ script_query_t *script_query_bind(scriptlang_t *s, script_t *scr, char *qname, v
 	else if (!xstrcmp(qname, "protocol-message-received-2"))qname = "protocol-message-received";
 
 /* IRC */
-	if (!xstrncmp(qname, "irc-protocol-numeric", sizeof("irc-protocol-numeric")-1)) {
+	if (!xstrncmp(qname, "irc-protocol-numeric ", sizeof("irc-protocol-numeric ")-1)) {
 		/* XXX, obciaz nazwe do irc-protocl-numeric i wrzucic to ponizej do queries.h */
 		NEXT_ARG(QUERY_ARG_CHARP);
 		NEXT_ARG(QUERY_ARG_CHARPP);
 	}
 /* other */
 	else {
-		int i;
-		for (i = 0; i < QUERY_EXTERNAL; i++) {
-			if (!xstrcmp(qname, (query_name(i)))) {
-				const struct query_def *q = query_struct(i);
+		const query_def_t* g;
+		for (g = registered_queries; g; g = g->next) {
+			if (!xstrcmp(qname, g->name)) {
 				int j = 0;
-
-				while (j < QUERY_ARGS_MAX && q->params[j] != QUERY_ARG_END) {
-					NEXT_ARG(q->params[j++]);
+				while (j < QUERY_ARGS_MAX && g->params[j] != QUERY_ARG_END) {
+					NEXT_ARG(g->params[j++]);
 				}
-
 				break;
 			}
 		}

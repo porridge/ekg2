@@ -1,11 +1,10 @@
 #ifndef PERL_CORE_H
 #define PERL_CORE_H
 
-#ifndef __FreeBSD__
-#define __EXTENSIONS__
+#ifdef bool
+#define HAS_BOOL
 #endif
 
-#include <ekg/xmalloc.h>
 #define fix(s) ((s) ? (s) : "") /* xmalloc.h */
 
 #include <EXTERN.h>
@@ -51,15 +50,23 @@ SV *create_sv_ptr(void *object);
 #define RESTORE_ARGS(x)\
     if (change) {\
 	for (i=0; i < scr_que->argc; i++) {\
-		switch ( scr_que->argv_type[i] ) {\
+		if (scr_que->argv_type[i] & QUERY_ARG_CONST)\
+			continue;\
+		switch ( scr_que->argv_type[i] & QUERY_ARG_TYPES ) {\
 			case (QUERY_ARG_INT):\
 				*( (int *) args[i]) = SvIV(SvRV(perlargs[i]));\
 				break;\
 \
 			case (QUERY_ARG_CHARP):\
-/*				xfree(*(char **) args[i]);  */\
-				*( (char **) args[i]) = xstrdup( SvPV_nolen(SvRV(perlargs[i])) ) ;\
+			{\
+				char *retarg = xstrdup( SvPV_nolen(SvRV(perlargs[i])) ); \
+				if ( xstrcmp(retarg, *( (char **) args[i])) ) {\
+					xfree(*(char **) args[i]);  \
+					*( (char **) args[i]) =  retarg;\
+				} else\
+					xfree(retarg);\
 				break;\
+			}\
 			case (QUERY_ARG_CHARPP): /* wazne, zrobic. */\
 				break;\
 \

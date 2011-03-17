@@ -3,19 +3,12 @@
  * (C) 2006 Michał Górny <peres@peres.int.pl>
  */
 
-#define _GNU_SOURCE
-
 #ifdef __APPLE__
 #define _DARWIN_C_SOURCE
 #include <sys/fcntl.h>
 #endif
 
-#ifdef __NetBSD__
-# define _NETBSD_SOURCE
-#else
-# define _XOPEN_SOURCE 600
-#endif
-#define __BSD_VISIBLE 1
+#include "ekg2.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -27,16 +20,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
-#include <ekg/queries.h>
-#include <ekg/stuff.h>
-#include <ekg/userlist.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
-
 #ifdef HAVE_INOTIFY
 #include <termios.h>
 #include <sys/inotify.h>
@@ -47,10 +30,6 @@
 #define IN_ONLYDIR	 0x01000000
 #endif
 #endif /*HAVE_INOTIFY*/
-
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
 
 #ifndef NAME_MAX
 #ifdef MAXNAMLEN /* BSD */
@@ -65,7 +44,7 @@
 # if __GNUC__ >= 2
 #  define __func__ __FUNCTION__
 # else
-#  define __func__ itoa(__LINE__)
+#  define __func__ ekg_itoa(__LINE__)
 # endif
 #endif
 
@@ -196,7 +175,7 @@ static const char *xmsg_dirfix(const char *path)
 {
 	char *buf = (char*) prepare_pathf(NULL); /* steal the buffer */
 	
-	if (strlcpy(buf, path, PATH_MAX) >= PATH_MAX) { /* buffer too small */
+	if (g_strlcpy(buf, path, PATH_MAX) >= PATH_MAX) { /* buffer too small */
 		xdebug2(DEBUG_ERROR, "Buffer too small for: in = %s, len = %d, PATH_MAX = %d", path, xstrlen(path), PATH_MAX);
 		return NULL;
 	}
@@ -234,7 +213,7 @@ static int xmsg_handle_file(session_t *s, const char *fn)
 	dir = (char*) xmsg_dirfix(session_uid_get(s)+XMSG_UID_DIROFFSET);
 	dirlen = xstrlen(dir);
 		/* first check if buffer is long enough to fit the whole path for dotfile */
-	if (strlcpy(dir+dirlen+1, fn, PATH_MAX-dirlen-2-xstrlen(dfsuffix)) >= PATH_MAX-dirlen-2-xstrlen(dfsuffix))
+	if (g_strlcpy(dir+dirlen+1, fn, PATH_MAX-dirlen-2-xstrlen(dfsuffix)) >= PATH_MAX-dirlen-2-xstrlen(dfsuffix))
 		xerr("Buffer too small for: fn = %s, len(fn) = %d, dirlen = %d, dfsuffixlen = %d", fn, xstrlen(fn), dirlen, xstrlen(dfsuffix));
 
 		/* then fill in middle part of path */
@@ -288,14 +267,13 @@ static int xmsg_handle_file(session_t *s, const char *fn)
 		char *uid	= xmalloc(strlen(fn) + 6);
 		char *msgx	= NULL;
 
-		{
-			const char *charset = session_get(s, "charset");
+		const char *charset = session_get(s, "charset");
 
-			if (charset && (msgx = ekg_convert_string(msg, charset, NULL)))
-				xfree(msg);
-			else
-				msgx = msg;
-		}
+		if (charset) {
+			msgx = ekg_recode_to_core_dup(charset, msg);
+			xfree(msg);
+		} else
+			msgx = msg;
 
 		xstrcpy(uid, "xmsg:");
 		xstrcat(uid, fn);
@@ -603,7 +581,7 @@ static COMMAND(xmsg_msg)
 	char fn[sizeof(XMSG_TMPFILE_PATH)];
 	int fd;
 	char *msg = (char*) params[1];
-	char *uid;
+	const char *uid;
 	int fs;
 	int n;
 	const char *msgcmd = session_get(session, "send_cmd");
@@ -628,7 +606,7 @@ static COMMAND(xmsg_msg)
 		const char *charset = session_get(session, "charset");
 
 		if (charset)
-			msgx = ekg_convert_string(msg, NULL, charset);
+			msgx = ekg_recode_from_core(charset, msg);
 		mymsg = (msgx ? msgx : msg);
 	}
 	fs = xstrlen(mymsg);
@@ -658,7 +636,7 @@ static COMMAND(xmsg_msg)
 
 		protocol_message_emit(session, session->uid, rcpts, params[1], NULL, time(NULL), class, NULL, EKG_NO_BEEP, 0);
 
-		array_free(rcpts);
+		g_strfreev(rcpts);
 	}
 			
 	return 0;
@@ -722,8 +700,8 @@ int xmsg_plugin_init(int prio)
 	xmsg_plugin.priv	= &xmsg_priv;
 	plugin_register(&xmsg_plugin, prio);
 
-	query_connect_id(&xmsg_plugin, PROTOCOL_VALIDATE_UID, xmsg_validate_uid, NULL);
-	query_connect_id(&xmsg_plugin, EKG_SIGUSR1, xmsg_handle_sigusr, NULL);
+	query_connect(&xmsg_plugin, "protocol-validate-uid", xmsg_validate_uid, NULL);
+	query_connect(&xmsg_plugin, "ekg-sigusr1", xmsg_handle_sigusr, NULL);
 
 #define XMSG_CMDFLAGS SESSION_MUSTBELONG
 #define XMSG_CMDFLAGS_TARGET SESSION_MUSTBELONG|COMMAND_ENABLEREQPARAMS|COMMAND_PARAMASTARGET|SESSION_MUSTBECONNECTED

@@ -17,24 +17,14 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "debug.h"
-#include "dynstuff.h"
-#include "sessions.h"
-#include "themes.h"
-#include "stuff.h"
-#include "userlist.h"
-#include "xmalloc.h"
-
-#include "dynstuff_inline.h"
 #include "metacontacts.h"
-#include "queries.h"
 
 metacontact_t *metacontacts = NULL;
 
@@ -87,7 +77,7 @@ COMMAND(cmd_metacontact)
 
 	if (match_arg(params[0], 'a', ("add"), 2)) {
 		if (!params[1]) {
-			printq("invalid_params", name);
+			printq("not_enough_params", name);
 			return -1;
 		}
 
@@ -102,7 +92,7 @@ COMMAND(cmd_metacontact)
 			config_changed = 1;
 			printq("metacontact_added", params[1]);
 
-			query_emit_id(NULL, METACONTACT_ADDED, &tmp);
+			query_emit(NULL, "metacontact-added", &tmp);
 			xfree(tmp);
 		}
 		return 0;	
@@ -110,7 +100,7 @@ COMMAND(cmd_metacontact)
 
 	if (match_arg(params[0], 'd', ("del"), 2)) {
 		if (!params[1]) {
-			printq("invalid_params", name);
+			printq("not_enough_params", name);
 			return -1;
 		}
 
@@ -125,7 +115,7 @@ COMMAND(cmd_metacontact)
 			config_changed = 1;
 			printq("metacontact_removed", params[1]);
 			
-			query_emit_id(NULL, METACONTACT_REMOVED, &tmp);
+			query_emit(NULL, "metacontact-removed", &tmp);
 			xfree(tmp);
 		}
 		return 0;
@@ -133,7 +123,7 @@ COMMAND(cmd_metacontact)
 
 	if (match_arg(params[0], 'i', ("add-item"), 2)) {
 		if (!params[1] || !params[2] || !params[3] || !params[4]) {
-			printq("invalid_params", name);
+			printq("not_enough_params", name);
 			return -1;
 		}
 
@@ -147,7 +137,7 @@ COMMAND(cmd_metacontact)
 
 			printq("metacontact_added_item", session_alias_uid_n(params[2]), params[3], params[1]);
 
-			query_emit_id(NULL, METACONTACT_ITEM_ADDED, &tmp1, &tmp2, &tmp3);
+			query_emit(NULL, "metacontact-item-added", &tmp1, &tmp2, &tmp3);
 			xfree(tmp1);
 			xfree(tmp2);
 			xfree(tmp3);
@@ -157,7 +147,7 @@ COMMAND(cmd_metacontact)
 
 	if (match_arg(params[0], 'r', ("del-item"), 2)) {
 		if (!params[1] || !params[2] || !params[3]) {
-			printq("invalid_params", name);
+			printq("not_enough_params", name);
 			return -1;
 		}
 
@@ -171,7 +161,7 @@ COMMAND(cmd_metacontact)
 
 			printq("metacontact_removed_item", session_alias_uid_n(params[2]), params[3], params[1]);
 
-			query_emit_id(NULL, METACONTACT_ITEM_REMOVED, &tmp1, &tmp2, &tmp3);
+			query_emit(NULL, "metacontact-item-removed", &tmp1, &tmp2, &tmp3);
 			xfree(tmp1);
 			xfree(tmp2);
 			xfree(tmp3);
@@ -199,7 +189,7 @@ COMMAND(cmd_metacontact)
 			else	
 				tmp = format_string(format_find(ekg_status_label(u->status, u->descr, "metacontact_info_")), get_user_name(u), u->descr);
 
-			printq("metacontact_item_list", session_alias_uid_n(i->s_uid), i->name, tmp, itoa(i->prio));
+			printq("metacontact_item_list", session_alias_uid_n(i->s_uid), i->name, tmp, ekg_itoa(i->prio));
 			xfree(tmp);
 		}
 
@@ -214,7 +204,7 @@ COMMAND(cmd_metacontact)
 		return -1;
 	}
 
-	printq("invalid_params", name);
+	printq("invalid_params", name, params[0]);
 
 	return -1;
 }
@@ -293,7 +283,7 @@ static int metacontact_add_item(metacontact_t *m, const char *session, const cha
 {
 	metacontact_item_t *i;
 	session_t *s;
-	char *uid;
+	const char *uid;
 
 	if (!m || !name || !session) {
 		debug("! metacontact_add_item: NULL data on input\n");
@@ -524,8 +514,8 @@ metacontact_item_t *metacontact_find_prio(metacontact_t *m)
  */
 void metacontact_init()
 {
-	query_connect_id(NULL, SESSION_RENAMED, metacontact_session_renamed_handler, NULL);
-	query_connect_id(NULL, USERLIST_REMOVED, metacontact_userlist_removed_handler, NULL);
+	query_connect(NULL, "session-renamed", metacontact_session_renamed_handler, NULL);
+	query_connect(NULL, "userlist-removed", metacontact_userlist_removed_handler, NULL);
 }
 
 /*
@@ -533,26 +523,23 @@ void metacontact_init()
  * 
  * it writes info about metacontacts to file 
  */
-int metacontact_write()
+void metacontact_write()
 {
 	metacontact_t *m;
-	FILE *f = NULL;
+	GOutputStream *f = NULL;
 
-	f = fopen(prepare_path("metacontacts", 1), "w");
+	f = G_OUTPUT_STREAM(config_open("metacontacts", "w"));
 
 	if (!f)
-		return -1;
+		return;
 
 	for (m = metacontacts; m; m = m->next) {
 		metacontact_item_t *i;
-		fprintf(f, "[%s]\n", m->name);
+		ekg_fprintf(f, "[%s]\n", m->name);
 
 		for (i = m->metacontact_items; i; i = i->next)
-			fprintf(f, "%s %s %d\n", i->s_uid, i->name, i->prio);
+			ekg_fprintf(f, "%s %s %d\n", i->s_uid, i->name, i->prio);
 	}
-	fclose(f);
-
-	return 0;
 }
 
 /* 
@@ -563,15 +550,18 @@ int metacontact_write()
 int metacontact_read()
 {
 	char *line;
-	FILE *f;
+	GDataInputStream *f;
 	metacontact_t *m = NULL;
 
-	if (!(f = fopen(prepare_path("metacontacts", 0), "r")))
+	if (!(f = G_DATA_INPUT_STREAM(config_open("metacontacts", "r"))))
 		return -1;
 
-	while ((line = read_file(f, 0))) {
+	while ((line = read_line(f))) {
 		char *tmp;
 		char **array = NULL;
+
+		if (line[0] == '#' || line[0] == ';' || (line[0] == '/' && line[1] == '/'))
+			continue;
 
 		if (line[0] == '[') {
 			tmp = xstrchr(line, ']');
@@ -587,17 +577,17 @@ int metacontact_read()
 
 		array = array_make(line, " ", 3, 1, 1);
 		
-		if (array_count(array) != 3) {
+		if (g_strv_length(array) != 3) {
 			debug("		metacontact_read: wrong number of forms\n");
 			goto next;
 		}
 
 		metacontact_add_item(m, array[0], array[1], atoi(array[2]), 1);
 next:
-		array_free(array);
+		g_strfreev(array);
 	}
 
-	fclose(f);
+	g_object_unref(f);
 
 	return 0;
 }

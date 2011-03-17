@@ -17,18 +17,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
-
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/userlist.h>
-#include <ekg/protocol.h>
-#include <ekg/queries.h>
-#include <ekg/themes.h>
-#include <ekg/stuff.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
+#include "ekg2.h"
 
 #include <xosd.h>
 #include <string.h>
@@ -191,7 +180,7 @@ static QUERY(xosd_protocol_message)
 	char *uid	= *(va_arg(ap, char**));
 		char **UNUSED(rcpts)	= *(va_arg(ap, char***));
 	char *text	= *(va_arg(ap, char**));
-		uint32_t *UNUSED(format) = *(va_arg(ap, uint32_t**));
+		guint32 *UNUSED(format) = *(va_arg(ap, guint32**));
 		time_t UNUSED(sent)	 = *(va_arg(ap, time_t*));
 	int class	= *(va_arg(ap, int*));
 	
@@ -375,9 +364,9 @@ int xosd_plugin_init(int prio)
 	variable_add(&xosd_plugin, ("vertical_position"), VAR_MAP, 1, &xosd_vertical_position, NULL,
 			variable_map(3, 0, 2, "top", 1, 0, "center", 2, 1, "bottom"), NULL);
 	
-	query_connect_id(&xosd_plugin, PROTOCOL_MESSAGE, xosd_protocol_message, NULL);
-	query_connect_id(&xosd_plugin, IRC_PROTOCOL_MESSAGE, xosd_irc_protocol_message, NULL);
-	query_connect_id(&xosd_plugin, PROTOCOL_STATUS, xosd_protocol_status, NULL);
+	query_connect(&xosd_plugin, "protocol-message", xosd_protocol_message, NULL);
+	query_connect(&xosd_plugin, "irc-protocol-message", xosd_irc_protocol_message, NULL);
+	query_connect(&xosd_plugin, "protocol-status", xosd_protocol_status, NULL);
 	
 	timer_add(&xosd_plugin, "xosd:display_welcome_timer", 1, 0, xosd_display_welcome_message, NULL);
 
@@ -416,11 +405,6 @@ static int xosd_plugin_destroy()
 	plugin_unregister(&xosd_plugin);
 	return 0;
 }
-
-#if USE_UNICODE
-#	warning "NOTE: xosd uses deprecated X11 interface and thus doesn't support unicode!"
-#	warning "It's problem with the library itself, not ekg2 plugin."
-#endif
 
 /*
  * Local Variables:

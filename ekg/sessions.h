@@ -66,6 +66,14 @@ typedef enum {
 	EKG_STATUS_AUTOBACK		/* returning to previous status */
 } status_t;
 
+typedef enum {
+	EKG_CHATSTATE_COMPOSING	= 1 << 0,
+	EKG_CHATSTATE_ACTIVE	= 1 << 1,
+	EKG_CHATSTATE_GONE	= 1 << 2,
+	_EKG_CHATSTATE_NOT	= 1 << 10,
+	EKG_CHATSTATE_PAUSED	= _EKG_CHATSTATE_NOT | EKG_CHATSTATE_COMPOSING,
+	EKG_CHATSTATE_INACTIVE	= _EKG_CHATSTATE_NOT | EKG_CHATSTATE_ACTIVE
+} chatstates_t;
 /* Few words about statuses:
  *
  * All of the enum statuses are proritity-sorted. I mean, if we want to determine, which of the two given statuses is more
@@ -204,8 +212,8 @@ int session_unidle(session_t *s);
 session_t *session_add(const char *uid);
 int session_remove(const char *uid);
 
-int session_read(const char *filename);
-int session_write();
+int session_read(const gchar *plugin_name) G_GNUC_INTERNAL;
+void session_write();
 
 void sessions_free();
 

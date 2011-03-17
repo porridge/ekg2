@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-#define GTK_DISABLE_DEPRECATED
+#include "ekg2.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -33,11 +33,6 @@
 #include <gtk/gtkcellrenderertext.h>
 #include <gtk/gtkliststore.h>
 #include <gdk/gdkkeysyms.h>
-
-#include <ekg/userlist.h>
-#include <ekg/stuff.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
 
 #include "main.h"
 #include "menu.h"
@@ -121,7 +116,7 @@ void userlist_select(session *sess, char *name)
 
 	if (gtk_tree_model_get_iter_first(model, &iter)) {
 		do {
-			gtk_tree_model_get(model, &iter, 3, &row_user, -1);
+			gtk_tree_model_get(model, &iter, USERLIST_USER, &row_user, -1);
 			if (sess->server->p_cmp(row_user->nick, name) == 0) {
 				if (gtk_tree_selection_iter_is_selected(selection, &iter))
 					gtk_tree_selection_unselect_iter(selection, &iter);
@@ -167,7 +162,10 @@ char **userlist_selection_list(GtkWidget *widget, int *num_ret) {
 	gtk_tree_model_get_iter_first(model, &iter);
 	do {
 		if (gtk_tree_selection_iter_is_selected(selection, &iter)) {
-			gtk_tree_model_get(model, &iter, 1, &nicks[i], -1);
+			userlist_t *user;
+
+			gtk_tree_model_get(model, &iter, USERLIST_USER, &user, -1);
+			nicks[i] = g_strdup(user->nickname);
 			i++;
 			nicks[i] = NULL;
 		}
@@ -193,7 +191,7 @@ void fe_userlist_set_selected(struct session *sess)
 
 	if (gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter)) {
 		do {
-			gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, 3, &user, -1);
+			gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, USERLIST_USER, &user, -1);
 
 			if (gtk_tree_selection_iter_is_selected(selection, &iter))
 				user->selected = 1;
@@ -213,7 +211,7 @@ static GtkTreeIter *find_row(GtkTreeView * treeview, GtkTreeModel * model, struc
 	*selected = FALSE;
 	if (gtk_tree_model_get_iter_first(model, &iter)) {
 		do {
-			gtk_tree_model_get(model, &iter, 3, &row_user, -1);
+			gtk_tree_model_get(model, &iter, USERLIST_USER, &row_user, -1);
 			if (row_user == user) {
 				if (gtk_tree_view_get_model(treeview) == model) {
 					if (gtk_tree_selection_iter_is_selected
@@ -269,7 +267,9 @@ void fe_userlist_insert(window_t *sess, userlist_t *u, GdkPixbuf **pixmaps)
 	GtkTreeModel *model = gtk_private(sess)->user_model;
 	GdkPixbuf *pix = NULL;	/* get_user_icon (sess->server, newuser); */
 	GtkTreeIter iter;
+#if 0
 	int do_away = TRUE;
+#endif
 
 	int sel = 0;
 
@@ -484,7 +484,7 @@ GtkWidget *userlist_create(GtkWidget *box)
 			 G_CALLBACK(userlist_click_cb), 0);
 	g_signal_connect(G_OBJECT(treeview), "key_press_event", G_CALLBACK(userlist_key_cb), 0);
 
-#warning "xchat->ekg2: drag & drop"
+/* xchat->ekg2: drag & drop */
 
 	userlist_add_columns(GTK_TREE_VIEW(treeview));
 
@@ -517,7 +517,7 @@ void fe_uselect(session *sess, char *word[], int do_clear, int scroll_to)
 
 		do {
 			if (*word[0]) {
-				gtk_tree_model_get(model, &iter, 3, &row_user, -1);
+				gtk_tree_model_get(model, &iter, USERLIST_USER, &row_user, -1);
 				thisname = 0;
 				while (*(name = word[thisname++])) {
 					if (sess->server->p_cmp(row_user->nick, name) == 0) {

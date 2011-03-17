@@ -3,28 +3,25 @@
 #ifndef __EKG_NCURSES_ECURSES_H
 #define __EKG_NCURSES_ECURSES_H
 
-#include "ekg2-config.h"
-
 #define NCURSES_OPAQUE 0	/* for broken macOSX 10.6.1 header
                                    XXX detect during configure
 				 */
 
-#if USE_UNICODE
-# ifndef _XOPEN_SOURCE_EXTENDED
-#  define _XOPEN_SOURCE_EXTENDED
-# endif
-# include <ncursesw/ncurses.h>
-#else	/* USE_UNICODE */
-# ifdef HAVE_NCURSES_H
-#   include <ncurses.h>
-#  else	/* HAVE_NCURSES_H */
-#   ifdef HAVE_NCURSES_NCURSES_H
-#     include <ncurses/ncurses.h>
-#   endif	/* HAVE_NCURSES_NCURSES_H */
-# endif	/* HAVE_NCURSES_H */
-#endif	/* USE_UNICODE */
+#ifdef HAVE_WADDNWSTR
+#	define USE_UNICODE 1
+#endif
 
-#include <ekg/strings.h>
+#ifdef HAVE_NCURSESW_NCURSES_H
+#	include <ncursesw/ncurses.h>
+#else /*HAVE_NCURSESW_NCURSES_H*/
+#	ifdef HAVE_NCURSES_NCURSES_H
+#		include <ncurses/ncurses.h>
+#	else
+#		include <ncurses.h>
+#   endif /*HAVE_NCURSES_NCURSES_H*/
+#endif /*HAVE_NCURSESW_NCURSES_H*/
+
+#include "nc-strings.h"
 
 #endif	/* __EKG_NCURSES_ECURSES_H */
 

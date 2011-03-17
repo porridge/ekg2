@@ -18,17 +18,10 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "ekg2.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/sessions.h>
-#include <ekg/themes.h>
-#include <ekg/userlist.h>
-#include <ekg/stuff.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
 
 #include "gg.h"
 #include "misc.h"
@@ -92,7 +85,7 @@ COMMAND(gg_command_find)
 		argv = &argv[1];	/* skip this param, and go to nextone */
 	}
 	
-	uargv = xcalloc(array_count(argv)+1, sizeof(char **));
+	uargv = xcalloc(g_strv_length(argv)+1, sizeof(char **));
 
 	for (i = 0; argv[i]; i++)
 		uargv[i] = (char*)locale_to_gg_use(session, argv[i]);
@@ -162,7 +155,7 @@ COMMAND(gg_command_find)
 			continue;
 		}
 
-		printq("invalid_params", name);
+		printq("invalid_params", name, arg);
 		gg_pubdir50_free(req);
 
 		for (i = 0; argv[i]; i++)
@@ -195,7 +188,7 @@ COMMAND(gg_command_change)
 	gg_pubdir50_t req;
 
 	if (!g->sess || g->sess->state != GG_STATE_CONNECTED) {
-		printq("not_connected");
+		printq("not_connected", session_name(session));
 		return -1;
 	}
 
@@ -259,13 +252,13 @@ COMMAND(gg_command_change)
 				continue;
 			}
 
-			printq("invalid_params", name);
-			array_free(argv);
+			printq("invalid_params", name, argv[i]);
+			g_strfreev(argv);
 
 			gg_pubdir50_free(req);
 			return -1;
 		}
-		array_free(argv);
+		g_strfreev(argv);
 	}
 
 	if (!gg_pubdir50(g->sess, req)) {
@@ -324,10 +317,10 @@ void gg_session_handler_search50(session_t *s, struct gg_event *e)
 		const char *__birthyear = gg_pubdir50_get(res, i, "birthyear");
 		const char *__city	= gg_pubdir50_get(res, i, "city");
 
-		char *firstname		= gg_to_locale_dup(s, __firstname);
-		char *lastname		= gg_to_locale_dup(s, __lastname);
-		char *nickname		= gg_to_locale_dup(s, __nickname);
-		char *city		= gg_to_locale_dup(s, __city);
+		char *firstname		= gg_to_core_dup(s, __firstname);
+		char *lastname		= gg_to_core_dup(s, __lastname);
+		char *nickname		= gg_to_core_dup(s, __nickname);
+		char *city		= gg_to_core_dup(s, __city);
 		int status		= (__fmstatus)	? atoi(__fmstatus) : GG_STATUS_NOT_AVAIL;
 		const char *birthyear	= (__birthyear && xstrcmp(__birthyear, "0")) ? __birthyear : NULL;
 
@@ -416,7 +409,7 @@ void gg_session_handler_search50(session_t *s, struct gg_event *e)
 			break;
 		}
 
-		gg_pubdir50_add(req, GG_PUBDIR50_START, itoa(next));
+		gg_pubdir50_add(req, GG_PUBDIR50_START, ekg_itoa(next));
 		gg_pubdir50(g->sess, req);
 
 		break;

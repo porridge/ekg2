@@ -21,43 +21,20 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
-
-#include <ekg/commands.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/userlist.h>
-#include <ekg/metacontacts.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
-#include <ekg/windows.h>
-
+#include "backlog.h"
 #include "bindings.h"
-#include "old.h"
-#include "mouse.h"
 #include "contacts.h"
+#include "nc-stuff.h"
+#include "mouse.h"
 
 int contacts_group_index = 0;
 
 static int contacts_edge = WF_RIGHT;
 static int contacts_frame = WF_LEFT;
-#define CONTACTS_ORDER_DEFAULT "chavawxadninnouner"			/* if you modify it, please modify also CONTACTS_ORDER_DEFAULT_LEN */
-#define CONTACTS_ORDER_DEFAULT_LEN 18					/* CONTACTS_ORDER_DEFAULT_LEN == strlen(CONTACTS_ORDER_DEFAULT) */
+#define CONTACTS_ORDER_DEFAULT "chavawxadnintynouner"			/* if you modify it, please modify also CONTACTS_ORDER_DEFAULT_LEN */
+#define CONTACTS_ORDER_DEFAULT_LEN 20					/* CONTACTS_ORDER_DEFAULT_LEN == strlen(CONTACTS_ORDER_DEFAULT) */
 static char contacts_order[32] = CONTACTS_ORDER_DEFAULT;
 static size_t corderlen	= CONTACTS_ORDER_DEFAULT_LEN;			/* it must be always equal xstrlen(contacts_order) XXX please note if you add somewhere code which modify contacts_order */
 
@@ -69,15 +46,16 @@ int config_contacts_descr = 0;
 int config_contacts_edge;
 int config_contacts_frame;
 int config_contacts_margin = 1;
+int config_contacts_vertical_margin = 1;
 int config_contacts_orderbystate = 1;
 int config_contacts_wrap = 0;
 char *config_contacts_order;
 char *config_contacts_groups;
 int config_contacts_metacontacts_swallow;
 
-/* 
- * funkcja zwraca pierwsze literki status avail -> av away -> aw itd... 
- * funkcja nie sprawdza czy status jest NULL, ani czy strlen(status) > 2 
+/*
+ * funkcja zwraca pierwsze literki status avail -> av away -> aw itd...
+ * funkcja nie sprawdza czy status jest NULL, ani czy strlen(status) > 2
  */
 static inline char *get_short_status(const char *status_t) {
 	static char buf[3];
@@ -90,14 +68,14 @@ static inline char *get_short_status(const char *status_t) {
 
 /*
  * contacts_compare()
- * 
- * helps list_add_sorted() 
+ *
+ * helps list_add_sorted()
  */
 static int contacts_compare(void *data1, void *data2)
 {
 	userlist_t *a = data1, *b = data2;
 
-	return xstrcasecmp(a->nickname, b->nickname);
+	return g_utf8_collate(a->nickname, b->nickname);
 }
 
 /*
@@ -106,17 +84,11 @@ static int contacts_compare(void *data1, void *data2)
  * Duplicate entry, with priv_data set to priv.
  */
 
-static inline userlist_t *userlist_dup(userlist_t *up, char *uid, char *nickname, void *priv) {
-	userlist_t *u = xmalloc(sizeof(userlist_t));
+static inline userlist_t *userlist_dup(userlist_t *up, const char *uid, char *nickname, void *priv) {
+	userlist_t *u = g_memdup(up, sizeof(userlist_t));
 
 	u->uid		= uid;
 	u->nickname	= nickname;
-	u->descr	= up->descr;
-	u->status	= up->status;
-		/* XXX: we need to copy these two? or maybe we shall memcpy() whole struct,
-		 * then change invidual fields? */
-	u->blink	= up->blink;
-	u->typing	= up->typing;
 	u->priv_data	= priv;
 	return u;
 }
@@ -124,11 +96,11 @@ static inline userlist_t *userlist_dup(userlist_t *up, char *uid, char *nickname
 /*
  * ncurses_contacts_update()
  *
- * updates contacts window 
- * 
+ * updates contacts window
+ *
  * it switches also groups, metacontacts, all together
  * details in documentation
- * 
+ *
  */
 int ncurses_contacts_update(window_t *w, int save_pos) {
 	int old_start;
@@ -140,25 +112,25 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 	ncurses_window_t *n;
 	newconference_t *c	= NULL;
 	userlist_t *sorted_all	= NULL;
-	int (*comp)(void *, void *) = NULL;		/* coz userlist's list are sorted we don't need to sort it again... 
+	int (*comp)(void *, void *) = NULL;		/* coz userlist's list are sorted we don't need to sort it again...
 								unfortunetly if we create list from serveral userlists (for instance: session && window)
-								we must resort... --- in ekg2 we do 
+								we must resort... --- in ekg2 we do
 									list_add_sorted(...., NULL) on session userlist &&
 									list_add_sorted(...., contacts_compare) on window userlist
 							*/
 
-	
-	if (!w) w = window_find_sa(NULL, "__contacts", 1);
+
+	if (!w) w = window_exist(WINDOW_CONTACTS_ID);
 	if (!w)
 		return -1;
 
 	n = w->priv_data;
-	
-	if (save_pos) 
+
+	if (save_pos)
 		old_start = n->start;
 	else
 		old_start = 0;
-	
+
 	ncurses_clear(w, 1);
 
 	if (!session_current)
@@ -166,7 +138,7 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 
 	if (config_contacts_groups) {
 		char **groups = array_make(config_contacts_groups, ", ", 0, 1, 0);
-		int count = array_count(groups);
+		int count = g_strv_length(groups);
 
 		if (contacts_group_index > count + 2) {
 			contacts_group_index = 0;
@@ -186,7 +158,7 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 			header = format_find("contacts_header_group");
 			footer = format_find("contacts_footer_group");
 		}
-		array_free(groups);
+		g_strfreev(groups);
 	} else if (contacts_group_index) {
 		if (contacts_group_index > ((metacontacts) ? 2 :1) )
 			contacts_group_index = 0;
@@ -208,8 +180,11 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 		footer = format_find("contacts_footer");
 	}
 
-	if (format_ok(header))
-		ncurses_backlog_add(w, fstring_new_format(header, group));
+	if (format_ok(header)) {
+		fstring_t *fstr = fstring_new_format(header, group);
+		ncurses_backlog_add(w, fstr);
+		fstring_free(fstr);
+	}
 
 	if (all == 1) {
 		userlist_t *l;
@@ -255,7 +230,7 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 
 				/* metacontact_find_prio() should always success [for current API] */
 /*
-				if (!metacontact_find_prio(m)) 
+				if (!metacontact_find_prio(m))
 					continue;
 */
 				for (i = m->metacontact_items; i; i = i->next) {
@@ -299,7 +274,7 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 	if (!all) {
 		sorted_all = session_current->userlist;
 
-		if (c && c->participants) 
+		if (c && c->participants)
 			sorted_all = c->participants;
 		else if (window_current->userlist)
 			sorted_all = window_current->userlist;
@@ -321,13 +296,13 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 			const char *format;
 			fstring_t *string;
 
-			if (!u->nickname || !u->status) 
+			if (!u->nickname || !u->status)
 				continue;
 
 			status_t = ekg_status_string(u->status, 0);
 
 			if (config_contacts_orderbystate ?
-				xstrncmp(contacts_order + j, status_t, 2) :		/* when config_contacts_orderbystate, we need to have got this status in contacts_order now. */
+				xstrncmp(contacts_order + j, u->status == EKG_STATUS_NA && u->typing ? "ty" : status_t, 2) :	/* when config_contacts_orderbystate, we need to have got this status in contacts_order now. */
 				!xstrstr(contacts_order, get_short_status(status_t)))	/* when !config_contacts_orderbystate, we need to have got this status in contacts_order anywhere. */
 					continue;
 
@@ -341,8 +316,11 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 			if (!count) {
 				snprintf(tmp, sizeof(tmp), "contacts_%s_header", status_t);
 				format = format_find(tmp);
-				if (format_ok(format))
-					ncurses_backlog_add(w, fstring_new_format(format));
+				if (format_ok(format)) {
+					fstring_t *fstr = fstring_new_format(format);
+					ncurses_backlog_add(w, fstr);
+					fstring_free(fstr);
+				}
 				footer_status = status_t;
 			}
 
@@ -360,12 +338,15 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 
 			string = fstring_new_format(format_find(tmp), u->nickname, u->descr);
 
+				/* used in mouse handler, do not recode */
 			if (u->priv_data == (void *) 2)
-				string->priv_data = (void *) xstrdup(u->nickname);
-			else 
-				string->priv_data = (void *) saprintf("%s/%s", (u->priv_data) ? ((session_t *) u->priv_data)->uid : session_current->uid, u->nickname);
+				string->priv_data = g_strdup(u->nickname);
+			else
+				string->priv_data = g_strdup_printf("%s/%s", (u->priv_data) ? ((session_t *) u->priv_data)->uid : session_current->uid, u->nickname);
 
 			ncurses_backlog_add(w, string);
+			string->priv_data = NULL; /* XXX: stop freeing this in fstring_free()! */
+			fstring_free(string);
 
 			count++;
 		}
@@ -376,8 +357,11 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 			snprintf(tmp, sizeof(tmp), "contacts_%s_footer", footer_status);
 			format = format_find(tmp);
 
-			if (format_ok(format))
-				ncurses_backlog_add(w, fstring_new_format(format));
+			if (format_ok(format)) {
+				fstring_t *fstr = fstring_new_format(format);
+				ncurses_backlog_add(w, fstr);
+				fstring_free(fstr);
+			}
 		}
 
 		if (!config_contacts_orderbystate)
@@ -385,8 +369,11 @@ int ncurses_contacts_update(window_t *w, int save_pos) {
 	}
 
 after_loop:
-	if (format_ok(footer))
-		ncurses_backlog_add(w, fstring_new_format(footer, group));
+	if (format_ok(footer)) {
+		fstring_t *fstr = fstring_new_format(footer, group);
+		ncurses_backlog_add(w, fstr);
+		fstring_free(fstr);
+	}
 	if (all)
 		LIST_DESTROY2(sorted_all, NULL);
 
@@ -395,7 +382,7 @@ after_loop:
 kon:
 /* restore old index */
 	n->start = old_start;
-	
+
 	if (n->start > n->lines_count - w->height + n->overflow)
 		n->start = n->lines_count - w->height + n->overflow;
 
@@ -416,7 +403,7 @@ kon:
  */
 
 void ncurses_contacts_changed(const char *name) {
-	window_t *w = NULL;
+	window_t *w = window_exist(WINDOW_CONTACTS_ID);
 
 	if (in_autoexec)
 		return;
@@ -424,7 +411,7 @@ void ncurses_contacts_changed(const char *name) {
 	if (!xstrcasecmp(name, "ncurses:contacts_size"))
 		config_contacts = 1;
 
-	if (config_contacts_size < 0) 
+	if (config_contacts_size < 0)
 		config_contacts_size = 0;
 
 	if (config_contacts_size == 0)
@@ -436,6 +423,9 @@ void ncurses_contacts_changed(const char *name) {
 	if (config_contacts_margin > 10)
 		config_contacts_margin = 10;
 
+	if (config_contacts_vertical_margin > 5)
+		config_contacts_vertical_margin = 5;
+
 	if (config_contacts_edge > 3)
 		config_contacts_edge = 2;
 
@@ -445,36 +435,39 @@ void ncurses_contacts_changed(const char *name) {
 			: contacts_edge ^ (WF_TOP|WF_BOTTOM));
 
 	if (config_contacts_order) {
-		strlcpy(contacts_order, config_contacts_order, sizeof(contacts_order));
+		g_strlcpy(contacts_order, config_contacts_order, sizeof(contacts_order));
 		corderlen = xstrlen(contacts_order);
 	} else {
 		xstrcpy(contacts_order, CONTACTS_ORDER_DEFAULT);
 		corderlen = CONTACTS_ORDER_DEFAULT_LEN;	/* xstrlen(CONTACTS_ORDER_DEFAULT) eq CONTACTS_ORDER_DEFAULT_LEN */
 	}
 
-	/* XXX destroy window only if (!config_contacts) ? XXX */
-	if ((w = window_find_sa(NULL, "__contacts", 1))) {
-		window_kill(w);
-		w = NULL;
+	if (w) {
+		if (!config_contacts) {
+			window_kill(w);
+			w = NULL;
+		} else {
+			ncurses_contacts_set(w);
+		}
+	} else if (config_contacts) {
+		w = window_new("__contacts", NULL, WINDOW_CONTACTS_ID);
 	}
 
-	if (config_contacts /* && !w */) {
-		w = window_new("__contacts", NULL, 1000);
+	if (w)
 		ncurses_contacts_update(w, 0);
-	}
 
 	ncurses_resize();
 	ncurses_commit();
 }
 
-/* 
+/*
  * ncurses_contacts_mouse_handler()
- * 
+ *
  * handler for mouse events
  */
-void ncurses_contacts_mouse_handler(int x, int y, int mouse_state) 
+void ncurses_contacts_mouse_handler(int x, int y, int mouse_state)
 {
-	window_t *w = window_find_sa(NULL, "__contacts", 1);
+	window_t *w = window_exist(WINDOW_CONTACTS_ID);
 	ncurses_window_t *n;
 
 	if (mouse_state == EKG_SCROLLED_UP) {
@@ -484,6 +477,9 @@ void ncurses_contacts_mouse_handler(int x, int y, int mouse_state)
 		binding_helper_scroll(w, 5);
 		return;
 	}
+
+	if (mouse_state == EKG_BUTTON3_CLICKED)
+		binding_next_contacts_group(NULL);
 
 	if (!w || mouse_state != EKG_BUTTON1_DOUBLE_CLICKED)
 		return;
@@ -512,22 +508,24 @@ void ncurses_contacts_mouse_handler(int x, int y, int mouse_state)
 		return;
 	}
 
+		/* (we keep priv_data utf8-encoded) */
 	command_exec_format(NULL, NULL, 0, ("/query \"%s\""), n->backlog[y]->priv_data);
 	return;
 }
 
-static int ncurses_contacts_update_redraw(window_t *w) { return 0; } 
+static int ncurses_contacts_update_redraw(window_t *w) { return 0; }
 
 /*
- * ncurses_contacts_new()
+ * ncurses_contacts_set()
  *
- * dostosowuje nowoutworzone okno do listy kontaktów.
+ * setup contacts window
  */
-void ncurses_contacts_new(window_t *w)
+void ncurses_contacts_set(window_t *w)
 {
 	int size = config_contacts_size + config_contacts_margin + ((contacts_frame) ? 1 : 0);
 	ncurses_window_t *n = w->priv_data;
 
+	n->margin_right = n->margin_left = n->margin_bottom = n->margin_top = 0;
 	switch (contacts_edge) {
 		case WF_LEFT:
 			w->width = size;
@@ -539,11 +537,11 @@ void ncurses_contacts_new(window_t *w)
 			break;
 		case WF_TOP:
 			w->height = size;
-			n->margin_bottom = config_contacts_margin;
+			n->margin_bottom = config_contacts_vertical_margin;
 			break;
 		case WF_BOTTOM:
 			w->height = size;
-			n->margin_top = config_contacts_margin;
+			n->margin_top = config_contacts_vertical_margin;
 			break;
 	}
 

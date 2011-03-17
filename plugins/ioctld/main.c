@@ -23,12 +23,9 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
-#ifndef __FreeBSD__
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
-#endif
+#include <glib.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -41,16 +38,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <signal.h>
-
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
-
-#include <ekg/commands.h>
-#include <ekg/dynstuff.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/xmalloc.h>
 
 #include "ioctld.h"
 
@@ -95,7 +82,7 @@ static int ioctld_parse_seq(const char *seq, struct action_data *data)
 		data->delay[i] = delay;
 	}
 
-	array_free(entries);
+	g_strfreev(entries);
 
 	return 0;
 }
@@ -121,7 +108,7 @@ static int ioctld_socket(const char *path)
 		return -1;
 
 	sockun.sun_family = AF_UNIX;
-	strlcpy(sockun.sun_path, path, sizeof(sockun.sun_path));
+	g_strlcpy(sockun.sun_path, path, sizeof(sockun.sun_path));
 
 	for (i = 5; i; i--) {
 		/* XXX, make it non-blocking.. use watches */

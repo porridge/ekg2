@@ -7,16 +7,12 @@ Ekg2::Variable variable_find(const char *name)
 
 void variables()
 PREINIT:
-        variable_t *v;
+        GSList *vl;
 PPCODE:
-        for (v = variables; v; v = v->next) {
-                XPUSHs(sv_2mortal(bless_variable( v )));
+        for (vl = variables; vl; vl = vl->next) {
+                XPUSHs(sv_2mortal(bless_variable( (variable_t *) vl->data )));
         }
 
-void variables_free()
-CODE:
-	variables_destroy();
-	
 Ekg2::Variable variable_add_ext(char *name, char *value, char *handler)
 CODE:
         RETVAL = perl_variable_add(name, value, handler)->self;
@@ -43,8 +39,13 @@ CODE:
 	variable_remove(var->plugin, var->name);
 
 int variable_set(Ekg2::Variable var, const char *value)
+PREINIT:
+	int ret;
 CODE:
-	RETVAL = variable_set(var->name, value);
+	ret = variable_set(var->name, value);
+	if (ret == 0)
+		config_changed = 1;
+	RETVAL = ret;
 OUTPUT:
 	RETVAL
 

@@ -34,7 +34,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <ekg2-config.h>
+#include "ekg2.h"
 
 #include <X11/Xlib.h>
 #include <gtk/gtk.h>
@@ -44,14 +44,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/queries.h>
-#include <ekg/stuff.h>
-#include <ekg/vars.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
 
 #include "main.h"
 #include "palette.h"
@@ -189,7 +181,7 @@ static QUERY(gtk_ui_window_new) {			/* fe_new_window() */
 int gtk_ui_window_switch_lock = 0;
 
 static QUERY(gtk_ui_window_switch) {
-#warning "XXX, fast implementation"
+/* XXX, fast implementation */
 	window_t *w	= *(va_arg(ap, window_t **));
 
 	if (gtk_ui_window_switch_lock)
@@ -212,7 +204,7 @@ static QUERY(gtk_ui_window_kill) {			/* fe_session_callback() || fe_close_window
 
 static QUERY(gtk_ui_window_print) {			/* fe_print_text() */
 	window_t *w = *(va_arg(ap, window_t **));
-	fstring_t *line = *(va_arg(ap, fstring_t **));
+	const fstring_t *line = *(va_arg(ap, const fstring_t **));
 
 	gtk_xtext_append_fstring(gtk_private(w)->buffer, line);
 
@@ -247,15 +239,6 @@ static QUERY(gtk_print_version) {
 /*				GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION GTK_BINARY_AGE );*/
 	print("generic", ver);
 	xfree(ver);
-	return 0;
-}
-
-static QUERY(gtk_utf_postinit) {
-	/* hack */
-	xfree(config_console_charset);
-	config_console_charset = xstrdup("UTF-8");
-
-	config_use_unicode = 1;
 	return 0;
 }
 
@@ -338,7 +321,7 @@ static QUERY(gtk_statusbar_query) {
 static QUERY(gtk_ui_window_clear) {
 	window_t *w = *(va_arg(ap, window_t **));
 
-#warning "This is real clear, not ncurses-like"
+/* This is real clear, not ncurses-like */
 	gtk_xtext_clear(gtk_private(w)->buffer);
 	return 0;
 }
@@ -352,7 +335,7 @@ EXPORT int gtk_plugin_init(int prio) {
 
 	PLUGIN_CHECK_VER("gtk");
 
-	query_emit_id(NULL, UI_IS_INITIALIZED, &is_UI);
+	query_emit(NULL, "ui-is-initialized", &is_UI);
 
 	if (is_UI) {
 		debug(ekg2_another_ui);
@@ -363,17 +346,6 @@ EXPORT int gtk_plugin_init(int prio) {
 
 	if (!(gtk_init_check(0, NULL)))
 		return -1;
-
-#ifdef USE_UNICODE
-	if (!config_use_unicode)
-#endif
-	{
-		int la = in_autoexec;
-		bind_textdomain_codeset("ekg2", "UTF-8");
-		in_autoexec = 0;	changed_theme(("theme"));	in_autoexec = la; /* gettext + themes... */
-	}
-
-		/* ... */
 
 	/* fe_init() */
 	gtk_binding_init();
@@ -388,60 +360,59 @@ EXPORT int gtk_plugin_init(int prio) {
 
 	plugin_register(&gtk_plugin, prio);
 
-	query_connect_id(&gtk_plugin, UI_IS_INITIALIZED,	gtk_ui_is_initialized, NULL); /* aby __debug sie wyswietlalo */
-	query_connect_id(&gtk_plugin, SET_VARS_DEFAULT,		gtk_setvar_default, NULL);
+	query_connect(&gtk_plugin, "ui-is-initialized",	gtk_ui_is_initialized, NULL); /* aby __debug sie wyswietlalo */
+	query_connect(&gtk_plugin, "set-vars-default",		gtk_setvar_default, NULL);
 
-	query_emit_id(&gtk_plugin, SET_VARS_DEFAULT);
+	query_emit(&gtk_plugin, "set-vars-default");
 
-	query_connect_id(&gtk_plugin, CONFIG_POSTINIT,		gtk_utf_postinit, NULL);
-	query_connect_id(&gtk_plugin, CONFIG_POSTINIT,		gtk_postinit, NULL);
+	query_connect(&gtk_plugin, "config-postinit",		gtk_postinit, NULL);
 
-	query_connect_id(&gtk_plugin, UI_LOOP,			ekg2_gtk_loop, NULL);
-	query_connect_id(&gtk_plugin, PLUGIN_PRINT_VERSION,	gtk_print_version, NULL);
+	query_connect(&gtk_plugin, "ui-loop",			ekg2_gtk_loop, NULL);
+	query_connect(&gtk_plugin, "plugin-print-version",	gtk_print_version, NULL);
 
-	query_connect_id(&gtk_plugin, UI_BEEP,			gtk_beep, NULL);		/* fe_beep() */
-	query_connect_id(&gtk_plugin, UI_WINDOW_NEW,		gtk_ui_window_new, NULL);	/* fe_new_window() */
-	query_connect_id(&gtk_plugin, UI_WINDOW_PRINT,		gtk_ui_window_print, NULL);	/* fe_print_text() */
-	query_connect_id(&gtk_plugin, UI_WINDOW_ACT_CHANGED,	gtk_ui_window_act_changed, NULL);/* fe_set_tab_color() */
-	query_connect_id(&gtk_plugin, UI_WINDOW_KILL,		gtk_ui_window_kill, NULL);	/* fe_session_callback() */
-	query_connect_id(&gtk_plugin, UI_WINDOW_SWITCH,		gtk_ui_window_switch, NULL);
-	query_connect_id(&gtk_plugin, UI_WINDOW_TARGET_CHANGED, gtk_ui_window_target_changed, NULL);	/* fe_set_channel() */
-	query_connect_id(&gtk_plugin, UI_WINDOW_CLEAR,		gtk_ui_window_clear, NULL);
+	query_connect(&gtk_plugin, "ui-beep",			gtk_beep, NULL);		/* fe_beep() */
+	query_connect(&gtk_plugin, "ui-window-new",		gtk_ui_window_new, NULL);	/* fe_new_window() */
+	query_connect(&gtk_plugin, "ui-window-print",		gtk_ui_window_print, NULL);	/* fe_print_text() */
+	query_connect(&gtk_plugin, "ui-window-act-changed",	gtk_ui_window_act_changed, NULL);/* fe_set_tab_color() */
+	query_connect(&gtk_plugin, "ui-window-kill",		gtk_ui_window_kill, NULL);	/* fe_session_callback() */
+	query_connect(&gtk_plugin, "ui-window-switch",		gtk_ui_window_switch, NULL);
+	query_connect(&gtk_plugin, "ui-window-target-changed", gtk_ui_window_target_changed, NULL);	/* fe_set_channel() */
+	query_connect(&gtk_plugin, "ui-window-clear",		gtk_ui_window_clear, NULL);
 
-	query_connect_id(&gtk_plugin, SESSION_CHANGED,		gtk_session_changed, NULL);
-	query_connect_id(&gtk_plugin, SESSION_EVENT,		gtk_statusbar_query, NULL);
-	query_connect_id(&gtk_plugin, SESSION_RENAMED,		gtk_statusbar_query, NULL);
+	query_connect(&gtk_plugin, "session-changed",		gtk_session_changed, NULL);
+	query_connect(&gtk_plugin, "session-event",		gtk_statusbar_query, NULL);
+	query_connect(&gtk_plugin, "session-renamed",		gtk_statusbar_query, NULL);
 
-	query_connect_id(&gtk_plugin, VARIABLE_CHANGED,		gtk_variable_changed, NULL);
+	query_connect(&gtk_plugin, "variable-changed",		gtk_variable_changed, NULL);
 
-	query_connect_id(&gtk_plugin, USERLIST_CHANGED,	gtk_userlist_changed, NULL);
-	query_connect_id(&gtk_plugin, USERLIST_ADDED,	gtk_userlist_changed, NULL);
-	query_connect_id(&gtk_plugin, USERLIST_REMOVED,	gtk_userlist_changed, NULL);
-	query_connect_id(&gtk_plugin, USERLIST_RENAMED,	gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "userlist-changed",	gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "userlist-added",	gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "userlist-removed",	gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "userlist-renamed",	gtk_userlist_changed, NULL);
 
-	query_connect_id(&gtk_plugin, SESSION_EVENT,	gtk_userlist_changed, NULL);
-	query_connect_id(&gtk_plugin, UI_WINDOW_REFRESH, gtk_userlist_changed, NULL);
-	query_connect_id(&gtk_plugin, USERLIST_REFRESH,	gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "session-event",	gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "ui-window-refresh", gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "userlist-refresh",	gtk_userlist_changed, NULL);
 
 /*
-	query_connect_id(&ncurses_plugin, UI_WINDOW_REFRESH, ncurses_ui_window_refresh, NULL);
-	query_connect_id(&ncurses_plugin, UI_WINDOW_UPDATE_LASTLOG, ncurses_ui_window_lastlog, NULL);
-	query_connect_id(&ncurses_plugin, SESSION_ADDED, ncurses_statusbar_query, NULL);
-	query_connect_id(&ncurses_plugin, SESSION_REMOVED, ncurses_statusbar_query, NULL);
-	query_connect_id(&ncurses_plugin, BINDING_SET, ncurses_binding_set_query, NULL);
-	query_connect_id(&ncurses_plugin, BINDING_COMMAND, ncurses_binding_adddelete_query, NULL);
-	query_connect_id(&ncurses_plugin, BINDING_DEFAULT, ncurses_binding_default, NULL);
-	query_connect_id(&ncurses_plugin, VARIABLE_CHANGED, ncurses_variable_changed, NULL);
-	query_connect_id(&ncurses_plugin, CONFERENCE_RENAMED, ncurses_conference_renamed, NULL);
+	query_connect(&ncurses_plugin, "ui-window-refresh", ncurses_ui_window_refresh, NULL);
+	query_connect(&ncurses_plugin, "ui-window-update-lastlog", ncurses_ui_window_lastlog, NULL);
+	query_connect(&ncurses_plugin, "session-added", ncurses_statusbar_query, NULL);
+	query_connect(&ncurses_plugin, "session-removed", ncurses_statusbar_query, NULL);
+	query_connect(&ncurses_plugin, "binding-set", ncurses_binding_set_query, NULL);
+	query_connect(&ncurses_plugin, "binding-command", ncurses_binding_adddelete_query, NULL);
+	query_connect(&ncurses_plugin, "binding-default", ncurses_binding_default, NULL);
+	query_connect(&ncurses_plugin, "variable-changed", ncurses_variable_changed, NULL);
+	query_connect(&ncurses_plugin, "conference-renamed", ncurses_conference_renamed, NULL);
 */
 
-	query_connect_id(&gtk_plugin, METACONTACT_ADDED, gtk_userlist_changed, NULL);
-	query_connect_id(&gtk_plugin, METACONTACT_REMOVED, gtk_userlist_changed, NULL);
-	query_connect_id(&gtk_plugin, METACONTACT_ITEM_ADDED, gtk_userlist_changed, NULL);
-	query_connect_id(&gtk_plugin, METACONTACT_ITEM_REMOVED, gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "metacontact-added", gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "metacontact-removed", gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "metacontact-item-added", gtk_userlist_changed, NULL);
+	query_connect(&gtk_plugin, "metacontact-item-removed", gtk_userlist_changed, NULL);
 
 #define gtk_backlog_change NULL
-#warning "gtk_backlog_change == NULL, need research"
+/* gtk_backlog_change == NULL, need research */
 	variable_add(&gtk_plugin, ("backlog_size"), VAR_INT, 1, &backlog_size_config, gtk_backlog_change, NULL, NULL);
 	variable_add(&gtk_plugin, ("tab_layout"), VAR_INT, 1, &tab_layout_config, gtk_tab_layout_change, NULL, NULL);	/* XXX, variable_map() 0 -> 2-> */
 

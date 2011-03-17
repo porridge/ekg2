@@ -3,19 +3,9 @@
  * (C) 2006 Michał Górny <peres@peres.int.pl>
  */
 
-#include <sys/types.h>
-#include <regex.h>
+#include "ekg2.h"
 
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
-#include <ekg/queries.h>
-#include <ekg/sessions.h>
-#include <ekg/themes.h>
-#include <ekg/userlist.h>
-#include <ekg/vars.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
+#include <sys/types.h>
 
 static list_t list_find_str(const list_t first, const char *needle);
 static QUERY(autoresponder_message);
@@ -28,7 +18,7 @@ static char *config_autoresponder_answer = NULL;
 static char *config_autoresponder_greeting = NULL;
 static char *config_autoresponder_allowed_sessions = NULL;
 static int config_autoresponder_match_mode = 1;
-static regex_t *autoresponder_answer_regex = NULL;
+static GRegex *autoresponder_answer_regex = NULL;
 
 static list_t autoresponder_allowed_uids;
 
@@ -49,7 +39,7 @@ static QUERY(autoresponder_message)
 	char *uid	= *(va_arg(ap, char**));
 		char **UNUSED(rcpts)	= *(va_arg(ap, char***));
 	char *text	= *(va_arg(ap, char**));
-		uint32_t *UNUSED(format)= *(va_arg(ap, uint32_t**));
+		guint32 *UNUSED(format)= *(va_arg(ap, guint32**));
 		time_t UNUSED(sent)	= *(va_arg(ap, time_t*));
 	int class	= *(va_arg(ap, int*));
 		char *UNUSED(seq)	= *(va_arg(ap, char**));
@@ -78,7 +68,7 @@ static QUERY(autoresponder_message)
 			matchoccured = !xstrcmp(text, an);
 			break;
 		case 2: /* POSIX regex match */
-			matchoccured = !regexec(autoresponder_answer_regex, text, 0, NULL, 0);
+			matchoccured = g_regex_match(autoresponder_answer_regex, text, 0, NULL);
 			break;
 		case 1: /* substring match */
 		default:
@@ -100,31 +90,17 @@ static QUERY(autoresponder_message)
 static void autoresponder_varchange(const char *varname)
 {
 	if (autoresponder_answer_regex) {
-		regfree(autoresponder_answer_regex);
-		xfree(autoresponder_answer_regex);
+		g_regex_unref(autoresponder_answer_regex);
 		autoresponder_answer_regex = NULL;
 	}
 
 	if (config_autoresponder_match_mode == 2 && config_autoresponder_answer && (*config_autoresponder_answer)) {
-		int retval;
-
-		autoresponder_answer_regex = xmalloc(sizeof(regex_t));
-		if ((retval = regcomp(autoresponder_answer_regex, config_autoresponder_answer, REG_EXTENDED|REG_NOSUB))) {
-			const int len = regerror(retval, autoresponder_answer_regex, NULL, 0);
-			char *tmp;
+		GError *err = NULL;
+		if (!((autoresponder_answer_regex = g_regex_new(config_autoresponder_answer,
+					G_REGEX_RAW | G_REGEX_NO_AUTO_CAPTURE, 0, &err)))) {
 			
-			if (len) {
-				char *err = xmalloc(len);
-				
-				regerror(retval, autoresponder_answer_regex, err, len);
-				print("generic_error", (tmp = saprintf("Regex compilation error: %s", err)));
-				xfree(err);
-			} else {
-				print("generic_error", (tmp = saprintf("Regex compilation error %d", retval)));
-			}
-			xfree(tmp);
-			xfree(autoresponder_answer_regex);
-			autoresponder_answer_regex = NULL;
+			print("regex_error", err->message);
+			g_error_free(err);
 			config_autoresponder_match_mode = 1;
 		}
 	}
@@ -136,7 +112,7 @@ EXPORT int autoresponder_plugin_init(int prio)
 
 	plugin_register(&autoresponder_plugin, prio);
 	
-	query_connect_id(&autoresponder_plugin, PROTOCOL_MESSAGE, autoresponder_message, NULL);
+	query_connect(&autoresponder_plugin, "protocol-message", autoresponder_message, NULL);
 	variable_add(&autoresponder_plugin, "allowed_sessions", VAR_STR, 1, &config_autoresponder_allowed_sessions, NULL, NULL, NULL);
 	variable_add(&autoresponder_plugin, "answer", VAR_STR, 1, &config_autoresponder_answer, autoresponder_varchange, NULL, NULL);
 	variable_add(&autoresponder_plugin, "greeting", VAR_STR, 1, &config_autoresponder_greeting, NULL, NULL, NULL);
@@ -150,10 +126,8 @@ EXPORT int autoresponder_plugin_init(int prio)
 static int autoresponder_plugin_destroy(void)
 {
 	list_destroy(autoresponder_allowed_uids, 1);
-	if (autoresponder_answer_regex) {
-		regfree(autoresponder_answer_regex);
-		xfree(autoresponder_answer_regex);
-	}
+	if (autoresponder_answer_regex)
+		g_regex_unref(autoresponder_answer_regex);
 	plugin_unregister(&autoresponder_plugin);
 	
 	return 0;

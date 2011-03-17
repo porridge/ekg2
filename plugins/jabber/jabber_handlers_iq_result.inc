@@ -16,9 +16,9 @@ JABBER_HANDLER_RESULT(jabber_handle_iq_result_disco) {
 			char *snode = jabber_unescape(jabber_attr(item->atts, "node"));
 
 			if (!iscontrol)	print(snode ? "jabber_transport_list_item_node" : "jabber_transport_list_item", 
-					session_name(s), uid, sjid, snode, sdesc, itoa(i));
+					session_name(s), uid, sjid, snode, sdesc, ekg_itoa(i));
 			else		print("jabber_remotecontrols_list_item", 
-					session_name(s), uid, sjid, snode, sdesc, itoa(i));
+					session_name(s), uid, sjid, snode, sdesc, ekg_itoa(i));
 			xfree(sdesc);
 			xfree(sjid);
 			xfree(snode);
@@ -263,10 +263,10 @@ JABBER_HANDLER_RESULT(jabber_handle_iq_result_privacy) {
 				if (!i) print("jabber_privacy_list_begin", session_name(s), j->server);
 				if (i != -1) i++;
 				if (active && !xstrcmp(jabber_attr(node->atts, "name"), activename)) {
-					print("jabber_privacy_list_item_act", session_name(s), j->server, itoa(i), activename); dn++; }
+					print("jabber_privacy_list_item_act", session_name(s), j->server, ekg_itoa(i), activename); dn++; }
 				if (def && !xstrcmp(jabber_attr(node->atts, "name"), defaultname)) {
-					print("jabber_privacy_list_item_def", session_name(s), j->server, itoa(i), defaultname); dn++; }
-				if (!dn) print("jabber_privacy_list_item", session_name(s), j->server, itoa(i), jabber_attr(node->atts, "name")); 
+					print("jabber_privacy_list_item_def", session_name(s), j->server, ekg_itoa(i), defaultname); dn++; }
+				if (!dn) print("jabber_privacy_list_item", session_name(s), j->server, ekg_itoa(i), jabber_attr(node->atts, "name")); 
 			}
 		}
 	}
@@ -404,6 +404,7 @@ JABBER_HANDLER_RESULT(jabber_handle_gmail_result_mailbox) {
 
 			char *amessages = jabber_attr(child->atts, "messages");		/* messages count in thread */
 			char *subject = NULL;
+			char *snippet = NULL;
 			int firstsender = 1;
 
 			for (subchild = child->children; subchild; subchild = subchild->next) {
@@ -437,16 +438,18 @@ JABBER_HANDLER_RESULT(jabber_handle_gmail_result_mailbox) {
 					}
 				} else if (!xstrcmp(subchild->name, "labels")) {	/* <labels>        | 
 											   A tag that contains a pipe ('|') delimited list of labels applied to this thread. */
-				} else if (!xstrcmp(subchild->name, "snippet")) {	/* <snippet>       | 
-											   A snippet from the body of the email. This must be HTML-encoded. */
+				} else if (!xstrcmp(subchild->name, "snippet")) {
+					/* A snippet from the body of the email. This must be HTML-encoded. */
+					snippet = jabber_unescape(subchild->data);
 				} else debug_error("[jabber] google:mail:notify/mail-thread-info wtf: %s\n", __(subchild->name));
 			}
 
 			print((amessages && atoi(amessages) > 1) ? "gmail_thread" : "gmail_mail", 
-					session_name(s), from->str, jabberfix(subject, "(no subject)"), amessages);
+					session_name(s), from->str, jabberfix(subject, "(no subject)"), amessages, jabberfix(snippet, ""));
 
 			string_free(from, 1);
 			xfree(subject);
+			xfree(snippet);
 		} else debug_error("[jabber, iq] google:mail:notify wtf: %s\n", __(child->name));
 	}
 	if (mailcount && atoi(mailcount)) /* we don't want to beep or send events if no new mail is available */
@@ -549,15 +552,8 @@ JABBER_HANDLER_RESULT(jabber_handle_iq_roster) {
 		userlist_t *u;
 		char *uid;
 
-		if (j->istlen) {
-			/* do it like tlen does with roster - always @tlen.pl */
-			char *atsign	= xstrchr(jid, '@');
-
-			if (atsign)
-				*atsign	= 0;
-			uid = saprintf("tlen:%s@tlen.pl", jid);
-		} else
-			uid = xmpp_uid(jid);
+		if (j->istlen)	uid = tlen_uid(jid);
+		else		uid = xmpp_uid(jid);
 
 		/* jeśli element rostera ma subscription = remove to tak naprawde użytkownik jest usuwany;
 		   w przeciwnym wypadku - nalezy go dopisać do userlisty; dodatkowo, jesli uzytkownika
@@ -575,7 +571,11 @@ JABBER_HANDLER_RESULT(jabber_handle_iq_roster) {
 			const char *authval;
 			xmlnode_t *group;
 
-			u = userlist_add(s, uid, nickname); 
+			u = userlist_find(s, uid);
+			if (u && xstrcmp(u->nickname, nickname))
+				query_emit(NULL, "userlist-renamed", &nickname, &(u->nickname));
+			else
+				u = userlist_add(s, uid, nickname); 
 
 			if ((authval = jabber_attr(item->atts, "subscription"))) {
 				jabber_userlist_private_t *up = jabber_userlist_priv_get(u);
@@ -682,7 +682,7 @@ JABBER_HANDLER_RESULT(jabber_handle_iq_roster) {
 		jabber_write_status(s);
 	}
 
-	query_emit_id(NULL, USERLIST_REFRESH);
+	query_emit(NULL, "userlist-refresh");
 }
 
 JABBER_HANDLER_RESULT(jabber_handle_iq_result_register) {
@@ -717,6 +717,7 @@ JABBER_HANDLER_RESULT(jabber_handle_iq_result_register) {
 		for (reg = n->children; reg; reg = reg->next) {
 			char *jname, *jdata;
 			if (!xstrcmp(reg->name, "instructions")) continue;
+			if (!xstrcmp(reg->name, "registered")) continue;	/* XXX the entity is already registered! */
 
 			jname = jabber_unescape(reg->name);
 			if (!xstrcmp(jname, "password"))
@@ -952,7 +953,7 @@ JABBER_HANDLER_RESULT(jabber_handle_iq_muc_admin) {
 			xmlnode_t *reason	= xmlnode_find_child(node, "reason");
 			char *rsn		= reason ? jabber_unescape(reason->data) : NULL;
 
-			print("jabber_muc_banlist", session_name(s), from, jid, rsn ? rsn : "", itoa(++count));
+			print("jabber_muc_banlist", session_name(s), from, jid, rsn ? rsn : "", ekg_itoa(++count));
 			xfree(rsn);
 		}
 	}
@@ -1005,7 +1006,7 @@ JABBER_HANDLER_SET(jabber_handle_si_set) {
 			if (len) dcc_size_set(D, atoi(len));
 		}
 */
-		print("dcc_get_offer", format_user(s, uid), filename, size, itoa(dcc_id_get(D))); 
+		print("dcc_get_offer", format_user(s, uid), filename, size, ekg_itoa(dcc_id_get(D))); 
 
 		xfree(uin);
 		xfree(uid);
@@ -1055,7 +1056,7 @@ JABBER_HANDLER_RESULT(jabber_handle_si_result) {
 				streamhost.jid	= saprintf("%s/%s", s->uid+5, j->resource);
 				streamhost.ip	= xstrdup(jabber_dcc_ip);
 				streamhost.port	= jabber_dcc_port;
-				list_add(&(b->streamlist), xmemdup(&streamhost, sizeof(struct jabber_streamhost_item)));
+				list_add(&(b->streamlist), g_memdup(&streamhost, sizeof(struct jabber_streamhost_item)));
 			}
 
 			/* 	... other, proxy, etc, etc..
@@ -1065,7 +1066,7 @@ JABBER_HANDLER_RESULT(jabber_handle_si_result) {
 				*/
 
 			xfree(p->req);
-			p->req = xstrdup(itoa(j->id++));
+			p->req = xstrdup(ekg_itoa(j->id++));
 
 			watch_write(j->send_watch, "<iq type=\"set\" to=\"%s\" id=\"%s\">"
 					"<query xmlns=\"http://jabber.org/protocol/bytestreams\" mode=\"tcp\" sid=\"%s\">", 

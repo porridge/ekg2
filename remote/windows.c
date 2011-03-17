@@ -147,7 +147,7 @@ static void window_switch_c(int id) {
 			session_current = w->session;
 	
 		window_current = w;
-		query_emit_id(NULL, UI_WINDOW_SWITCH, &w);	/* XXX */
+		query_emit(NULL, "ui-window-switch", &w);	/* XXX */
 
 		w->act = 0;
 		if (w->target && w->session && (u = userlist_find(w->session, w->target)) && u->blink) {
@@ -173,7 +173,7 @@ static void window_switch_c(int id) {
 	}
 
 	if (ul_refresh)
-		query_emit_id(NULL, USERLIST_REFRESH);
+		query_emit(NULL, "userlist-refresh");
 }
 
 EXPORTNOT void remote_window_switch(int id) {
@@ -198,7 +198,7 @@ static window_t *window_new_c(const char *target, session_t *session, int new_id
 /*	w->userlist = NULL; */		/* xmalloc memset() to 0 memory */
 
 	windows_add(w);
-	query_emit_id(NULL, UI_WINDOW_NEW, &w);	/* XXX */
+	query_emit(NULL, "ui-window-new", &w);	/* XXX */
 
 	return w;
 }
@@ -313,7 +313,7 @@ void window_kill(window_t *w) {
 		w->target	= NULL;
 /*		w->session	= NULL; */
 
-		query_emit_id(NULL, UI_WINDOW_TARGET_CHANGED, &w);
+		query_emit(NULL, "ui-window-target-changed", &w);
 		return;
 	}
 
@@ -341,7 +341,7 @@ void window_kill(window_t *w) {
 		}
 	}
 
-	query_emit_id(NULL, UI_WINDOW_KILL, &w);
+	query_emit(NULL, "ui-window-kill", &w);
 	windows_remove(w);
 }
 
@@ -381,15 +381,15 @@ EXPORTNOT void window_session_set(window_t *w, session_t *new_session) {
 
 	if (w == window_current) {
 		session_current = new_session;
-		query_emit_id(NULL, SESSION_CHANGED);
+		query_emit(NULL, "session-changed");
 	}
 
-	query_emit_id(NULL, UI_WINDOW_TARGET_CHANGED, &w);
+	query_emit(NULL, "ui-window-target-changed", &w);
 }
 
 void window_switch(int id) {
 	/* XXX? */
-	remote_request("REQWINDOW_SWITCH", itoa(id), NULL);
+	remote_request("REQWINDOW_SWITCH", ekg_itoa(id), NULL);
 }
 
 int window_session_cycle(window_t *w) {
@@ -397,7 +397,7 @@ int window_session_cycle(window_t *w) {
 		return -1;
 
 	/* XXX, assume w == window_current? */
-	remote_request("REQSESSION_CYCLE", itoa(w->id), NULL);
+	remote_request("REQSESSION_CYCLE", ekg_itoa(w->id), NULL);
 	return 0;		/* it won't hurt */
 
 	/* NOTE: SESSION_CHANGED emitowane gdy sie zmienia session_current */
@@ -417,7 +417,7 @@ EXPORTNOT void windows_unlock_all() {
 	for (w = windows; w; w = w->next)
 		w->lock = 0;
 
-	query_emit_id(NULL, UI_WINDOW_REFRESH);	/* powinno wystarczyc */
+	query_emit(NULL, "ui-window-refresh");	/* powinno wystarczyc */
 }
 
 

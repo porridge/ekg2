@@ -20,7 +20,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -29,16 +29,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
-
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/sessions.h>
-#include <ekg/queries.h>
-#include <ekg/userlist.h>
-#include <ekg/xmalloc.h>
-
-#include <ekg/stuff.h>
 
 #include <gpgme.h>
 
@@ -590,7 +580,7 @@ static COMMAND(gpg_command_key) {
 		return 0;
 	}
 	
-	printq("invalid_params", name);
+	printq("invalid_params", name, params[0]);
 	return -1;
 }
 
@@ -655,7 +645,7 @@ EXPORT int gpg_plugin_init(int prio) {
 				k->keysetup = atoi(p[2]);
 			} else debug_error("[GPG] INVALID LINE: %s\n", line);
 
-			array_free(p);
+			g_strfreev(p);
 		}
 		fclose(f);
 	} else debug_error("[GPG] Opening of %s failed: %d %s.\n", dbfile, errno, strerror(errno));
@@ -671,19 +661,19 @@ EXPORT int gpg_plugin_init(int prio) {
 	command_add(&gpg_plugin, "gpg:key", "p u ?", gpg_command_key, 0, 
 		"-d --delkey -f --forcekey -i --infokey -l --listkeys -s --setkey");
 
-	query_connect_id(&gpg_plugin, GPG_MESSAGE_ENCRYPT,	gpg_message_encrypt, NULL);
-	query_connect_id(&gpg_plugin, GPG_MESSAGE_DECRYPT,	gpg_message_decrypt, 
+	query_connect(&gpg_plugin, "gpg-message-encrypt",	gpg_message_encrypt, NULL);
+	query_connect(&gpg_plugin, "gpg-message-decrypt",	gpg_message_decrypt, 
 						"-----BEGIN PGP MESSAGE-----\n\n"
 						"%s\n"
 						"-----END PGP MESSAGE-----\n");
 
-	query_connect_id(&gpg_plugin, GPG_SIGN,			gpg_sign, NULL);
-	query_connect_id(&gpg_plugin, GPG_VERIFY,		gpg_verify, 
+	query_connect(&gpg_plugin, "gpg-sign",			gpg_sign, NULL);
+	query_connect(&gpg_plugin, "gpg-verify",		gpg_verify, 
 						"-----BEGIN PGP SIGNATURE-----\n\n"
 						"%s\n"
 						"-----END PGP SIGNATURE-----\n");
 
-	query_connect_id(&gpg_plugin, USERLIST_INFO,		gpg_user_keyinfo, NULL);
+	query_connect(&gpg_plugin, "userlist-info",		gpg_user_keyinfo, NULL);
 
 	return 0;
 }

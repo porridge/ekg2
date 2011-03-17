@@ -15,7 +15,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <ekg/win32.h>
+#include "ekg2.h"
 
 #ifndef NO_POSIX_SYSTEM
 #include <arpa/inet.h>
@@ -35,13 +35,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include <ekg/debug.h>
-#include <ekg/xmalloc.h>
-
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
-
 #include "rc.h"
 
 /*
@@ -53,7 +46,7 @@ static int rc_input_new_inet(const char *path, int type)
 {
 	struct sockaddr_in sin;
 	int port, fd;
-	uint32_t addr = INADDR_ANY;
+	guint32 addr = INADDR_ANY;
 
 	if (xstrchr(path, ':')) {
 		char *tmp = xstrdup(path), *c = xstrchr(tmp, ':');
@@ -66,7 +59,7 @@ static int rc_input_new_inet(const char *path, int type)
 		port = atoi(path);
 
 	sin.sin_family = AF_INET;
-	sin.sin_port = htons(port);
+	sin.sin_port = g_htons(port);
 	sin.sin_addr.s_addr = addr;
 
 	if ((fd = socket(AF_INET, type, 0)) == -1) {
@@ -152,7 +145,7 @@ int rc_input_new_unix(const char *path)
 	int fd;
 
 	beeth.sun_family = AF_UNIX;
-	strlcpy(beeth.sun_path, path, sizeof(beeth.sun_path));
+	g_strlcpy(beeth.sun_path, path, sizeof(beeth.sun_path));
 
 	if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 		debug("[rc] socket() failed: %s\n", strerror(errno));

@@ -18,9 +18,8 @@
 /* some functions are copied from ekg2's gg plugin/other ekg2's plugins/libgadu 
  *	there're copyrighted under GPL-2 */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 
@@ -31,22 +30,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-#include <ekg/debug.h>
-
-#include <ekg/plugins.h>
-#include <ekg/commands.h>
-#include <ekg/vars.h>
-#include <ekg/userlist.h>
-
-#include <ekg/commands.h>
-#include <ekg/stuff.h>
-#include <ekg/recode.h>
-#include <ekg/themes.h>
-
-#include <ekg/queries.h>
-#include <ekg/xmalloc.h>
-#include <ekg/protocol.h>
 
 #include "sniff_ip.h"
 #include "sniff_gg.h"
@@ -63,10 +46,10 @@ PLUGIN_DEFINE(sniff, PLUGIN_PROTOCOL, sniff_theme_init);
 
 typedef struct {
 	struct in_addr srcip;
-	uint16_t srcport;
+	guint16 srcport;
 
 	struct in_addr dstip;
-	uint16_t dstport;
+	guint16 dstport;
 } connection_t;
 
 static char *build_code(const unsigned char *code) {
@@ -89,14 +72,14 @@ static char *build_sha1(const unsigned char *digest) {
 	return &result[0];
 }
 
-static char *build_hex(uint32_t hex) {
+static char *build_hex(guint32 hex) {
 	static char buf[20];
 
 	sprintf(buf, "0x%x", hex);
 	return buf;
 }
 
-static char *build_hex2(uint32_t hex) {
+static char *build_hex2(guint32 hex) {
 	static char buf[20];
 
 	sprintf(buf, "0x%x", hex);
@@ -143,10 +126,10 @@ static connection_t *sniff_udp_get(const struct iphdr *ip, const struct udphdr *
 	static connection_t d;
 	
 	d.srcip		= ip->ip_src;
-	d.srcport	= ntohs(udp->th_sport);
+	d.srcport	= g_ntohs(udp->th_sport);
 
 	d.dstip		= ip->ip_dst;
-	d.dstport	= ntohs(udp->th_dport);
+	d.dstport	= g_ntohs(udp->th_dport);
 	return &d;
 }
 
@@ -163,32 +146,32 @@ static connection_t *sniff_tcp_find_connection(const struct iphdr *ip, const str
 	for (l = tcp_connections; l; l = l->next) {
 		connection_t *c = l->data;
 
-		if (	c->srcip.s_addr == ip->ip_src.s_addr && c->srcport == ntohs(tcp->th_sport) &&
-			c->dstip.s_addr == ip->ip_dst.s_addr && c->dstport == ntohs(tcp->th_dport)) 
+		if (	c->srcip.s_addr == ip->ip_src.s_addr && c->srcport == g_ntohs(tcp->th_sport) &&
+			c->dstip.s_addr == ip->ip_dst.s_addr && c->dstport == g_ntohs(tcp->th_dport)) 
 				return c;
 
-		if (	c->srcip.s_addr == ip->ip_dst.s_addr && c->srcport == ntohs(tcp->th_dport) &&
-			c->dstip.s_addr == ip->ip_src.s_addr && c->dstport == ntohs(tcp->th_sport))
+		if (	c->srcip.s_addr == ip->ip_dst.s_addr && c->srcport == g_ntohs(tcp->th_dport) &&
+			c->dstip.s_addr == ip->ip_src.s_addr && c->dstport == g_ntohs(tcp->th_sport))
 				return c;
 	}
 
 	d	= xmalloc(sizeof(connection_t));
 
 	d->srcip	= ip->ip_src;
-	d->srcport	= ntohs(tcp->th_sport);
+	d->srcport	= g_ntohs(tcp->th_sport);
 	
 	d->dstip	= ip->ip_dst;
-	d->dstport	= ntohs(tcp->th_dport);
+	d->dstport	= g_ntohs(tcp->th_dport);
 
 	list_add(&tcp_connections, d, 0);
 #endif
 	static connection_t d;
 	
 	d.srcip		= ip->ip_src;
-	d.srcport	= ntohs(tcp->th_sport);
+	d.srcport	= g_ntohs(tcp->th_sport);
 
 	d.dstip		= ip->ip_dst;
-	d.dstport	= ntohs(tcp->th_dport);
+	d.dstport	= g_ntohs(tcp->th_dport);
 	return &d;
 }
 
@@ -297,7 +280,7 @@ static inline void sniff_loop_tcp(session_t *s, int len, const u_char *packet, c
 		return;
 	}
 
-	size_payload = ntohs(ip->ip_len) - (size_ip + size_tcp);
+	size_payload = g_ntohs(ip->ip_len) - (size_ip + size_tcp);
 
 	CHECK_LEN(size_tcp + size_payload);
 
@@ -311,8 +294,8 @@ static inline void sniff_loop_tcp(session_t *s, int len, const u_char *packet, c
 			_inet_ntoa(hdr->dstip),		/* dest ip */
 			hdr->dstport,			/* dest port */
 			tcp_print_flags(tcp->th_flags), /* tcp flags */
-			htonl(tcp->th_seq),		/* seq */
-			htonl(tcp->th_ack),		/* ack */
+			g_htonl(tcp->th_seq),		/* seq */
+			g_htonl(tcp->th_ack),		/* ack */
 			size_payload);			/* payload len */
 
 	/* XXX check tcp flags */
@@ -373,7 +356,7 @@ static inline void sniff_loop_udp(session_t *s, int len, const u_char *packet, c
 	hdr = sniff_udp_get(ip, udp);
 
 	payload = (char *) (packet + sizeof(struct udphdr));
-	size_payload = ntohs(udp->th_len)-sizeof(struct udphdr);
+	size_payload = g_ntohs(udp->th_len)-sizeof(struct udphdr);
 
 	CHECK_LEN(sizeof(struct udphdr) + size_payload);
 
@@ -435,7 +418,7 @@ static inline void sniff_loop_ip(session_t *s, int len, const u_char *packet) {
 
 static inline void sniff_loop_ether(u_char *data, const struct pcap_pkthdr *header, const u_char *packet) {
 	const struct ethhdr *ethernet;
-	uint16_t ethtype;		/* ntohs(ethernet->ether_type) */
+	guint16 ethtype;		/* g_ntohs(ethernet->ether_type) */
 
 	if (header->caplen < sizeof(struct ethhdr)) {
 		debug_error("sniff_loop_ether() %x %x\n", header->caplen, sizeof(struct ethhdr));
@@ -443,7 +426,7 @@ static inline void sniff_loop_ether(u_char *data, const struct pcap_pkthdr *head
 	}
 
 	ethernet = (const struct ethhdr *) packet;
-	ethtype = ntohs(ethernet->ether_type);
+	ethtype = g_ntohs(ethernet->ether_type);
 
 	if (ethtype == ETHERTYPE_ARP)
 		debug_function("sniff_loop_ether() ARP\n");
@@ -455,7 +438,7 @@ static inline void sniff_loop_ether(u_char *data, const struct pcap_pkthdr *head
 
 void sniff_loop_sll(u_char *data, const struct pcap_pkthdr *header, const u_char *packet) {
 	const struct sll_header *sll;
-	uint16_t ethtype;
+	guint16 ethtype;
 
 	if (header->caplen < sizeof(struct sll_header)) {
 		debug_error("sniff_loop_ssl() %x %x\n", header->caplen, sizeof(struct sll_header));
@@ -463,7 +446,7 @@ void sniff_loop_sll(u_char *data, const struct pcap_pkthdr *header, const u_char
 	}
 
 	sll = (const struct sll_header *) packet;
-	ethtype = ntohs(sll->sll_protocol);
+	ethtype = g_ntohs(sll->sll_protocol);
 	
 	if (ethtype == ETHERTYPE_IP) 
 		sniff_loop_ip((session_t *) data, header->caplen - sizeof(struct sll_header), packet + SIZE_SLL);
@@ -598,9 +581,9 @@ static COMMAND(sniff_command_connections) {
 		print_window("__status", session, EKG_WINACT_MSG, 1,
 			"sniff_tcp_connection", 
 				inet_ntop(AF_INET, &c->srcip, src_ip, sizeof(src_ip)),
-				itoa(c->srcport),
+				ekg_itoa(c->srcport),
 				inet_ntop(AF_INET, &c->dstip, dst_ip, sizeof(dst_ip)),
-				itoa(c->dstport));
+				ekg_itoa(c->dstport));
 	}
 	return 0;
 }
@@ -659,9 +642,9 @@ static QUERY(sniff_status_show) {
 	}
 
 	debug("pcap_stats() recv: %d drop: %d ifdrop: %d\n", stats.ps_recv, stats.ps_drop, stats.ps_ifdrop);
-	print("sniff_pkt_rcv",	session_name(s), itoa(stats.ps_recv));
-	print("sniff_pkt_drop",	session_name(s), itoa(stats.ps_drop));
-	print("sniff_conn_db",	session_name(s), itoa(list_count(tcp_connections)));
+	print("sniff_pkt_rcv",	session_name(s), ekg_itoa(stats.ps_recv));
+	print("sniff_pkt_drop",	session_name(s), ekg_itoa(stats.ps_drop));
+	print("sniff_conn_db",	session_name(s), ekg_itoa(list_count(tcp_connections)));
 
 	return 0;
 }
@@ -768,10 +751,10 @@ EXPORT int sniff_plugin_init(int prio) {
 	ekg_recode_cp_inc();
 	ekg_recode_utf8_inc();
 
-	query_connect_id(&sniff_plugin, PROTOCOL_VALIDATE_UID,	sniff_validate_uid, NULL);
-	query_connect_id(&sniff_plugin, STATUS_SHOW,		sniff_status_show, NULL);
-	query_connect_id(&sniff_plugin, PLUGIN_PRINT_VERSION,	sniff_print_version, NULL);
-	query_connect_id(&sniff_plugin, SESSION_REMOVED,	sniff_session_deinit, NULL);
+	query_connect(&sniff_plugin, "protocol-validate-uid",	sniff_validate_uid, NULL);
+	query_connect(&sniff_plugin, "status-show",		sniff_status_show, NULL);
+	query_connect(&sniff_plugin, "plugin-print-version",	sniff_print_version, NULL);
+	query_connect(&sniff_plugin, "session-removed",	sniff_session_deinit, NULL);
 
 	command_add(&sniff_plugin, "sniff:connect", NULL, sniff_command_connect,    SESSION_MUSTBELONG, NULL);
 	command_add(&sniff_plugin, "sniff:connections", NULL, sniff_command_connections, SESSION_MUSTBELONG | SESSION_MUSTBECONNECTED, NULL);

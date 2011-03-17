@@ -16,6 +16,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "ekg2.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -28,7 +30,6 @@
 #include <sys/socket.h>
 
 #include <sys/stat.h>
-#define __USE_POSIX
 #include <netdb.h>
 
 #include <sys/time.h>
@@ -40,17 +41,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <ekg/debug.h>
 #include <ekg/net.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
-#include <ekg/recode.h>
-#include <ekg/stuff.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
-#include <ekg/userlist.h>
-
-#include <ekg/queries.h>
 
 #define DEFPARTMSG "EKG2 bejbi! http://ekg2.org/"
 #define DEFQUITMSG "EKG2 - It's better than sex!"
@@ -194,7 +185,7 @@ static watch_t *polchat_sendpkt(session_t *s, short headercode, ...)  {
 
 	string_append_raw(w->buf, dword_str(size), 4);
 	string_append_raw(w->buf, word_str(headercode ? 1 : 0), 2);	/* headerlen / 256 + headerlen % 256 */
-	string_append_raw(w->buf, word_str(array_count(arr)), 2);
+	string_append_raw(w->buf, word_str(g_strv_length(arr)), 2);
 
 /* headers */
 	if (headercode)
@@ -207,7 +198,7 @@ static watch_t *polchat_sendpkt(session_t *s, short headercode, ...)  {
 			string_append_n(w->buf, arr[i], len);		/* str */
 			string_append_c(w->buf, '\0');			/* NUL */
 		}
-		array_free(arr);
+		g_strfreev(arr);
 	}
 	
 	w->data = (void *) (long int) w->buf->len;
@@ -410,7 +401,7 @@ static WATCHER_SESSION(polchat_handle_connect) {
 		"http://www.polchat.pl/chat/room.phtml/?room=AmiX",	/* referer */
 		"polchat.pl",						/* adres serwera */
 		"nlst=1&nnum=1&jlmsg=true&ignprv=false",		/* konfiguracja */
-		"ekg2-CVS-polchat",					/* klient */
+		"ekg2-GIT-polchat",					/* klient */
 		NULL);
 
 	watch_add_session(s, fd, WATCH_READ, polchat_handle_stream);
@@ -468,7 +459,7 @@ static WATCHER(polchat_handle_resolver) {
 	}
 
 	sin.sin_family = AF_INET;
-	sin.sin_port = htons(port);
+	sin.sin_port = g_htons(port);
 	sin.sin_addr.s_addr = a.s_addr;
 
 	if (ioctl(fd, FIONBIO, &one) == -1) 
@@ -627,7 +618,7 @@ static COMMAND(polchat_command_part) {
 	const char *reason = PARTMSG(session, params[0]);
 
 	if (!j->room) {
-		printq("invalid_params", name);
+		printq("invalid_params", name, params[0]);
 		return 0;
 	}
 
@@ -702,10 +693,10 @@ EXPORT int polchat_plugin_init(int prio) {
 	plugin_register(&polchat_plugin, prio);
 	ekg_recode_utf8_inc();
 
-	query_connect_id(&polchat_plugin, PROTOCOL_VALIDATE_UID, polchat_validate_uid, NULL);
-	query_connect_id(&polchat_plugin, SESSION_ADDED, polchat_session_init, NULL);
-	query_connect_id(&polchat_plugin, SESSION_REMOVED, polchat_session_deinit, NULL);
-	query_connect_id(&polchat_plugin, PLUGIN_PRINT_VERSION, polchat_print_version, NULL);
+	query_connect(&polchat_plugin, "protocol-validate-uid", polchat_validate_uid, NULL);
+	query_connect(&polchat_plugin, "session-added", polchat_session_init, NULL);
+	query_connect(&polchat_plugin, "session-removed", polchat_session_deinit, NULL);
+	query_connect(&polchat_plugin, "plugin-print-version", polchat_print_version, NULL);
 
 #if 0
 	query_connect(&irc_plugin, ("ui-window-kill"),	irc_window_kill, NULL);

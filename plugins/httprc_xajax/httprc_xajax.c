@@ -17,6 +17,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "ekg2.h"
+
 #include <stdio.h>
 
 #include <errno.h>
@@ -30,17 +32,6 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
-
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/log.h>
-#include <ekg/plugins.h>
-#include <ekg/strings.h>
-#include <ekg/stuff.h>
-#include <ekg/userlist.h>
-#include <ekg/vars.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
 
 /* string that you're typing in browser's window:
  * e.g: your.server.with.ekg2.com, localhost, 127.0.0.1
@@ -93,54 +84,29 @@ char *generate_cookie(void)
 	return saprintf("%x%d%d", rand()*rand(), (int)time(NULL), rand());
 }
 
-char *escape_single_quote(char *p, int inuni)
+char *escape_single_quote(char *p)
 {
 	string_t s = string_init(NULL);
 	int l=xstrlen(p);
-#if USE_UNICODE
-	if (inuni)
+	while (l>0)
 	{
-		int r;
-		mbtowc(NULL, NULL, 0);	/* reset */
-		while (l>0)
-		{
-			if ((r = mbtowc(NULL, p, l)) == -1)
-				string_append_c(s, '?'), r=1;
-			else if (r == 1)
-			{
-				if (*p == '\'')
-					string_append(s, "\\'");
-				else
-					string_append_c(s, *p);
-			} else
-				string_append_n(s, p, r);
-			l -= r;
-			p += r;
-		}
-	} else
-#endif
-	{
-		while (l>0)
-		{
-			if (*p == '\'')
-				string_append(s, "\\'");
-			else
-				string_append_c(s, *p);
-			l --;
-			p ++;
-		}
+		if (*p == '\'')
+			string_append(s, "\\'");
+		else
+			string_append_c(s, *p);
+		l --;
+		p ++;
 	}
 	return string_free(s, 0);
 }
 
-char *http_fstring(int winid, char *parent, fstring_t *line, int inuni)
+char *http_fstring(int winid, char *parent, const fstring_t *line)
 {
-	short *attr = line->attr;
-	char *str = line->str.b;
-	CHAR_T *str_w = line->str.w;
+	const fstr_attr_t *attr = line->attr;
+	const char *str = line->str;
 	string_t asc = string_init(NULL);
 	int i, last, lastbeg, len, att;
-	CHAR_T tempchar;
+	char tempchar;
 	char *normal;
 	char *tmp;
 	char *colortbl[10] = { "grey", "red", "green", "yellow", "blue", "purple", "turquoise", "white" };
@@ -162,12 +128,7 @@ char *http_fstring(int winid, char *parent, fstring_t *line, int inuni)
 	 * <strong><span>...</span>  ... <span> ... </span> </strong>
 	 * since this would be quite senseless
 	 */
-#if USE_UNICODE
-	if (inuni)
-		len = wcslen(str_w);
-	else
-#endif
-		len = strlen(str);
+	len = strlen(str);
 	for (i = 1; i <= len; i++)
 	{
 		if (attr[i] == last)
@@ -176,13 +137,10 @@ char *http_fstring(int winid, char *parent, fstring_t *line, int inuni)
 		tempchar = str[i];
 		str[i] = 0;
 		att = attr[lastbeg];
-		if (inuni)
-			normal = wcs_to_normal(str_w + lastbeg);
-		else
-			normal = str + lastbeg;
+		normal = str + lastbeg;
 		if (ISONLYNORMAL)
 		{
-			ADDJSf("%s.appendChild(document.createTextNode('%s'));\n",parent,(tmp = escape_single_quote(normal,inuni)));
+			ADDJSf("%s.appendChild(document.createTextNode('%s'));\n",parent,(tmp = escape_single_quote(normal)));
 		} else {
 			if (ISBOLD || ISUNDERLINE || ISBLINK)
 				ADDJS("em = document.createElement('em'); em.setAttribute('class', '");
@@ -196,7 +154,7 @@ char *http_fstring(int winid, char *parent, fstring_t *line, int inuni)
 			
 			if (!ISNORMAL)
 				ADDJSf("sp.setAttribute('class', '%s');", colortbl[FORE]);
-			ADDJSf("sp.appendChild(document.createTextNode('%s'));\n",(tmp = escape_single_quote(normal,inuni)));
+			ADDJSf("sp.appendChild(document.createTextNode('%s'));\n",(tmp = escape_single_quote(normal)));
 			if (ISBOLD)
 			{
 				ADDJS("em.appendChild(sp);");
@@ -204,8 +162,6 @@ char *http_fstring(int winid, char *parent, fstring_t *line, int inuni)
 			} else 
 				ADDJSf("%s.appendChild(sp);", parent);
 		}
-		if (inuni)
-			xfree(normal);
 		xfree(tmp);
 
 		ADDJS("\n");
@@ -221,14 +177,14 @@ char *http_fstring(int winid, char *parent, fstring_t *line, int inuni)
 	return string_free(asc, 0);
 }
 
-#define httprc_write(watch, args...)	string_append_format(watch->buf, args)
-#define httprc_write2(watch, str)	string_append_n(watch->buf, str, -1)
-#define httprc_write3(watch, str, len)	string_append_raw(watch->buf, str, len)
+#define httprc_write(watch, args...)	do { string_append_format(watch->buf, args); } while (0)
+#define httprc_write2(watch, str)	do { string_append_n(watch->buf, str, -1); } while (0)
+#define httprc_write3(watch, str, len)	do { string_append_raw(watch->buf, str, len); } while (0)
 
 #define HTTP_HEADER(ver, scode, eheaders) \
 	httprc_write(send_watch,				\
 		"%s %d %s\r\n"						/* statusline: $PROTOCOL $SCODE $RESPONSE */\
-		"Server: ekg2-CVS-httprc_xajax plugin\r\n"		/* server info */	\
+		"Server: ekg2-GIT-httprc_xajax plugin\r\n"		/* server info */	\
 		"%s\r\n",							/* headers */		\
 		ver == 0 ? "HTTP/1.0" : ver == 1 ? "HTTP/1.1" : "",	/* PROTOCOL */		\
 		scode,							/* Status code */	\
@@ -242,9 +198,12 @@ char *http_fstring(int winid, char *parent, fstring_t *line, int inuni)
 		); clen = (send_watch->buf ? send_watch->buf->len : 0) - clen;
 
 
-#define WATCH_FIND(w, fd) \
+#define WATCH_FIND(w, fd) do { \
 	w = watch_find(&httprc_xajax_plugin, fd, WATCH_WRITE);\
-	if (!w) w = watch_add_line(&httprc_xajax_plugin, fd, WATCH_WRITE_LINE, http_watch_send, NULL); \
+	if (!w) { \
+	    w = watch_add_line(&httprc_xajax_plugin, fd, WATCH_WRITE_LINE, http_watch_send, NULL); \
+	} \
+    } while(0)
 
 WATCHER_LINE(http_watch_send)  {
 	if (type) return 0;
@@ -264,7 +223,7 @@ QUERY(httprc_xajax_def_action)
 	int gname=0, gw=0, gline=0;
 	char *name = NULL, *tmp = NULL;
 	window_t *w = NULL;
-	fstring_t *line = NULL;
+	const fstring_t *line = NULL;
 
 	for (a=clients; a; a=a->next)
 	{
@@ -280,9 +239,9 @@ QUERY(httprc_xajax_def_action)
 				if (!gline) {
 					char *fstringed;
 /*					ncurses_window_t *n = w->priv_data; */
-					line = *(va_arg(ap, fstring_t **));
+					line = *(va_arg(ap, const fstring_t **));
 					gline=1;
-					fstringed = http_fstring(w->id, "ch", line, 0);
+					fstringed = http_fstring(w->id, "ch", line);
 					tmp = saprintf("glst=gwins[%d][2].length;\n"
 							"ch = document.createElement('li');\n"
 							"ch.setAttribute('id', 'lin'+glst);\n"
@@ -299,12 +258,12 @@ QUERY(httprc_xajax_def_action)
 				/* it'd be easier if we'd got iface for creating xml files... */
 
 				string_append(p->collected, "<cmd n=\"ap\" t=\"LOG\" p=\"innerHTML\"><![CDATA[");
-				string_append(p->collected, itoa(nobr));
+				string_append(p->collected, ekg_itoa(nobr));
 				string_append(p->collected, (char *)data);
 				string_append(p->collected, " = ");
-				string_append(p->collected, itoa(w->id));
+				string_append(p->collected, ekg_itoa(w->id));
 				string_append(p->collected, " = ");
-				string_append(p->collected, line->str.b);
+				string_append(p->collected, line->str);
 				string_append(p->collected, "]]></cmd>");
 				string_append(p->collected, "<cmd n=\"js\"><![CDATA[");
 				string_append(p->collected, tmp);
@@ -338,7 +297,7 @@ QUERY(httprc_xajax_def_action)
 			string_append(p->collected, "<cmd n=\"ap\" t=\"LOG\" p=\"innerHTML\"><![CDATA[");
 			string_append(p->collected, (char *)data);
 			string_append(p->collected, " = ID: ");
-			string_append(p->collected, itoa(w->id));
+			string_append(p->collected, ekg_itoa(w->id));
 			string_append(p->collected, " = targ:");
 			string_append(p->collected, w->target?w->target:"empty_target");
 			string_append(p->collected, " = sess:");
@@ -368,9 +327,9 @@ QUERY(httprc_xajax_def_action)
 			string_append(p->collected, "<cmd n=\"ap\" t=\"LOG\" p=\"innerHTML\"><![CDATA[");
 			string_append(p->collected, (char *)data);
 			string_append(p->collected, " = current: ");
-			string_append(p->collected, itoa(window_current->id));
+			string_append(p->collected, ekg_itoa(window_current->id));
 			string_append(p->collected, " = ID: ");
-			string_append(p->collected, itoa(w->id));
+			string_append(p->collected, ekg_itoa(w->id));
 			string_append(p->collected, " = targ:");
 			string_append(p->collected, window_target(w));
 			string_append(p->collected, " = sess:");
@@ -407,7 +366,7 @@ QUERY(httprc_xajax_def_action)
 		if (!nobr)
 		{
 			string_append(p->collected, "<cmd n=\"ce\" t=\"LOG\" p=\"l");
-			string_append(p->collected, itoa(xxxid++));
+			string_append(p->collected, ekg_itoa(xxxid++));
 			string_append(p->collected, "\"><![CDATA[br]]></cmd>");
 		}
 		if (p->fd != -1 && p->collected->len && p->waiting)
@@ -451,7 +410,7 @@ const char *http_timestamp(time_t t) {
 	const char *format = format_find("timestamp");
 
 	if (!format)
-		return itoa(t);
+		return ekg_itoa(t);
 
 	i = i % 2;
 	if (!strftime(buf[i], sizeof(buf[0]), format, tm) && xstrlen(format)>0)
@@ -643,7 +602,7 @@ WATCHER(http_watch_read) {
 		} else {
 			char *temp;
 			int i, j;
-			window_t *w = window_current; 
+			window_t *w = window_current, *w2;
 			ncurses_window_t *n;
 
 			/* if user is making a refresh, we must clear collected events
@@ -690,30 +649,30 @@ WATCHER(http_watch_read) {
 			
 			htheader = string_init("gwins = new Array();\n");
 			string_append (htheader, "current_window = ");
-			string_append (htheader, itoa(window_current->id));
+			string_append (htheader, ekg_itoa(window_current->id));
 			string_append (htheader, ";\n");
 
-			for (w = windows; w; w = w->next) {
+			for (w2 = windows; w2; w2 = w2->next) {
 				char *tempdata;
-				if (w == window_current)
-					string_append_format(htheader, "gwins[%d] = new Array(2, \"%s\", new Array());\n ", w->id, window_target(w));
-				else if (w->act)
-					string_append_format(htheader, "gwins[%d] = new Array(1, \"%s\", new Array());\n ", w->id, window_target(w));
+				if (w2 == window_current)
+					string_append_format(htheader, "gwins[%d] = new Array(2, \"%s\", new Array());\n ", w2->id, window_target(w2));
+				else if (w2->act)
+					string_append_format(htheader, "gwins[%d] = new Array(1, \"%s\", new Array());\n ", w2->id, window_target(w2));
 				else
-					string_append_format(htheader, "gwins[%d] = new Array(0, \"%s\", new Array());\n ", w->id, window_target(w));
+					string_append_format(htheader, "gwins[%d] = new Array(0, \"%s\", new Array());\n ", w2->id, window_target(w2));
 
 				/* we don't want debug window... */
-				if (w->id == 0)
+				if (w2->id == 0)
 					continue;
 
-				n = w->priv_data;
+				n = w2->priv_data;
 				string_append(htheader, "i=0;\n");
-				temp = saprintf("gwins[%d][2][i++] = ch;\n", w->id);
+				temp = saprintf("gwins[%d][2][i++] = ch;\n", w2->id);
 				for (j=0, i = n->backlog_size-1; i >= 0; i--) {
 					/* really, really stupid... */
 					string_append(htheader, "ch = document.createElement('li');\n"
 							"ch.setAttribute('id', 'lin'+i);\n");
-					tempdata = http_fstring(w->id, "ch", n->backlog[i], 1);
+					tempdata = http_fstring(w2->id, "ch", n->backlog[i]);
 					string_append(htheader, tempdata);
 					if (j^=1)
 						string_append(htheader, "ch.className='info1';");
@@ -728,7 +687,7 @@ WATCHER(http_watch_read) {
 			httprc_write2(send_watch, htheader->str);
 			string_free(htheader, 1);
 
-			httprc_write(send_watch,	
+			httprc_write2(send_watch,	
 					"\t\t</script>"
 					"\t\t<script type=\"text/javascript\" src=\"ekg2.js\"> </script>\n"
 					"\t\t<script type=\"text/javascript\">\n"
@@ -851,7 +810,7 @@ int httprc_xajax_plugin_init(int prio) {
 	PLUGIN_CHECK_VER("httprc_xajax");
 
 	sin.sin_family = AF_INET;
-	sin.sin_port = htons(atoi(HTTPRCXAJAX_DEFPORT));
+	sin.sin_port = g_htons(atoi(HTTPRCXAJAX_DEFPORT));
 	sin.sin_addr.s_addr = INADDR_ANY;
 
 	if (!config_console_charset || (xstrcmp(config_console_charset, "ISO-8859-2") && xstrcmp(config_console_charset, "UTF-8")))
@@ -886,35 +845,35 @@ int httprc_xajax_plugin_init(int prio) {
 //	query_connect(&httprc_xajax_plugin, ("set-vars-default"), httprc_xajax_def_action, NULL);
 //	query_connect(&httprc_xajax_plugin, ("ui-beep"), httprc_xajax_def_action, NULL);
 //	query_connect(&httprc_xajax_plugin, ("ui-is-initialized"), httprc_xajax_def_action, NULL);
-	query_connect(&httprc_xajax_plugin, ("ui-window-switch"),	httprc_xajax_def_action, "ui-window-switch");
-	query_connect(&httprc_xajax_plugin, ("ui-window-print"),	httprc_xajax_def_action, "ui-window-print");
-	query_connect(&httprc_xajax_plugin, ("ui-window-new"),		httprc_xajax_def_action, "ui-window-new");
-	query_connect(&httprc_xajax_plugin, ("ui-window-kill"),		httprc_xajax_def_action, "ui-window-kill");
-	query_connect(&httprc_xajax_plugin, ("ui-window-target-changed"), httprc_xajax_def_action, "ui-target-changed");
+	query_connect(&httprc_xajax_plugin, "ui-window-switch",	httprc_xajax_def_action, "ui-window-switch");
+	query_connect(&httprc_xajax_plugin, "ui-window-print",	httprc_xajax_def_action, "ui-window-print");
+	query_connect(&httprc_xajax_plugin, "ui-window-new",		httprc_xajax_def_action, "ui-window-new");
+	query_connect(&httprc_xajax_plugin, "ui-window-kill",		httprc_xajax_def_action, "ui-window-kill");
+	query_connect(&httprc_xajax_plugin, "ui-window-target-changed", httprc_xajax_def_action, "ui-target-changed");
 	/* We're not touching this one, since this would cause
 	 * A LOT of unneeded traffic!
-	query_connect(&httprc_xajax_plugin, ("ui-window-act-changed"),	httprc_xajax_def_action, "ui-window-act-changed");
+	query_connect(&httprc_xajax_plugin, "ui-window-act-changed",	httprc_xajax_def_action, "ui-window-act-changed");
 	 */
-	query_connect(&httprc_xajax_plugin, ("ui-window-refresh"),	httprc_xajax_def_action, "ui-window-refresh");
-	query_connect(&httprc_xajax_plugin, ("ui-window-clear"),	httprc_xajax_def_action, "ui-window-clear");
-	query_connect(&httprc_xajax_plugin, ("session-added"),		httprc_xajax_def_action, "session-added");
-	query_connect(&httprc_xajax_plugin, ("session-removed"),	httprc_xajax_def_action, "session-removed");
-	query_connect(&httprc_xajax_plugin, ("session-changed"),	httprc_xajax_def_action, "session-changed");
-	query_connect(&httprc_xajax_plugin, ("userlist-changed"),	httprc_xajax_def_action, "userlist-changed");
-	query_connect(&httprc_xajax_plugin, ("userlist-added"),		httprc_xajax_def_action, "userlist-added");
-	query_connect(&httprc_xajax_plugin, ("userlist-removed"),	httprc_xajax_def_action, "userlist-removed");
-	query_connect(&httprc_xajax_plugin, ("userlist-renamed"),	httprc_xajax_def_action, "userlist-renamed");
-	query_connect(&httprc_xajax_plugin, ("binding-set"),		httprc_xajax_def_action, "binding-set");
-	query_connect(&httprc_xajax_plugin, ("binding-command"),	httprc_xajax_def_action, "binding-command");
-	query_connect(&httprc_xajax_plugin, ("binding-default"),	httprc_xajax_def_action, "binding-default");
-	query_connect(&httprc_xajax_plugin, ("variable-changed"),	httprc_xajax_def_action, "variable-changed");
-	query_connect(&httprc_xajax_plugin, ("conference-renamed"),	httprc_xajax_def_action, "conference-renamed");
+	query_connect(&httprc_xajax_plugin, "ui-window-refresh",	httprc_xajax_def_action, "ui-window-refresh");
+	query_connect(&httprc_xajax_plugin, "ui-window-clear",	httprc_xajax_def_action, "ui-window-clear");
+	query_connect(&httprc_xajax_plugin, "session-added",		httprc_xajax_def_action, "session-added");
+	query_connect(&httprc_xajax_plugin, "session-removed",	httprc_xajax_def_action, "session-removed");
+	query_connect(&httprc_xajax_plugin, "session-changed",	httprc_xajax_def_action, "session-changed");
+	query_connect(&httprc_xajax_plugin, "userlist-changed",	httprc_xajax_def_action, "userlist-changed");
+	query_connect(&httprc_xajax_plugin, "userlist-added",		httprc_xajax_def_action, "userlist-added");
+	query_connect(&httprc_xajax_plugin, "userlist-removed",	httprc_xajax_def_action, "userlist-removed");
+	query_connect(&httprc_xajax_plugin, "userlist-renamed",	httprc_xajax_def_action, "userlist-renamed");
+	query_connect(&httprc_xajax_plugin, "binding-set",		httprc_xajax_def_action, "binding-set");
+	query_connect(&httprc_xajax_plugin, "binding-command",	httprc_xajax_def_action, "binding-command");
+	query_connect(&httprc_xajax_plugin, "binding-default",	httprc_xajax_def_action, "binding-default");
+	query_connect(&httprc_xajax_plugin, "variable-changed",	httprc_xajax_def_action, "variable-changed");
+	query_connect(&httprc_xajax_plugin, "conference-renamed",	httprc_xajax_def_action, "conference-renamed");
 
-	query_connect(&httprc_xajax_plugin, ("metacontact-added"),	httprc_xajax_def_action, "metacontact-added");
-	query_connect(&httprc_xajax_plugin, ("metacontact-removed"),	httprc_xajax_def_action, "metacontact-removed");
-	query_connect(&httprc_xajax_plugin, ("metacontact-item-added"),	httprc_xajax_def_action, "metacontact-item-added");
-	query_connect(&httprc_xajax_plugin, ("metacontact-item-removed"), httprc_xajax_def_action, "metacontact-item-removed");
-	query_connect(&httprc_xajax_plugin, ("config-postinit"),	httprc_xajax_def_action, "config-postinit");
+	query_connect(&httprc_xajax_plugin, "metacontact-added",	httprc_xajax_def_action, "metacontact-added");
+	query_connect(&httprc_xajax_plugin, "metacontact-removed",	httprc_xajax_def_action, "metacontact-removed");
+	query_connect(&httprc_xajax_plugin, "metacontact-item-added",	httprc_xajax_def_action, "metacontact-item-added");
+	query_connect(&httprc_xajax_plugin, "metacontact-item-removed", httprc_xajax_def_action, "metacontact-item-removed");
+	query_connect(&httprc_xajax_plugin, "config-postinit",	httprc_xajax_def_action, "config-postinit");
 
 	return 0;
 }

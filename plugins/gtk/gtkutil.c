@@ -15,7 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
-#define _FILE_OFFSET_BITS 64	/* allow selection of large files */
+
+#include "ekg2.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,6 +47,8 @@
 #include <gtk/gtkcellrenderertoggle.h>
 #include <gtk/gtkversion.h>
 #include <gtk/gtkfilechooserdialog.h>
+
+#include <ekg/xmalloc.h>	/* xstrcmp */
 
 #include "main.h"
 #include "gtkutil.h"
@@ -355,6 +359,7 @@ gtkutil_button(GtkWidget *box, char *stock, char *tip, void *callback,
 		gtk_button_set_label(GTK_BUTTON(wid), labeltext);
 		gtk_button_set_image(GTK_BUTTON(wid),
 				     gtk_image_new_from_stock(stock, GTK_ICON_SIZE_MENU));
+		gtk_button_set_use_underline(GTK_BUTTON(wid), TRUE);
 		if (box)
 			gtk_container_add(GTK_CONTAINER(box), wid);
 	} else {
@@ -363,7 +368,7 @@ gtkutil_button(GtkWidget *box, char *stock, char *tip, void *callback,
 		gtk_widget_show(bbox);
 
 		img = gtk_image_new_from_stock(stock, GTK_ICON_SIZE_MENU);
-		if (stock == GTK_STOCK_GOTO_LAST)
+		if (!xstrcmp(stock, GTK_STOCK_GOTO_LAST))
 			gtk_widget_set_usize(img, 10, 6);
 		gtk_container_add(GTK_CONTAINER(bbox), img);
 		gtk_widget_show(img);

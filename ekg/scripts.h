@@ -39,7 +39,7 @@ extern script_t		*scripts;
 
 typedef struct {
 	script_t	*scr;
-	struct timer	*self;
+	ekg_timer_t	self;
 	int		removed;
 	void		*priv_data;
 } script_timer_t; 
@@ -131,9 +131,17 @@ extern scriptlang_t *scriptlang;
 	}\
 	return NULL;
 
-/* XXX: split *_watches() into normal and line-ones,
- *	else we can have epic fails if void* > long int */
-#warning "POSSIBLE EPIC FAIL: when void* > long int, WATCH_LINE pointer may be shortened"
+/* XXX: Split *_watches() into normal and line-ones.
+ *
+ *	Until then we abort the build if sizeof(void*) > sizeof(long int), as
+ *	in that case the pointer would get corrupted when being passed around
+ *	as a long using type-punning.
+ *
+ *	This trick was stolen from the Linux kernel. See
+ *	http://scaryreasoner.wordpress.com/2009/02/28/checking-sizeof-at-compile-time/
+ *	for an explanation.
+ */
+#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 #define SCRIPT_DEFINE(x, y)\
 	extern int x##_load(script_t *);\
@@ -144,6 +152,7 @@ extern scriptlang_t *scriptlang;
 	extern int x##_variable_changed(script_t *, script_var_t *, char *);\
 	extern int x##_query(script_t *, script_query_t *, void **);\
 	extern int x##_watches(script_t *, script_watch_t *, int, int, long int);\
+	void x##_dummy_sanity_check() { BUILD_BUG_ON(sizeof(void *) > sizeof(long)); };\
 	\
 	extern int x##_bind_free(script_t *, void *, int type, void *, ...);\
 	\
@@ -189,15 +198,15 @@ int script_timer_unbind(script_timer_t *stimer, int free);
 int script_var_unbind(script_var_t *data, int free);
 int script_watch_unbind(script_watch_t *temp, int free);
 
-script_command_t *script_command_bind(scriptlang_t *s, script_t *scr, char *command, void *handler);
+script_command_t *script_command_bind(scriptlang_t *s, script_t *scr, char *command, char *params, char *possibilities, void *handler);
 script_timer_t *script_timer_bind(scriptlang_t *s, script_t *scr, int freq, void *handler);
 script_query_t *script_query_bind(scriptlang_t *s, script_t *scr, char *qname, void *handler);
 script_var_t *script_var_add(scriptlang_t *s, script_t *scr, char *name, char *value, void *handler);
 script_watch_t *script_watch_add(scriptlang_t *s, script_t *scr, int fd, int type, void *handler, void *data);
 script_plugin_t *script_plugin_init(scriptlang_t *s, script_t *scr, char *name, plugin_class_t pclass, void *handler);
 
-int script_variables_free(int free);
-int script_variables_write();
+void script_variables_free(int free);
+void script_variables_write();
 #endif
 
 #define SCRIPT_UNBIND_HANDLER(type, args...) \

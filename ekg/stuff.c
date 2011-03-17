@@ -22,11 +22,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
-#include "win32.h"
+#include "ekg2.h"
 
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -34,7 +31,6 @@
 #include <sys/socket.h>
 #endif
 
-#define __USE_BSD
 #include <sys/time.h>
 
 #ifndef NO_POSIX_SYSTEM
@@ -60,56 +56,12 @@
 #include <time.h>
 #include <unistd.h>
 
-#ifdef HAVE_ICONV
-#	include <iconv.h>
-#endif
-
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
-#ifndef HAVE_STRLCAT
-#  include "compat/strlcat.h"
-#endif
-
-#include "debug.h"
-#include "commands.h"
-#include "dynstuff.h"
-#include "protocol.h"
-#include "stuff.h"
-#include "themes.h"
-#include "userlist.h"
-#include "vars.h"
-#include "windows.h"
-#include "xmalloc.h"
-#include "plugins.h"
-#include "sessions.h"
-#include "recode.h"
-
-#include "dynstuff_inline.h"
-#include "queries.h"
-
-child_t *children = NULL;
-
-static LIST_FREE_ITEM(child_free_item, child_t *) { xfree(data->name); }
-
-DYNSTUFF_LIST_DECLARE(children, child_t, child_free_item,
-	static __DYNSTUFF_LIST_ADD,		/* children_add() */
-	__DYNSTUFF_LIST_REMOVE_ITER,		/* children_removei() */
-	__DYNSTUFF_LIST_DESTROY)		/* children_destroy() */
-
 alias_t *aliases = NULL;
 list_t autofinds = NULL;
 
-struct timer *timers = NULL;
-static LIST_FREE_ITEM(timer_free_item, struct timer *) { data->function(1, data->data); xfree(data->name); }
-
-
-DYNSTUFF_LIST_DECLARE2(timers, struct timer, timer_free_item,
-	static __DYNSTUFF_LIST_ADD,		/* timers_add() */
-	__DYNSTUFF_LIST_REMOVE_SAFE,		/* timers_remove() */
-	__DYNSTUFF_LIST_REMOVE_ITER,		/* timers_removei() */
-	__DYNSTUFF_LIST_DESTROY)		/* timers_destroy() */
-
+/***************
+ * conferences
+ ***************/
 struct conference *conferences = NULL;
 newconference_t *newconferences = NULL;
 
@@ -123,13 +75,11 @@ char *config_subject_reply_prefix;
 int in_autoexec = 0;
 int config_auto_save = 0;
 int config_auto_user_add = 0;
-time_t last_save = 0;
 int config_display_color = 1;
 int config_beep = 1;
 int config_beep_msg = 1;
 int config_beep_chat = 1;
 int config_beep_notify = 1;
-char *config_console_charset;
 char *config_dcc_dir;
 int config_display_blinking = 1;
 int config_events_delay = 3;
@@ -141,8 +91,6 @@ char *config_sound_notify_file = NULL;
 char *config_sound_sysmsg_file = NULL;
 char *config_sound_mail_file = NULL;
 char *config_sound_app = NULL;
-int config_use_unicode;
-int config_use_iso;
 int config_changed = 0;
 int config_display_ack = 12;
 int config_completion_notify = 1;
@@ -170,7 +118,6 @@ int config_display_sent = 1;
 int config_send_white_lines = 0;
 int config_sort_windows = 1;
 int config_keep_reason = 1;
-char *config_audio_device = NULL;
 char *config_speech_app = NULL;
 int config_time_deviation = 300;
 int config_mesg = MESG_DEFAULT;
@@ -182,11 +129,7 @@ int config_window_session_allow = 0;
 int config_windows_save = 0;
 char *config_windows_layout = NULL;
 char *config_profile = NULL;
-int config_reason_limit = 1;
 int config_debug = 1;
-int config_lastlog_noitems = 0;
-int config_lastlog_case = 0;
-int config_lastlog_display_all = 0;
 int config_version = 0;
 char *config_exit_exec = NULL;
 int config_session_locks = 0;
@@ -197,7 +140,7 @@ char *last_search_last_name = NULL;
 char *last_search_nickname = NULL;
 char *last_search_uid = 0;
 
-int reason_changed = 0;
+int ekg2_reason_changed = 0;
 
 /*
  * windows_save()
@@ -279,11 +222,12 @@ DYNSTUFF_LIST_DECLARE(aliases, alias_t, list_alias_free,
  */
 int alias_add(const char *string, int quiet, int append)
 {
-	char *cmd;
-	command_t *c;
+	char *cmd, *aname, *tmp;
+	GSList *cl;
 	alias_t *a;
 	char **params = NULL;
 	char *array;
+	int i;
 
 	if (!string || !(cmd = xstrchr(string, ' ')))
 		return -1;
@@ -299,7 +243,8 @@ int alias_add(const char *string, int quiet, int append)
 				list_add(&a->commands, xstrdup(cmd));
 				
 				/* przy wielu komendach trudno dope³niaæ, bo wg. której? */
-				for (c = commands; c; c = c->next) {
+				for (cl = commands; cl; cl = cl->next) {
+					command_t *c = cl->data;
 					if (!xstrcasecmp(c->name, a->name)) {
 						xfree(c->params);
 						c->params = array_make(("?"), (" "), 0, 1, 1);
@@ -314,24 +259,43 @@ int alias_add(const char *string, int quiet, int append)
 		}
 	}
 
-	for (c = commands; c; c = c->next) {
-		char *tmp = ((*cmd == '/') ? cmd + 1 : cmd);
 
-		if (!xstrcasecmp(string, c->name) && !(c->flags & COMMAND_ISALIAS)) {
-			printq("aliases_command", string);
-			return -1;
+	aname = xstrdup((*cmd == '/') ? cmd + 1 : cmd);
+	if ((tmp = xstrchr(aname, ' ')))
+		*tmp = 0;
+
+	for (i=0; i<2; i++) {
+		for (cl = commands; cl && !params; cl = cl->next) {
+			command_t *c = cl->data;
+			const char *cname = c->name;
+			if (i) {
+				if ((tmp = xstrchr(cname, ':')))
+					cname = tmp+1;
+				else  
+					continue;
+			}
+
+			if (!xstrcasecmp(string, cname) && !(c->flags & COMMAND_ISALIAS)) {
+				printq("aliases_command", string);
+				xfree(aname);
+				return -1;
+			}
+
+			if (!xstrcasecmp(aname, cname)) {
+				params = c->params;
+				break;
+			}
 		}
-
-		if (!xstrcasecmp(tmp, c->name))
-			params = c->params;
 	}
+	xfree(aname);
+
 	a = xmalloc(sizeof(struct alias));
 	a->name = xstrdup(string);
 	a->commands = NULL;
 	list_add(&(a->commands), xstrdup(cmd));
 	aliases_add(a);
 
-	array = (params) ? array_join(params, (" ")) : xstrdup(("?"));
+	array = (params) ? g_strjoinv(" ", params) : xstrdup(("?"));
 	command_add(NULL, a->name, array, cmd_alias_exec, COMMAND_ISALIAS, NULL);
 	xfree(array);
 	
@@ -569,17 +533,38 @@ void changed_mesg(const char *var)
 	else
 		mesg_set(config_mesg);
 }
-	
+
+static TIMER(auto_save_timer) {
+	if (type)
+		return 0;
+
+	if (!config_changed)
+		return 0;
+
+	debug("autosaving userlist and config.\n");
+
+	config_write();
+	session_write();
+
+	if (config_commit()) {
+		config_changed = 0;
+		ekg2_reason_changed = 0;
+		print("autosaved");
+	} else
+		print("error_saving");
+
+	return 0;
+}
+
 /*
  * changed_auto_save()
  *
  * wywo³ywane po zmianie warto¶ci zmiennej ,,auto_save''.
  */
-void changed_auto_save(const char *var)
-{
-	/* oszukujemy, ale takie zachowanie wydaje siê byæ
-	 * bardziej ,,naturalne'' */
-	last_save = time(NULL);
+void changed_auto_save(const char *var) {
+	timer_remove(NULL, "auto_save");
+	if (config_auto_save > 0)
+		timer_add(NULL, "auto_save", config_auto_save, 1, auto_save_timer, NULL);
 }
 
 /*
@@ -744,7 +729,7 @@ struct conference *conference_add(session_t *session, const char *name, const ch
 		return NULL;
 
 	if (nicklist[0] == ',' || nicklist[xstrlen(nicklist) - 1] == ',') {
-		printq("invalid_params", ("chat"));
+		printq("invalid_params", ("chat"), nicklist);
 		return NULL;
 	}
 
@@ -791,19 +776,19 @@ struct conference *conference_add(session_t *session, const char *name, const ch
 			if (!nig) {
 				printq("group_empty", gname);
 				printq("conferences_not_added", name);
-				array_free(nicks);
+				g_strfreev(nicks);
 				return NULL;
 			}
 		}
 	}
 
-	count = array_count(nicks);
+	count = g_strv_length(nicks);
 
 	for (cf = conferences; cf; cf = cf->next) {
 		if (!xstrcasecmp(name, cf->name)) {
 			printq("conferences_exist", name);
 
-			array_free(nicks);
+			g_strfreev(nicks);
 
 			return NULL;
 		}
@@ -812,7 +797,7 @@ struct conference *conference_add(session_t *session, const char *name, const ch
 	memset(&c, 0, sizeof(c));
 
 	for (p = nicks, i = 0; *p; p++) {
-		char *uid;
+		const char *uid;
 
 		if (!xstrcmp(*p, ""))
 			continue;
@@ -825,7 +810,7 @@ struct conference *conference_add(session_t *session, const char *name, const ch
 	}
 
 
-	array_free(nicks);
+	g_strfreev(nicks);
 
 	if (i != count) {
 		printq("conferences_not_added", name);
@@ -839,7 +824,7 @@ struct conference *conference_add(session_t *session, const char *name, const ch
 
 	tabnick_add(name);
 
-	cf = xmemdup(&c, sizeof(c));
+	cf = g_memdup(&c, sizeof(c));
 	conferences_add(cf);
 	return cf;
 }
@@ -984,7 +969,7 @@ struct conference *conference_find_by_uids(session_t *s, const char *from, const
 			int comma = 0;
 
 			if (xstrcasecmp(from, s->uid) && !conference_participant(c, from)) {
-				list_add(&c->recipients, xmemdup(&from, sizeof(from)));
+				list_add(&c->recipients, g_memdup(&from, sizeof(from)));
 
 				comma++;
 				string_append(new, format_user(s, from));
@@ -992,7 +977,7 @@ struct conference *conference_find_by_uids(session_t *s, const char *from, const
 
 			for (i = 0; i < count; i++) {
 				if (xstrcasecmp(recipients[i], s->uid) && !conference_participant(c, recipients[i])) {
-					list_add(&c->recipients, xmemdup(&recipients[i], sizeof(recipients[0])));
+					list_add(&c->recipients, g_memdup(&recipients[i], sizeof(recipients[0])));
 			
 					if (comma++)
 						string_append(new, ", ");
@@ -1071,63 +1056,57 @@ int conference_rename(const char *oldname, const char *newname, int quiet)
 	
 	printq("conferences_rename", oldname, newname);
 
-	query_emit_id(NULL, CONFERENCE_RENAMED, &oldname, &newname);	/* XXX READ-ONLY QUERY */
+	query_emit(NULL, "conference-renamed", &oldname, &newname);	/* XXX READ-ONLY QUERY */
 
 	return 0;
 }
 
-/*
- * help_path()
+/**
+ * help_open()
  *
- * zwraca plik z pomoc± we w³a¶ciwym jêzyku lub null je¶li nie ma takiego pliku
+ * Open the help file in best language available.
  *
+ * @param name - help file basename.
+ * @param plugin - plugin name or NULL if core help is requested.
+ *
+ * @return Open GDataInputStream with utf8 encoding or NULL if no file was
+ * found. It should be unreferenced with g_object_unref(). 
  */
-FILE *help_path(char *name, char *plugin) {
-	char lang[3];
-	char *tmp;
-	FILE *fp;
+GDataInputStream *help_open(const gchar *name, const gchar *plugin) {
+	const gchar* const *p;
 
-	char *base = plugin ? 
-		saprintf(DATADIR "/plugins/%s/%s", plugin, name) :
-		saprintf(DATADIR "/%s", name);
+	gchar *base = plugin
+		? g_build_filename(DATADIR, "plugins", plugin, name, NULL)
+		: g_build_filename(DATADIR, name, NULL);
+	GString *fnbuf = g_string_new(base);
+	const gsize baselen = fnbuf->len;
+	g_free(base);
 
-	do {
-		/* if we don't get lang from $LANGUAGE (man 3 gettext) */
-		if ((tmp = getenv("LANGUAGE"))) break;
-		/* fallback on locale enviroments.. (man 5 locale) */
-		if ((tmp = getenv("LC_ALL"))) break;
-		if ((tmp = getenv("LANG"))) break;
-		/* fallback to en language */
-		tmp = "en";
-	} while (0);
+	for (p = g_get_language_names(); *p; p++) {
+		GError *err = NULL;
+		GFile *f;
+		GFileInputStream *ret;
 
-	xstrncpy(&lang[0], tmp, 2);
-	lang[2] = 0;
-	
-help_again:
-	tmp = saprintf("%s-%s.txt", base, lang);
+		if (G_UNLIKELY(!strcmp(*p, "C")))
+			g_string_append(fnbuf, "-en.txt");
+		else
+			g_string_append_printf(fnbuf, "-%s.txt", *p);
+		f = g_file_new_for_path(fnbuf->str);
+		ret = g_file_read(f, NULL, &err);
 
-	if ((fp = fopen(tmp, "r"))) {
-		xfree(base);
-		xfree(tmp);
-		return fp;
+		if (ret) {
+			g_string_free(fnbuf, TRUE);
+			return g_data_input_stream_new(G_INPUT_STREAM(ret));
+		} else if (err->code != G_FILE_ERROR_NOENT)
+			debug_error("help_path() failed to open %s with error: %s\n",
+					fnbuf->str, err->message);
+
+		g_error_free(err);
+		g_string_truncate(fnbuf, baselen);
 	}
 
-	/* Temporary fallback - untill we don't have full en translation */
-	xfree(tmp);
-	if (xstrcasecmp(lang, "pl")) {
-		lang[0] = 'p';
-		lang[1] = 'l';
-		goto help_again;
-	}
-
-	/* last chance, just base without lang. */
-	tmp = saprintf("%s.txt", base);
-	fp = fopen(tmp, "r");
-
-	xfree(tmp);
-	xfree(base);
-	return fp;
+	g_string_free(fnbuf, TRUE);
+	return NULL;
 }
 
 
@@ -1139,6 +1118,7 @@ help_again:
  *
  *  - name - nazwa.
  */
+/*
 int ekg_hash(const char *name)
 {
 	int hash = 0;
@@ -1149,7 +1129,21 @@ int ekg_hash(const char *name)
 	}
 
 	return hash;
+}*/
+/*
+ * new hash, made with queries in mind
+ * but should also nicely behave for formats
+ */
+int ekg_hash(const char *name) {
+	unsigned long long st = 0x4d6947;
+
+	for (; *name; name++) {
+		st = st * 2147483069 + 2147482417;
+		st ^= (*name);
+	}
+	return (int)st;
 }
+
 
 /*
  * mesg_set()
@@ -1244,33 +1238,6 @@ int play_sound(const char *sound_path)
 	return res;
 }
 
-/*
- * child_add()
- *
- * dopisuje do listy uruchomionych dzieci procesów.
- *
- *  - plugin
- *  - pid
- *  - name
- *  - handler
- *  - data
- *
- * 0/-1
- */
-child_t *child_add(plugin_t *plugin, pid_t pid, const char *name, child_handler_t handler, void *priv_data)
-{
-	child_t *c = xmalloc(sizeof(child_t));
-
-	c->plugin	= plugin;
-	c->pid		= pid;
-	c->name		= xstrdup(name);
-	c->handler	= handler;
-	c->priv_data	= priv_data;
-	
-	children_add(c);
-	return c;
-}
-
 /**
  * mkdir_recursive()
  *
@@ -1357,7 +1324,7 @@ const char *prepare_pathf(const char *filename, ...) {
 	size_t len;
 	int fpassed = (filename && *filename);
 
-	len = strlcpy(path, config_dir ? config_dir : "", sizeof(path));
+	len = g_strlcpy(path, config_dir ? config_dir : "", sizeof(path));
 
 	if (len + fpassed >= sizeof(path)) {
 		debug_error("prepare_pathf() LEVEL0 %d + %d >= %d\n", len, fpassed, sizeof(path));
@@ -1487,9 +1454,9 @@ const char *prepare_path_user(const char *path) {
 			xstrcat(out, "/");
 		} else
 			*out = 0;
-		if (homedir && strlcat(out, homedir, sizeof(out)-xstrlen(out)-1) >= sizeof(out)-xstrlen(out)-1)
+		if (homedir && g_strlcat(out, homedir, sizeof(out)-xstrlen(out)-1) >= sizeof(out)-xstrlen(out)-1)
 			return NULL; /* we don't add slash here, 'cause in already has it */
-		if (strlcat(out, in, sizeof(out)-xstrlen(out)) >= sizeof(out)-xstrlen(out))
+		if (g_strlcat(out, in, sizeof(out)-xstrlen(out)) >= sizeof(out)-xstrlen(out))
 			return NULL;
 	}
 
@@ -1579,23 +1546,8 @@ static char *random_line(const char *path) {
 	return NULL;
 }
 
-/**
- * read_file()
- *
- * Read next line from file @a f, if needed alloc memory for it.<br>
- * Remove \\r and \\n chars from end of line if needed.
- *
- * @param f	- opened FILE *
- * @param alloc 
- *		- If  0 than it return internal read_file() either xrealloc()'ed or static char with sizeof()==1024,
- *			which you <b>MUST NOT</b> xfree()<br>
- *		- If  1 than it return strdup()'ed string this <b>MUST</b> xfree()<br>
- *		- If -1 than it free <i>internal</i> pointer which were used by xrealloc()
- *
- * @return Line without \\r and \\n which must or mustn't be xfree()'d. It depends on @a alloc param
- */
-
-char *read_file(FILE *f, int alloc) {
+/* XXX: ekg_fix_utf8() here */
+char *read_file_utf(FILE *f, int alloc) {
 	static char buf[1024];
 	static char *reres = NULL;
 
@@ -1647,23 +1599,63 @@ char *read_file(FILE *f, int alloc) {
 	return (alloc) ? xstrdup(res) : res;
 }
 
-char *read_file_iso(FILE *f, int alloc) {
+/**
+ * read_file()
+ *
+ * Read next line from file @a f, if needed alloc memory for it.<br>
+ * Remove \\r and \\n chars from end of line if needed.
+ *
+ * @param f	- opened FILE *
+ * @param alloc 
+ *		- If  0 than it return internal read_file() either xrealloc()'ed or static char with sizeof()==1024,
+ *			which you <b>MUST NOT</b> xfree()<br>
+ *		- If  1 than it return strdup()'ed string this <b>MUST</b> xfree()<br>
+ *		- If -1 than it free <i>internal</i> pointer which were used by xrealloc()
+ *
+ * @return Line without \\r and \\n which must or mustn't be xfree()'d. It depends on @a alloc param
+ */
+
+char *read_file(FILE *f, int alloc) {
 	static char *tmp = NULL;
-	char *buf = read_file(f, 0);
+	char *buf = read_file_utf(f, 0);
 	char *res;
 
-	xfree(tmp);
+	g_free(tmp);
 	tmp = NULL;
 	if (alloc == -1)
 		return NULL;
 
-	ekg_recode_iso2_inc();
-	res = ekg_iso2_to_locale_dup(buf);
+	res = ekg_recode_from_locale(buf);
 	if (!alloc)
 		tmp = res;
 
-	ekg_recode_iso2_dec();
 	return res;
+}
+
+/**
+ * read_line()
+ *
+ * Read a single line from GDataInputStream.
+ *
+ * @param f - GDataInputStream to read from.
+ *
+ * @return Pointer to a static line which will be overwritten by next
+ * call to read_line() or NULL on EOF or error.
+ */
+gchar *read_line(GDataInputStream *f) {
+	static gchar *buf = NULL;
+	GError *err = NULL;
+
+	g_free(buf);
+	buf = g_data_input_stream_read_line(f, NULL, NULL, &err);
+
+	if (!buf && err) {
+		debug_error("read_line() failed: %s\n", err->message);
+		g_error_free(err);
+	} else if (buf)
+		ekg_fix_utf8(buf);
+
+	return buf;
 }
 
 /**
@@ -1697,209 +1689,13 @@ const char *timestamp_time(const char *format, time_t t) {
 	static char buf[100];
 
 	if (!format || format[0] == '\0')
-		return itoa(t);
+		return ekg_itoa(t);
 
 	tm = localtime(&t);
 
 	if (!strftime(buf, sizeof(buf), format, tm))
 		return "TOOLONG";
 	return buf;
-}
-
-/**
- * on_off()
- *
- * @todo	It's only used in vars.c by variable_set() move it?
- *
- * @return	 1 - If @a value is one of: <i>on</i>, <i>true</i>, <i>yes</i>, <i>tak</i>, <i>1</i>	[case-insensitive]<br>
- *		 0 - If @a value is one of: <i>off</i>, <i>false</i>, <i>no</i>, <i>nie</i>, <i>0</i>	[case-insensitive]<br>
- *		else -1
- */
-
-int on_off(const char *value)
-{
-	if (!value)
-		return -1;
-
-	if (!xstrcasecmp(value, "on") || !xstrcasecmp(value, "true") || !xstrcasecmp(value, "yes") || !xstrcasecmp(value, "tak") || !xstrcmp(value, "1"))
-		return 1;
-
-	if (!xstrcasecmp(value, "off") || !xstrcasecmp(value, "false") || !xstrcasecmp(value, "no") || !xstrcasecmp(value, "nie") || !xstrcmp(value, "0"))
-		return 0;
-
-	return -1;
-}
-
-struct timer *timer_add_ms(plugin_t *plugin, const char *name, unsigned int period, int persist, int (*function)(int, void *), void *data) {
-	struct timer *t;
-	struct timeval tv;
-
-	/* wylosuj now± nazwê, je¶li nie mamy */
-	if (!name) {
-		int i;
-
-		for (i = 1; !name; i++) {
-			int gotit = 0;
-
-			for (t = timers; t; t = t->next) {
-				if (!xstrcmp(t->name, itoa(i))) {
-					gotit = 1;
-					break;
-				}
-			}
-
-			if (!gotit)
-				name = itoa(i);
-		}
-	}
-
-	t = xmalloc(sizeof(struct timer));
-	gettimeofday(&tv, NULL);
-	tv.tv_sec += (period / 1000);
-	tv.tv_usec += ((period % 1000) * 1000);
-	if (tv.tv_usec >= 1000000) {
-		tv.tv_usec -= 1000000;
-		tv.tv_sec++;
-	}
-	memcpy(&(t->ends), &tv, sizeof(tv));
-	t->name = xstrdup(name);
-	t->period = period;
-	t->persist = persist;
-	t->function = function;
-	t->data = data;
-	t->plugin = plugin;
-
-	timers_add(t);
-	return t;
-}
-
-/*
- * timer_add()
- *
- * dodaje timera.
- *
- *  - plugin - plugin obs³uguj±cy timer,
- *  - name - nazwa timera w celach identyfikacji. je¶li jest równa NULL,
- *	     zostanie przyznany pierwszy numerek z brzegu.
- *  - period - za jaki czas w sekundach ma byæ uruchomiony,
- *  - persist - czy sta³y timer,
- *  - function - funkcja do wywo³ania po up³yniêciu czasu,
- *  - data - dane przekazywane do funkcji.
- *
- * zwraca zaalokowan± struct timer lub NULL w przypadku b³êdu.
- */
-struct timer *timer_add(plugin_t *plugin, const char *name, unsigned int period, int persist, int (*function)(int, void *), void *data)
-{
-	return timer_add_ms(plugin, name, period * 1000, persist, function, data);
-}
-
-struct timer *timer_add_session(session_t *session, const char *name, unsigned int period, int persist, int (*function)(int, session_t *)) {
-	struct timer *t;
-
-	if (!session || !session->plugin) {
-		debug_error("timer_add_session() s: 0x%x s->plugin: 0x%x\n", session, session ? session->plugin : NULL);
-		return NULL;
-	}
-
-	t = timer_add(session->plugin, name, period, persist, (void *) function, session);
-	t->is_session = 1;
-	return t;
-}
-
-/*
- * timer_remove()
- *
- * usuwa timer.
- *
- *  - plugin - plugin obs³uguj±cy timer,
- *  - name - nazwa timera,
- *
- * 0/-1
- */
-int timer_remove(plugin_t *plugin, const char *name)
-{
-	struct timer *t;
-	int removed = 0;
-
-	for (t = timers; t; t = t->next) {
-		if (t->plugin == plugin && !xstrcasecmp(name, t->name)) {
-			t = timers_removei(t);
-			removed++;
-		}
-	}
-
-	return ((removed) ? 0 : -1);
-}
-
-struct timer *timer_find_session(session_t *session, const char *name) {
-	struct timer *t;
-
-	if (!session)
-		return NULL;
-	
-	for (t = timers; t; t = t->next) {
-		if (t->is_session && t->data == session && !xstrcmp(name, t->name))
-			return t;
-	}
-
-	return NULL;
-}
-
-int timer_remove_session(session_t *session, const char *name)
-{
-	struct timer *t;
-	plugin_t *p;
-	int removed = 0;
-
-	if (!session || (!(p = session->plugin)))
-		return -1;
-
-	for (t = timers; t; t = t->next) {
-		if (t->is_session && t->data == session && !xstrcmp(name, t->name)) {
-			t = timers_removei(t);
-			removed++;
-		}
-	}
-
-	return ((removed) ? 0 : -1);
-}
-
-/*
- * timer_handle_command()
- *
- * obs³uga timera wywo³uj±cego komendê.
- */
-TIMER(timer_handle_command)
-{
-	if (type) {
-		xfree(data);
-		return 0;
-	}
-	
-	command_exec(NULL, NULL, (char *) data, 0);
-	return 0;
-}
-
-/*
- * timer_remove_user()
- *
- * usuwa wszystkie timery u¿ytkownika.
- *
- * 0/-1
- */
-int timer_remove_user(int at)
-{
-	struct timer *t;
-	int removed = 0;
-
-	for (t = timers; t; t = t->next) {
-		if (t->at == at && t->function == timer_handle_command) { 
-			t = timers_removei(t);
-			removed = 1;
-		}
-	}
-
-	return ((removed) ? 0 : -1);
 }
 
 /* 
@@ -2067,6 +1863,22 @@ int msg_all(session_t *s, const char *function, const char *what)
 
 	return 0;
 }
+
+#ifndef NO_POSIX_SYSTEM
+static void speech_child_handler(GPid pid, gint status, gpointer data) {
+	speech_pid = 0;
+
+	if (!config_speech_app)
+		buffer_free(&buffer_speech);
+
+	if (buffer_speech.count && !status) {
+		char *str = buffer_tail(&buffer_speech);
+		say_it(str);
+		g_free(str);
+	}
+}
+#endif
+
 /*
  * say_it()
  *
@@ -2108,7 +1920,7 @@ int say_it(const char *str)
 		exit(status);
 	}
 
-	child_add(NULL, pid, NULL, NULL, NULL);
+	ekg_child_add(NULL, "(speech)", pid, speech_child_handler, NULL, NULL);
 	return 0;
 #else
 	return -1;
@@ -2143,9 +1955,6 @@ void debug(const char *format, ...)
 }
 #endif
 
-static char base64_charset[] =
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
 /*
  * base64_encode()
  *
@@ -2157,50 +1966,10 @@ static char base64_charset[] =
  */
 char *base64_encode(const char *buf, size_t len)
 {
-	char *out, *res;
-	int i = 0, j = 0, k = 0;
+	if (!buf)
+		return NULL;
 
-	if (!buf) return NULL;
-/*	if (!len) return NULL; */
-	
-	res = out = xmalloc((len / 3 + 1) * 4 + 2);
-
-	while (j < len) {
-		switch (i % 4) {
-			case 0:
-				k = (buf[j] & 252) >> 2;
-				break;
-			case 1:
-				if (j+1 < len)
-					k = ((buf[j] & 3) << 4) | ((buf[j + 1] & 240) >> 4);
-				else
-					k = (buf[j] & 3) << 4;
-
-				j++;
-				break;
-			case 2:
-				if (j+1 < len)
-					k = ((buf[j] & 15) << 2) | ((buf[j + 1] & 192) >> 6);
-				else
-					k = (buf[j] & 15) << 2;
-
-				j++;
-				break;
-			case 3:
-				k = buf[j++] & 63;
-				break;
-		}
-		*out++ = base64_charset[k];
-		i++;
-	}
-
-	if (i % 4)
-		for (j = 0; j < 4 - (i % 4); j++, out++)
-			*out = '=';
-	
-	*out = 0;
-	
-	return res;
+	return g_base64_encode((guchar*)buf, len);
 }
 
 /*
@@ -2214,49 +1983,12 @@ char *base64_encode(const char *buf, size_t len)
  */
 char *base64_decode(const char *buf)
 {
-	char *res, *save, *foo, val;
-	const char *end;
-	int index = 0;
 	size_t buflen;
 
-	if (!buf || !(buflen = xstrlen(buf)))
+	if (!buf || !(*buf))
 		return NULL;
 
-	save = res = xcalloc(1, (buflen / 4 + 1) * 3 + 2);
-
-	end = buf + buflen - 1;
-
-	while (*buf && buf < end) {
-		if (*buf == '\r' || *buf == '\n') {
-			buf++;
-			continue;
-		}
-		if (!(foo = xstrchr(base64_charset, *buf)))
-			foo = base64_charset;
-		val = (int)(foo - base64_charset);
-		buf++;
-		switch (index) {
-			case 0:
-				*res |= val << 2;
-				break;
-			case 1:
-				*res++ |= val >> 4;
-				*res |= val << 4;
-				break;
-			case 2:
-				*res++ |= val >> 2;
-				*res |= val << 6;
-				break;
-			case 3:
-				*res++ |= val;
-				break;
-		}
-		index++;
-		index %= 4;
-	}
-	*res = 0;
-	
-	return save;
+	return (char*) g_base64_decode(buf, &buflen);
 }
 
 /*
@@ -2375,7 +2107,7 @@ void ekg_update_status(session_t *session)
 			const char *__session	= session_uid_get(session);
 			const char *__uid		= u->uid;
 
-			query_emit_id(NULL, USERLIST_CHANGED, &__session, &__uid);
+			query_emit(NULL, "userlist-changed", &__session, &__uid);
 		}
 	}
 }
@@ -2497,9 +2229,9 @@ int ekg_status_int(const char *text)
  * tekstu wycina kolorki i zwraca informacje o formatowaniu tekstu bez
  * kolorków.
  */
-uint32_t *ekg_sent_message_format(const char *text)
+guint32 *ekg_sent_message_format(const char *text)
 {
-	uint32_t *format, attr;
+	guint32 *format, attr;
 	char *newtext, *q;
 	const char *p, *end;
 	int len;
@@ -2581,8 +2313,6 @@ uint32_t *ekg_sent_message_format(const char *text)
 	return format;
 }
 
-
-static int tolower_pl(const unsigned char c);
 /*
  * strncasecmp_pl()
  *
@@ -2590,68 +2320,35 @@ static int tolower_pl(const unsigned char c);
  * dzia³a analogicznie do xstrncasecmp()
  * obs³uguje polskie znaki
  */
-
-int strncasecmp_pl(const char *cs, const char *ct , size_t count)
-{
-	register signed char __res = 0;
-
-	while (count) {
-		if ((__res = tolower_pl(*cs) - tolower_pl(*ct++)) != 0 || !*cs++)
-			break;
-		count--;
-	}
-
-	return __res;
-}
-
-int strcasecmp_pl(const char *cs, const char *ct)
-{
-	register signed char __res = 0;
-
-	while ((__res = tolower_pl(*cs) - tolower_pl(*ct++)) == 0 && !*cs++) {
-		if (!*cs++)
-			return(0);
-	}
-
-	return __res;
-}
-
-/*
- * tolower_pl()
- *
- * zamienia podany znak na ma³y je¶li to mo¿liwe
- * obs³uguje polskie znaki
+/* adjusted to use casefold utf8
+ * (normalized would be better but count would have to be adjusted)
+ * count is in bytes, to make it simpler
+ * XXX: potentially slow, try to get rid of it
+ *	in favour of something with the common string being normalized
+ *	before calling
  */
-static int tolower_pl(const unsigned char c) {
-	switch(c) {
-		case 161: /* ¡ */
-			return 177;
-		case 198: /* Æ */
-			return 230;
-		case 202: /* Ê */
-			return 234;
-		case 163: /* £ */
-			return 179;
-		case 209: /* Ñ */
-			return 241;
-		case 211: /* Ó */
-			return 243;
-		case 166: /* ¦ */
-			return 182;
-		case 175: /* ¯ */
-			return 191;
-		case 172: /* ¬ */
-			return 188;
-		default: /* reszta */
-			return tolower(c);
-	}
+int strncasecmp_pl(const char *cs, const char *ct, size_t count)
+{
+	gchar *csc = g_utf8_casefold(cs, -1);
+	gchar *ctc = g_utf8_casefold(ct, -1);
+
+	gint ret = strncmp(csc, ctc, count);
+
+	g_free(csc);
+	g_free(ctc);
+
+	return ret;
 }
+
+#ifndef EKG_NO_DEPRECATED
 
 /*
  * saprintf()
  *
  * dzia³a jak sprintf() tylko, ¿e wyrzuca wska¼nik
  * do powsta³ego ci±gu
+ *
+ * NOTE: deprecated, please use g_strdup_printf() instead.
  */
 char *saprintf(const char *format, ...)
 {
@@ -2664,6 +2361,8 @@ char *saprintf(const char *format, ...)
 
 	return res;
 }
+
+#endif
 
 /*
  * xstrtr()
@@ -2805,12 +2504,41 @@ int ekg_close(int fd) {
 char *password_input(const char *prompt, const char *rprompt, const bool norepeat) {
 	char *pass = NULL;
 
-	if (query_emit_id(NULL, UI_PASSWORD_INPUT, &pass, &prompt, norepeat ? NULL : &rprompt) == -2) {
+	if (query_emit(NULL, "ui-password-input", &pass, &prompt, norepeat ? NULL : &rprompt) == -2) {
 		print("password_nosupport");
 		return NULL;
 	}
 
 	return pass;
+}
+
+int is_utf8_string(const char *txt) {
+	const char *p;
+	int mask, n;
+
+	if (!txt) return 0;
+
+	for (p = txt; *p; p++) {
+		//	0xxxxxxx	continue
+		//	10xxxxxx 	n=0; return 0
+		//	110xxxxx	n=1
+		//	1110xxxx	n=2
+		//	11110xxx	n=3
+		//	111110xx	n=4
+		//	1111110x	n=5
+		//	1111111x	n>5; return 0
+
+		if (!(*p & 0x80)) continue;
+
+		for (n = 0, mask = 0x40; (*p & mask); n++, mask >>= 1);
+
+		if (!n || (n>5)) return 0;
+
+		for (; n; n--)
+			if ((*++p & 0xc0) != 0x80) return 0;
+	}
+
+	return 1;
 }
 
 /*

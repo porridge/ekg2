@@ -20,15 +20,11 @@
 
 #define DOT(a,x,y,z,error) \
 	print_info("__status", z, a, session_name(z), x, y->hostname, y->address, \
-			itoa(y->port < 0 ? \
+			ekg_itoa(y->port < 0 ? \
 				session_int_get(z, "port") < 0 ? DEFPORT : session_int_get(z, "port") : y->port), \
-			itoa(y->family), error ? strerror(error) : "")
+			ekg_itoa(y->family), error ? strerror(error) : "")
 
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>	/* XXX, protocol_uid() */
-#include <ekg/sessions.h>
-#include <ekg/windows.h>
+#include "irc-ssl.h"
 
 /* irc_private->sopt */
 enum { USERMODES=0, CHANMODES, _005_PREFIX, _005_CHANTYPES,
@@ -50,6 +46,12 @@ typedef struct _irc_private_t {
 	char *nick;			/* guess again ? ;> */
 	char *host_ident;		/* ident+host */
 
+#ifdef IRC_HAVE_SSL
+	unsigned char using_ssl	: 2;	/**< 1 if we're using SSL, else 0 */
+	SSL_SESSION ssl_session;	/**< SSL session */
+	string_t ssl_buf;
+#endif
+
 	list_t people;			/* list of people_t */
 	list_t channels;		/* list of people_chan_t */
 	list_t hilights;
@@ -57,23 +59,17 @@ typedef struct _irc_private_t {
 	char *sopt[SERVOPTS];		/* just a few options from
 					 * www.irc.org/tech_docs/005.html
 					 * server's response */
+	char *nick_modes;		/* should be freed */
+	char *nick_signs;
 	int casemapping;
 
 	list_t awaylog;
 
-	list_t auto_guess_encoding;
-	list_t out_recodes;
-	list_t recoded_channels;
+	gchar **auto_guess_encoding; /* encoding names */
+	GData *recoded_channels;
 
-	void *conv_in;
-	void *conv_out;
+	gchar *conv;
 } irc_private_t;
-
-/* data for private->auto_guess_encoding */
-typedef struct {
-	void *conv_in;
-	void *conv_out;
-} conv_in_out_t;
 
 /* data for private->out_recodes */
 typedef struct {
@@ -109,7 +105,7 @@ typedef struct {
 typedef struct {
 	char		*name;
 	int		syncmode;
-	struct timeval	syncstart;
+	GTimeVal	syncstart;
 	int		mode;
 	char		*topic, *topicby, *mode_str;
 	window_t	*window;
@@ -167,13 +163,16 @@ enum { IRC_GC_CHAN=0, IRC_GC_NOT_CHAN, IRC_GC_ANY };
 
 #define irc_write(s, args...) watch_write((s && s->priv) ? irc_private(s)->send_watch : NULL, args);
 
-int irc_parse_line(session_t *s, char *buf, int fd);	/* misc.c */
+int irc_parse_line(session_t *s, const char *l, int fd);	/* misc.c */
 
-extern int irc_config_experimental_chan_name_clean;
+extern int irc_config_allow_fake_contacts;
+extern int irc_config_clean_channel_name;
 
 char *nickpad_string_create(channel_t *chan);
-char *nickpad_string_apply(channel_t *chan, char *str);
+char *nickpad_string_apply(channel_t *chan, const char *str);
 char *nickpad_string_restore(channel_t *chan);
+
+char *clean_channel_names(session_t *session, char *channels);
 
 #endif /* __EKG_PLUGINS_IRC_IRC_H */
 

@@ -24,10 +24,8 @@
 
 /* this is srv resolver as used by ekg2 */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
-#define __USE_BSD
-#define _GNU_SOURCE
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -43,8 +41,6 @@
 #include <resolv.h> /* res_init, res_query */
 #endif
 
-#include "dynstuff.h"
-#include "xmalloc.h"
 #include "srv.h"
 
 #ifndef T_SRV
@@ -52,25 +48,26 @@
 #endif
 
 /* Stolen from ClamAV */
+/* XXX: use glib byte order macros */
 #if WORDS_BIGENDIAN == 0
-union unaligned_32 { uint32_t una_u32; int32_t una_s32; } __attribute__((packed));
-union unaligned_16 { uint16_t una_u16; int16_t una_s16; } __attribute__((packed));
+union unaligned_32 { guint32 una_u32; gint32 una_s32; } __attribute__((packed));
+union unaligned_16 { guint16 una_u16; gint16 una_s16; } __attribute__((packed));
 
 #define cli_readint16(buff) (((const union unaligned_16 *)(buff))->una_u16)
 #define cli_readint32(buff) (((const union unaligned_32 *)(buff))->una_u32)
 
 #else
-static inline uint16_t cli_readint16(const unsigned char *buff)
+static inline guint16 cli_readint16(const unsigned char *buff)
 {
-	uint16_t ret;
+	guint16 ret;
 	ret = buff[0] & 0xff;
 	ret |= (buff[1] & 0xff) << 8;
 	return ret;
 }
 
-static inline uint32_t cli_readint32(const unsigned char *buff)
+static inline guint32 cli_readint32(const unsigned char *buff)
 {
-	uint32_t ret;
+	guint32 ret;
 	ret = buff[0] & 0xff;
 	ret |= (buff[1] & 0xff) << 8;
 	ret |= (buff[2] & 0xff) << 16;
@@ -96,9 +93,9 @@ struct _gim_host
 	struct _gim_host *next;
 
 	unsigned char name[MAXDNAME];
-	uint16_t prio;
-	uint16_t weight;
-	uint16_t port;
+	guint16 prio;
+	guint16 weight;
+	guint16 port;
 
 	int *ai_family;
 	char **ip;
@@ -175,10 +172,10 @@ int extract_rr(unsigned char *start, unsigned char *end, unsigned char **ptr, ns
 	if (rrs + 10 > end)
 		return 3;
 	/* this works both on sparc and intel, so don't mess with it */
-	rr->type	= ntohs(cli_readint16(rrs));
-	rr->rr_class	= ntohs(cli_readint16(rrs+2));
-	rr->ttl		= ntohs(cli_readint32(rrs+4));
-	rr->rdlength	= ntohs(cli_readint32(rrs+8));
+	rr->type	= g_ntohs(cli_readint16(rrs));
+	rr->rr_class	= g_ntohs(cli_readint16(rrs+2));
+	rr->ttl		= g_ntohs(cli_readint32(rrs+4));
+	rr->rdlength	= g_ntohs(cli_readint32(rrs+8));
 
 	rrs += 10;
 	if (rrs + rr->rdlength > end)
@@ -214,9 +211,9 @@ int extract_rr_srv(unsigned char *start, unsigned char *end, unsigned char **ptr
 	if (rr.rdlength < 6)
 		return 1;
 
-	srv->prio	= ntohs(cli_readint16(rr.rdata));
-	srv->weight	= ntohs(cli_readint16(rr.rdata+2));
-	srv->port	= ntohs(cli_readint16(rr.rdata+4));
+	srv->prio	= g_ntohs(cli_readint16(rr.rdata));
+	srv->weight	= g_ntohs(cli_readint16(rr.rdata+2));
+	srv->port	= g_ntohs(cli_readint16(rr.rdata+4));
 
 	if ((exp_len = dn_expand(start, end, rr.rdata+6, exp_dn , sizeof(exp_dn))) == -1)
 		return 1;
@@ -262,7 +259,7 @@ int srv_resolver(gim_host **hostlist, const char *hostname, const int proto_port
 	if (!(pro = getprotobynumber(proto ? proto : IPPROTO_TCP)))
 		return 1;
 
-	if (!(srv = getservbyport(htons(proto_port), pro->p_name)))
+	if (!(srv = getservbyport(g_htons(proto_port), pro->p_name)))
 		return 2;
 
 	if (res_init() == -1)
@@ -299,13 +296,13 @@ int srv_resolver(gim_host **hostlist, const char *hostname, const int proto_port
 
 	/* check if there was no error, and if there is answer section available
 	 */
-	if ( (ntohs(query_resp->rcode) == NOERROR) && (ntohs(query_resp->ancount) > 0) ) {
+	if ( (g_ntohs(query_resp->rcode) == NOERROR) && (g_ntohs(query_resp->ancount) > 0) ) {
 		int i;
 
-		cnt[SQUERY]	= ntohs(query_resp->qdcount);
-		cnt[SANSWER]	= ntohs(query_resp->ancount);
-		cnt[SAUTH]	= ntohs(query_resp->nscount);
-		cnt[SEXTRA]	= ntohs(query_resp->arcount);
+		cnt[SQUERY]	= g_ntohs(query_resp->qdcount);
+		cnt[SANSWER]	= g_ntohs(query_resp->ancount);
+		cnt[SAUTH]	= g_ntohs(query_resp->nscount);
+		cnt[SEXTRA]	= g_ntohs(query_resp->arcount);
 		if (cnt[SQUERY] != 1)
 		{
 			/* fprintf (stderr, "wth, not our query?"); */
@@ -415,7 +412,7 @@ static int basic_resolver_item (gim_host *srv)
 	memset(&hint, 0, sizeof(struct addrinfo));
 	hint.ai_socktype = SOCK_STREAM;
 
-	if (!getaddrinfo(srv->name, NULL, &hint, &ai)) {
+	if (!getaddrinfo((char *)srv->name, NULL, &hint, &ai)) {
 
 		for (aitmp = ai; aitmp; aitmp = aitmp->ai_next) {
 			int ip_cnt;
@@ -475,7 +472,7 @@ int basic_resolver(gim_host **hostlist, const char *hostname, int port)
 #  warning "resolver: You don't have getaddrinfo(), resolver may not work! (ipv6 for sure)"
 	struct hostent	*he4;
 #endif
-	gim_host *srv, *iter;
+	gim_host *srv;
 
 #ifdef HAVE_GETADDRINFO
 	memset(&hint, 0, sizeof(struct addrinfo));
@@ -484,10 +481,13 @@ int basic_resolver(gim_host **hostlist, const char *hostname, int port)
 	srv = xmalloc(sizeof(gim_host));
 
 	if (!getaddrinfo(hostname, NULL, &hint, &ai)) {
+#if 0
 		int do_loop = (AF_INET | AF_INET6);
+		gim_host *iter;
+#endif
 		srv->prio = DNS_SRV_MAX_PRIO;
 		srv->port = port;
-		strncpy(srv->name, hostname, DNS_NS_MAXDNAME);
+		strncpy((char *)srv->name, hostname, DNS_NS_MAXDNAME);
 
 		for (aitmp = ai; aitmp; aitmp = aitmp->ai_next) {
 			int ip_cnt;
@@ -556,7 +556,7 @@ void write_out_and_destroy_list(int fd, gim_host *hostlist)
 
 	for (iter = hostlist; iter; iter = iter->next)
 	{
-		for (i = 0; i < array_count(iter->ip); i++)
+		for (i = 0; i < g_strv_length(iter->ip); i++)
 		{
 			str = saprintf ("%s %s %d %d\n",
 					iter->name, iter->ip[i],
@@ -565,7 +565,7 @@ void write_out_and_destroy_list(int fd, gim_host *hostlist)
 			write (fd, str, xstrlen(str));
 			xfree (str);
 		}
-		array_free (iter->ip);
+		g_strfreev(iter->ip);
 		xfree (iter->ai_family);
 	}
 	LIST_DESTROY2 (hostlist, NULL);

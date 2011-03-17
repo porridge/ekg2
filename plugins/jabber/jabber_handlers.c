@@ -18,9 +18,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#define _XOPEN_SOURCE 600
-#include "ekg2-config.h"
-#include <ekg/win32.h>
+#include "ekg2.h"
 
 #include <sys/types.h>
 
@@ -51,20 +49,6 @@
 #include <sys/filio.h>
 #endif
 #include <time.h>
-
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
-#include <ekg/sessions.h>
-#include <ekg/stuff.h>
-#include <ekg/userlist.h>
-#include <ekg/themes.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
-#include <ekg/log.h>
-
-#include <ekg/queries.h>
 
 #include "jabber.h"
 #include "jabber_dcc.h"
@@ -158,6 +142,7 @@ void jabber_iq_auth_send(session_t *s, const char *username, const char *passwd,
 	char *resource = tlenjabber_escape(j->resource);/* escaped resource name */
 	char *epasswd = NULL;				/* temporary password [escaped, or hash], if needed for xfree() */
 	char *authpass;					/* <digest>digest</digest> or <password>plaintext_password</password> */
+	const char *host = "";
 
 	/* stolen from libtlen function calc_passcode() Copyrighted by libtlen's developer and Piotr Paw³ow */
 	if (j->istlen) {
@@ -173,6 +158,8 @@ void jabber_iq_auth_send(session_t *s, const char *username, const char *passwd,
 		magic2 &= 0x7fffffff;
 
 		passwd2 = epasswd = saprintf("%08x%08x", magic1, magic2);
+
+		host = "<host>tlen.pl</host>";
 	} else if (session_int_get(s, "plaintext_passwd")) {
 		epasswd = jabber_escape(passwd);
 	} else	passwd2 = passwd;
@@ -181,10 +168,10 @@ void jabber_iq_auth_send(session_t *s, const char *username, const char *passwd,
 	authpass = (passwd2) ?
 		saprintf("<digest>%s</digest>", jabber_digest(stream_id, passwd2, j->istlen)) :	/* hash */
 		saprintf("<password>%s</password>", epasswd);				/* plaintext */
-		
+
 	watch_write(j->send_watch, 
-			"<iq type=\"set\" id=\"auth\" to=\"%s\"><query xmlns=\"jabber:iq:auth\"><username>%s</username>%s<resource>%s</resource></query></iq>", 
-			j->server, username, authpass, resource);
+			"<iq type=\"set\" id=\"auth\" to=\"%s\"><query xmlns=\"jabber:iq:auth\">%s<username>%s</username>%s<resource>%s</resource></query></iq>",
+			j->server, host, username, authpass, resource);
 	xfree(authpass);
 
 	xfree(epasswd);
@@ -311,7 +298,7 @@ JABBER_HANDLER(jabber_handle_stream_features) {
 			for (method = n->children; method; method = method->next) {
 				if (!xstrcmp(method->name, "method")) {
 					if (!xstrcmp(method->data, "zlib")) {
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 						if ((tmp2 = xstrstr(tmp, "zlib")) && ((tmp2 < method_comp) || (!method_comp)) && 
 								(tmp2[4] == ',' || tmp2[4] == '\0')) {
 							method_comp = tmp2;	 /* found more preferable method */
@@ -393,7 +380,7 @@ JABBER_HANDLER(jabber_handle_stream_features) {
 				else if (!xstrcmp(mech_node->data, "PLAIN")) {
 					if ((session_int_get(s, "plaintext_passwd"))) {
 						auth_type = JABBER_SASL_AUTH_PLAIN;
-						break;	/* jesli plaintext jest prefered wychodzimy */
+						break;	/* jesli plaintext jest preferred - wychodzimy */
 					}
 					/* ustaw tylko wtedy gdy nie ma ustawionego, wolimy MD5 */
 					if (auth_type == JABBER_SASL_AUTH_UNKNOWN) auth_type = JABBER_SASL_AUTH_PLAIN;
@@ -495,7 +482,7 @@ JABBER_HANDLER(jabber_handle_challenge) {
 
 	/* decode && parse challenge data */
 	data = base64_decode(n->data);
-	debug_error("[jabber] PARSING challange (%s): \n", data);
+	debug_error("[jabber] PARSING challenge (%s): \n", data);
 	arr = array_make(data, "=,", 0, 1, 1);	/* maybe we need to change/create another one parser... i'm not sure. please notify me, 
 						   I'm lazy, sorry */
 	/* for chrome.pl and jabber.autocom.pl it works */
@@ -507,7 +494,7 @@ JABBER_HANDLER(jabber_handle_challenge) {
 		debug_error("[%d] %s: %s\n", i / 2, arr[i], __(arr[i+1]));
 		if (!arr[i+1]) {
 			debug_error("Parsing var<=>value failed, NULL....\n");
-			array_free(arr);
+			g_strfreev(arr);
 			j->parser = NULL; 
 			jabber_handle_disconnect(s, "IE, Current SASL support for ekg2 cannot handle with this data, sorry.", EKG_DISCONNECT_FAILURE);
 			return;
@@ -556,12 +543,12 @@ JABBER_HANDLER(jabber_handle_challenge) {
 		cnonce = base64_encode(tmp_cnonce, sizeof(tmp_cnonce));
 
 		xmpp_temp	= saprintf(":xmpp/%s", realm);
-		auth_resp	= jabber_challange_digest(username, password, nonce, cnonce, xmpp_temp, realm);
+		auth_resp	= jabber_challenge_digest(username, password, nonce, cnonce, xmpp_temp, realm);
 		session_set(s, "__sasl_excepted", auth_resp);
 		xfree(xmpp_temp);
 
 		xmpp_temp	= saprintf("AUTHENTICATE:xmpp/%s", realm);
-		auth_resp	= jabber_challange_digest(username, password, nonce, cnonce, xmpp_temp, realm);
+		auth_resp	= jabber_challenge_digest(username, password, nonce, cnonce, xmpp_temp, realm);
 		xfree(xmpp_temp);
 
 		string_append(str, "username=\"");	string_append(str, username);	string_append_c(str, '\"');
@@ -582,7 +569,7 @@ JABBER_HANDLER(jabber_handle_challenge) {
 		xfree(username);
 		xfree(cnonce);
 	}
-	array_free(arr);
+	g_strfreev(arr);
 }
 
 JABBER_HANDLER(jabber_handle_proceed) {
@@ -740,7 +727,7 @@ JABBER_HANDLER(jabber_handle_message) {
 	if (nerr) {
 		char *ecode = jabber_attr(nerr->atts, "code");
 		char *etext = jabber_unescape(nerr->data);
-		char *recipient = get_nickname(s, uid);
+		const char *recipient = get_nickname(s, uid);
 
 		if (nbody && nbody->data) {
 			char *tmp2 = jabber_unescape(nbody->data);
@@ -846,7 +833,7 @@ JABBER_HANDLER(jabber_handle_message) {
 					char buf[100];
 					string_append(body, "Sent: ");
 					if (!strftime(buf, sizeof(buf), nazwa_zmiennej_do_formatowania_czasu, tm) 
-						string_append(body, itoa(bsent);	/* if too long display seconds since the Epoch */
+						string_append(body, ekg_itoa(bsent);	/* if too long display seconds since the Epoch */
 					else	string_append(body, buf);	/* otherwise display formatted time */
 					new_line = 1;
 				}
@@ -972,13 +959,13 @@ JABBER_HANDLER(jabber_handle_message) {
 		int secure	= (x_encrypted != NULL);
 		time_t sent	= bsent;
 		char *text	= tlenjabber_unescape(body->str);
-		uint32_t *format= jabber_msg_format(text, nhtml);
+		guint32 *format= jabber_msg_format(text, nhtml);
 
 		if (!sent) sent = time(NULL);
 
 		debug_function("[jabber,message] type = %s\n", __(type));
 		if (!xstrcmp(type, "groupchat")) {
-			char *tuid = xstrrchr(uid, '/');				/* temporary */
+			char *tuid = xstrchr(uid, '/');				/* temporary */
 			char *uid2 = (tuid) ? xstrndup(uid, tuid-uid) : xstrdup(uid);		/* muc room */
 			char *nick = (tuid) ? xstrdup(tuid+1) : NULL;				/* nickname */
 			newconference_t *c = newconference_find(s, uid2);
@@ -1007,7 +994,10 @@ JABBER_HANDLER(jabber_handle_message) {
 					else						attr[0] = ' ';
 
 
-				} else debug_error("[MUC, MESSAGE] userlist_find_u(%s) failed\n", nick);
+				} else {
+					debug_error("[MUC, MESSAGE] userlist_find_u(%s) failed\n", nick);
+					return;
+				}
 
 				formatted = format_string(format_find(
 							is_me ? ( isour ? "jabber_muc_me_sent" : "jabber_muc_me" )
@@ -1213,7 +1203,7 @@ static void jabber_handle_xmldata_result(session_t *s, xmlnode_t *form, const ch
 		} else debug_error("jabber_handle_xmldata_result() name: %s\n", form->name);
 	}
 	if (print_end) print("jabber_form_end", session_name(s), uid, "");
-	array_free(labels);
+	g_strfreev(labels);
 }
 
 struct jabber_iq_generic_handler {
@@ -1387,15 +1377,23 @@ JABBER_HANDLER(jabber_handle_iq) {
 }
 
 static inline int jabber_status_int(int tlen, const char *text) {
-	if (!tlen && !xstrcasecmp(text, "online"))
-		return EKG_STATUS_AVAIL;
-
-	if (tlen && !xstrcasecmp(text, "available"))
+	if (!xstrcasecmp(text, "online") || !xstrcasecmp(text, "available"))
 		return EKG_STATUS_AVAIL;
 
 	return ekg_status_int(text);
 }
 
+static status_t role_and_affiliation_to_ekg2_status(char *role, char * affiliation) {
+	if(!xstrcmp(role, "moderator"))
+		return xstrcmp(affiliation, "owner") ? EKG_STATUS_AVAIL : EKG_STATUS_FFC;
+	else if (!xstrcmp(role,"participant"))
+		return EKG_STATUS_AWAY;
+	else if (!xstrcmp(role, "visitor"))
+		return EKG_STATUS_XA;
+	else /* none */
+		return EKG_STATUS_NA;
+}
+									    
 JABBER_HANDLER(jabber_handle_presence) {
 	jabber_private_t *j = s->priv;
 
@@ -1529,14 +1527,14 @@ JABBER_HANDLER(jabber_handle_presence) {
 
 						if (ulist) {
 							jabber_userlist_private_t *up = jabber_userlist_priv_get(ulist);
-							ulist->status = EKG_STATUS_AVAIL;
+							ulist->status = role_and_affiliation_to_ekg2_status(role, affiliation);
 							
 							if (up) {
 								up->role	= xstrdup(role);
 								up->aff		= xstrdup(affiliation);
 							}
 						}
-						query_emit_id(NULL, USERLIST_REFRESH);
+						query_emit(NULL, "userlist-refresh");
 						debug("[MUC, PRESENCE] NEWITEM: %s (%s) ROLE:%s AFF:%s\n", nickjid, __(jid), role, affiliation);
 						xfree(nickjid);
 						xfree(jid); xfree(role); xfree(affiliation);
@@ -1607,12 +1605,11 @@ JABBER_HANDLER(jabber_handle_presence) {
 			descr = saprintf("(%s) %s", ecode, __(etext));
 			xfree(etext);
 
-			if (!istlen && (atoi(ecode) == 403 || atoi(ecode) == 401)) /* we lack auth */
+			if (!istlen && ecode && (atoi(ecode) == 403 || atoi(ecode) == 401)) /* we lack auth */
 				status = EKG_STATUS_UNKNOWN; /* shall we remove the error description? */
 			else
 				status = EKG_STATUS_ERROR;
 			na = 1;
-
 			if (istlen) { /* we need to get&fix the UID - userlist entry is sent with @tlen.pl, but error with user-given host */
 				char *tmp	= tlenjabber_unescape(jabber_attr(n->atts, "to"));
 				char *atsign	= xstrchr(tmp, '@');
@@ -1695,7 +1692,7 @@ static void newmail_common(session_t *s) { /* maybe inline? */
 	if (config_sound_mail_file) 
 		play_sound(config_sound_mail_file);
 	else if (config_jabber_beep_mail)
-		query_emit_id(NULL, UI_BEEP, NULL);
+		query_emit(NULL, "ui-beep", NULL);
 	/* XXX, we NEED to connect to MAIL_COUNT && display info about mail like mail plugin do. */
 	/* XXX, emit events */
 }

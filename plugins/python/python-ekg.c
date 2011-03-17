@@ -17,32 +17,17 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include <sys/types.h>
 
 #include <stdlib.h>
-#define __USE_POSIX /* needed for fileno() */
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <Python.h>
-
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-
-#include <ekg/commands.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/userlist.h>
-#include <ekg/scripts.h>
-#include <ekg/vars.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
 
 #include "python.h"
 #include "python-ekg.h"
@@ -247,11 +232,8 @@ PyObject *ekg_cmd_command_bind(PyObject * self, PyObject * args)
 	scr = python_find_script(module);
 
 	debug("[python] binding command %s to python function\n", bind_command);
-#ifdef SCRIPTS_NEW
-	script_command_bind(&python_lang, scr, bind_command, NULL, NULL, callback);
-#else
-	script_command_bind(&python_lang, scr, bind_command, callback);
-#endif
+
+	script_command_bind(&python_lang, scr, bind_command, "?", NULL, callback);
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -410,17 +392,16 @@ PyObject *ekg_cmd_debug(PyObject * self, PyObject * pyargs)
 PyObject *ekg_cmd_plugins(PyObject * self, PyObject * pyargs)
 {
 	PyObject *list;
-	plugin_t *p;
+	GSList *pl;
 	int len = 0;
 
-	for (p = plugins; p; p = p->next) {
-		len++;
-	}
+    len = g_slist_length(plugins);
 
 	list = PyList_New(len);
 	len = 0;
 
-	for (p = plugins; p; p = p->next) {
+	for (pl = plugins; pl; pl = pl->next) {
+        const plugin_t *p = pl->data;
 		PyList_SetItem(list, len, PyString_FromString(p->name));
 		len++;
 	}

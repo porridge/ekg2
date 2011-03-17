@@ -17,7 +17,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #ifdef HAVE_LIBGPM
 #	include <gpm.h>
@@ -25,17 +25,12 @@
 
 #include <stdlib.h>
 
-#include "ecurses.h"
-
-#include <ekg/bindings.h>
-#include <ekg/debug.h>
-#include <ekg/stuff.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
-
-#include "old.h"
+#include "nc-stuff.h"
+#include "bindings.h"
 #include "contacts.h"
+#include "input.h"
 #include "mouse.h"
+#include "statusbar.h"
 
 	/* imported bindings */
 BINDING_FUNCTION(binding_previous_only_history);
@@ -48,7 +43,7 @@ int mouse_initialized = 0;
  * 
  * should show mouse pointer 
  */
-static void show_mouse_pointer() {
+static void show_mouse_pointer(void) {
 #ifdef HAVE_LIBGPM
 	if (gpm_visiblepointer) {
 		Gpm_Event event;
@@ -72,6 +67,7 @@ static TIMER(ncurses_mouse_timer)
 	return 0;
 }
 
+#ifdef HAVE_LIBGPM
 /*
  * ncurses_mouse_move_handler()
  * 
@@ -82,6 +78,40 @@ static void ncurses_mouse_move_handler(int x, int y)
 	/* debug("%d %d | %d\n", x, y); */
 
 	/* add function that should be done when mouse move is done */
+}
+#endif
+
+/*
+ * ncurses_lastlog_mouse_handler()
+ *
+ * handler for mouse events in lastlog window
+ */
+void ncurses_lastlog_mouse_handler(int x, int y, int mouse_state) {
+	window_t *w = window_exist(WINDOW_LASTLOG_ID);
+
+	if (mouse_state == EKG_SCROLLED_UP) {
+		binding_helper_scroll(w, -1);
+	} else if (mouse_state == EKG_SCROLLED_DOWN) {
+		binding_helper_scroll(w, +1);
+	} else if (mouse_state == EKG_BUTTON3_DOUBLE_CLICKED) {
+		window_kill(w);
+		ncurses_resize();
+		ncurses_commit();
+	}
+}
+
+/*
+ * ncurses_main_window_mouse_handler()
+ *
+ * handler for mouse events in main window
+ */
+void ncurses_main_window_mouse_handler(int x, int y, int mouse_state)
+{
+	if (mouse_state == EKG_SCROLLED_UP) {
+		binding_helper_scroll(window_current, -5);
+	} else if (mouse_state == EKG_SCROLLED_DOWN) {
+		binding_helper_scroll(window_current, +5);
+	}
 }
 
 /* 
@@ -162,12 +192,13 @@ void ncurses_mouse_clicked_handler(int x, int y, int mouse_flag)
 				else if (mouse_flag == EKG_SCROLLED_DOWN)
 					binding_next_only_history(NULL);
 				else if (mouse_flag == EKG_BUTTON1_CLICKED) {
+						/* XXX, check, cleanup */
 						/* the plugin already calculates offset incorrectly,
 						 * so we shall follow it */
-					const int promptlen	= ncurses_current ? ncurses_current->prompt_real_len : 0;
+					const int promptlen	= ncurses_current ? ncurses_current->prompt_len : 0;
 					const int linelen	= xwcslen(ncurses_line);
 
-					line_index = x - promptlen;
+					line_index = x - promptlen + line_start;
 
 					if (line_index < 0)
 						line_index = 0;
@@ -181,19 +212,19 @@ void ncurses_mouse_clicked_handler(int x, int y, int mouse_flag)
 					else
 						lines_start = 0;
 				} else if (mouse_flag == EKG_SCROLLED_DOWN) {
-					const int lines_count = array_count((char **) ncurses_lines);
+					const int lines_count = g_strv_length((char **) ncurses_lines);
 
 					if (lines_start < lines_count - 2)
 						lines_start += 2;
 					else
 						lines_start = lines_count - 1;
 				} else if (mouse_flag == EKG_BUTTON1_CLICKED) {
-					const int lines_count = array_count((char **) ncurses_lines);
+					const int lines_count = g_strv_length((char **) ncurses_lines);
 
 					lines_index = lines_start + y;
 					if (lines_index >= lines_count)
 						lines_index = lines_count - 1;
-					line_index = x;
+					line_index = x + line_start;
 					ncurses_lines_adjust();
 				}
 			}
@@ -273,14 +304,12 @@ static WATCHER(ncurses_gpm_watch_handler)
 #endif
 
 static int ncurses_has_mouse_support(const char *term) {
-#ifdef HAVE_NCURSES_TERMINFO
 	const char *km = tigetstr("kmous");
 
 	if (km == (void*) -1 || (km && !*km))
 		km = NULL;
 	if (km)
 		return 1;
-#endif
 
 #ifdef HAVE_LIBGPM
 	if (gpm_fd == -2)
@@ -341,7 +370,7 @@ void ncurses_enable_mouse(const char *env) {
  * it should disable mouse and destroy everything
  * connected with it's support
  */
-void ncurses_disable_mouse()
+void ncurses_disable_mouse(void)
 {
 	if (!mouse_initialized)
 		return;

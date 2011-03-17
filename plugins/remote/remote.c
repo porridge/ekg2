@@ -16,6 +16,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "ekg2.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,21 +33,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
-
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/vars.h>
-#include <ekg/xmalloc.h>
-#include <ekg/queries.h>
-
-#include <ekg/commands.h>
-
-#ifndef HAVE_STRLCPY
-#  include "compat/strlcpy.h"
-#endif
 
 typedef enum {
 	RC_INPUT_PIPE = 1,		/* pipe:/home/user/.ekg/pipe */
@@ -150,7 +137,7 @@ static const char *rc_var_get_value(variable_t *v) {
 		case VAR_INT:
 		case VAR_BOOL:
 		case VAR_MAP:
-			return itoa(*((int *) v->ptr));
+			return ekg_itoa(*((int *) v->ptr));
 
 		case VAR_THEME:
 		case VAR_FILE:
@@ -166,7 +153,7 @@ static const char *rc_var_get_value(variable_t *v) {
 
 static char *rc_fstring_reverse(fstring_t *fstr) {
 	const char *str;
-	const short *attr;
+	const fstr_attr_t *attr;
 	string_t asc;
 	int i;
 
@@ -174,7 +161,7 @@ static char *rc_fstring_reverse(fstring_t *fstr) {
 		return NULL;
 
 	attr = fstr->attr;
-	str = fstr->str.b;
+	str = fstr->str;
 
 	if (!attr || !str)
 		return NULL;
@@ -387,21 +374,21 @@ static WATCHER_LINE(rc_input_handler_line) {
 
 			if (!r->login_ok) {
 				remote_writefd(fd, "-LOGIN", NULL);
-				array_free(arr);
+				g_strfreev(arr);
 				return -1;
 			}
 
 			remote_writefd(fd, "+LOGIN", NULL);
 			if (rc_last_mail_count > 0)
-				remote_writefd(fd, "MAILCOUNT", itoa(rc_last_mail_count), NULL);		/* nie najszczesliwsze miejsce, ale nie mam pomyslu gdzie indziej */
+				remote_writefd(fd, "MAILCOUNT", ekg_itoa(rc_last_mail_count), NULL);		/* nie najszczesliwsze miejsce, ale nie mam pomyslu gdzie indziej */
 
 		} else {
 			debug_error("unknown command: %s\n", arr[0]);
-			array_free(arr);
+			g_strfreev(arr);
 			return -1;
 		}
 
-		array_free(arr);
+		g_strfreev(arr);
 		return 0;
 	}
 
@@ -412,11 +399,12 @@ static WATCHER_LINE(rc_input_handler_line) {
 
 /* synchronization ekg2-remote <==> ekg2 */
 		} else if (!xstrcmp(cmd, "REQCONFIG")) {
-			variable_t *v;
+			GSList *vl;
 
 			/* xxx, maybe send all variable which got (->display > 0) */
 
-			for (v = variables; v; v = v->next) {
+			for (vl = variables; vl; vl = vl->next) {
+				variable_t *v = vl->data;
 				const char *_val;
 
 				if (v->plugin == &remote_plugin)
@@ -429,7 +417,7 @@ static WATCHER_LINE(rc_input_handler_line) {
 			/* BIGNOTE: 
 			 * 	here send all remote-vars, which we want to show outside
 			 */
-			remote_writefd(fd, "CONFIG", "remote:detach", itoa(rc_detach), NULL);
+			remote_writefd(fd, "CONFIG", "remote:detach", ekg_itoa(rc_detach), NULL);
 			remote_writefd(fd, "CONFIG", "remote:remote_control", rc_paths, NULL);
 			remote_writefd(fd, "+CONFIG", NULL);
 
@@ -447,11 +435,12 @@ static WATCHER_LINE(rc_input_handler_line) {
 			remote_writefd(fd, "+UICONFIG", NULL);
 
 		} else if (!xstrcmp(cmd, "REQCOMMANDS")) {
-			command_t *c;
+			GSList *cl;
 
-			for (c = commands; c; c = c->next) {
+			for (cl = commands; cl; cl = cl->next) {
+				command_t *c = cl->data;
 				if (c->params) {
-					char *tmp = array_join(c->params, " ");
+					char *tmp = g_strjoinv(" ", c->params);
 					remote_writefd(fd, "COMMAND", c->name, tmp, NULL);
 					xfree(tmp);
 				} else
@@ -460,10 +449,11 @@ static WATCHER_LINE(rc_input_handler_line) {
 			remote_writefd(fd, "+COMMAND", NULL);
 
 		} else if (!xstrcmp(cmd, "REQPLUGINS")) {
-			plugin_t *p;
+			GSList *pl;
 
-			for (p = plugins; p; p = p->next) {
-				remote_writefd(fd, "PLUGIN", p->name, itoa(p->prio), NULL);
+			for (pl = plugins; pl; pl = pl->next) {
+				const plugin_t *p = pl->data;
+				remote_writefd(fd, "PLUGIN", p->name, ekg_itoa(p->prio), NULL);
 
 				if (p->params) {
 					int i;
@@ -514,7 +504,7 @@ static WATCHER_LINE(rc_input_handler_line) {
 						/* XXX, zakladamy ze backlog jest posortowany w/g czasu */
 
 						for (i = from; i; i--) {
-							remote_writefd(fd, "BACKLOG", itoa(w->id), itoa(n->backlog[i-1]->ts), n->backlog[i-1]->str, NULL);
+							remote_writefd(fd, "BACKLOG", ekg_itoa(w->id), ekg_itoa(n->backlog[i-1]->ts), n->backlog[i-1]->str, NULL);
 						}
 					}
 				} else if (!xstrcmp(arr[1], "FROMTIME")) {
@@ -531,7 +521,7 @@ static WATCHER_LINE(rc_input_handler_line) {
 
 						for (i = n->backlog_size; i; i--) {
 							if (n->backlog[i-1]->ts >= ts)
-								remote_writefd(fd, "BACKLOG", itoa(w->id), itoa(n->backlog[i-1]->ts), n->backlog[i-1]->str, NULL);
+								remote_writefd(fd, "BACKLOG", ekg_itoa(w->id), ekg_itoa(n->backlog[i-1]->ts), n->backlog[i-1]->str, NULL);
 						}
 					}
 				}
@@ -545,7 +535,7 @@ static WATCHER_LINE(rc_input_handler_line) {
 						continue;
 
 					for (i = n->backlog_size; i; i--) {
-						remote_writefd(fd, "BACKLOG", itoa(w->id), itoa(n->backlog[i-1]->ts), n->backlog[i-1]->str, NULL);
+						remote_writefd(fd, "BACKLOG", ekg_itoa(w->id), ekg_itoa(n->backlog[i-1]->ts), n->backlog[i-1]->str, NULL);
 					}
 				}
 			}
@@ -557,10 +547,10 @@ static WATCHER_LINE(rc_input_handler_line) {
 
 			for (s = sessions; s; s = s->next) {
 				remote_writefd(fd, "SESSION", s->uid, (s->plugin) ? ((plugin_t *) s->plugin)->name : "-", NULL);
-				remote_writefd(fd, "SESSIONINFO", s->uid, "STATUS", itoa(s->status), NULL);
+				remote_writefd(fd, "SESSIONINFO", s->uid, "STATUS", ekg_itoa(s->status), NULL);
 
 				if (s->connected)
-					remote_writefd(fd, "SESSIONINFO", s->uid, "CONNECTED", itoa(s->connected), NULL);
+					remote_writefd(fd, "SESSIONINFO", s->uid, "CONNECTED", ekg_itoa(s->connected), NULL);
 				if (s->alias)
 					remote_writefd(fd, "SESSIONINFO", s->uid, "ALIAS", s->alias, NULL);
 			}
@@ -572,25 +562,25 @@ static WATCHER_LINE(rc_input_handler_line) {
 			for (w = windows; w; w = w->next) {
 				remote_window_t *n;
 
-				remote_writefd(fd, "WINDOW", itoa(w->id), w->target, NULL);	/* NOTE: w->target can be NULL */
+				remote_writefd(fd, "WINDOW", ekg_itoa(w->id), w->target, NULL);	/* NOTE: w->target can be NULL */
 
 				if (w->alias)
-					remote_writefd(fd, "WINDOWINFO", itoa(w->id), "ALIAS", w->alias, NULL);
+					remote_writefd(fd, "WINDOWINFO", ekg_itoa(w->id), "ALIAS", w->alias, NULL);
 				if (w->session)
-					remote_writefd(fd, "WINDOWINFO", itoa(w->id), "SESSION", w->session->uid, NULL);
+					remote_writefd(fd, "WINDOWINFO", ekg_itoa(w->id), "SESSION", w->session->uid, NULL);
 				if (w->act)
-					remote_writefd(fd, "WINDOWINFO", itoa(w->id), "ACTIVITY", itoa(w->act), NULL);
+					remote_writefd(fd, "WINDOWINFO", ekg_itoa(w->id), "ACTIVITY", ekg_itoa(w->act), NULL);
 
 				if ((n = w->priv_data)) {
 					if (n->last_irctopic)
-						remote_writefd(fd, "WINDOWINFO", itoa(w->id), "IRCTOPIC", n->last_irctopic, NULL);
+						remote_writefd(fd, "WINDOWINFO", ekg_itoa(w->id), "IRCTOPIC", n->last_irctopic, NULL);
 					if (n->last_irctopicby)
-						remote_writefd(fd, "WINDOWINFO", itoa(w->id), "IRCTOPICBY", n->last_irctopicby, NULL);
+						remote_writefd(fd, "WINDOWINFO", ekg_itoa(w->id), "IRCTOPICBY", n->last_irctopicby, NULL);
 					if (n->last_ircmode)
-						remote_writefd(fd, "WINDOWINFO", itoa(w->id), "IRCTOPICMODE", n->last_ircmode, NULL);
+						remote_writefd(fd, "WINDOWINFO", ekg_itoa(w->id), "IRCTOPICMODE", n->last_ircmode, NULL);
 				}
 			}
-			remote_writefd(fd, "WINDOW_SWITCH", itoa(window_current->id), NULL);
+			remote_writefd(fd, "WINDOW_SWITCH", ekg_itoa(window_current->id), NULL);
 			remote_writefd(fd, "+WINDOW", NULL);
 
 		} else if (!xstrcmp(cmd, "REQUSERLISTS")) {
@@ -604,7 +594,7 @@ static WATCHER_LINE(rc_input_handler_line) {
 			for (s = sessions; s; s = s->next) {
 				for (u = s->userlist; u; u = u->next) {
 					char *groups = (u->groups) ? group_to_string(u->groups, 1, 0) : NULL;
-					remote_writefd(fd, "SESSIONITEM", s->uid, fix(u->uid), itoa(u->status), fix(u->nickname), fix(groups), fix(u->descr), NULL);
+					remote_writefd(fd, "SESSIONITEM", s->uid, fix(u->uid), ekg_itoa(u->status), fix(u->nickname), fix(groups), fix(u->descr), NULL);
 					xfree(groups);
 				}
 			}
@@ -613,7 +603,7 @@ static WATCHER_LINE(rc_input_handler_line) {
 			for (w = windows; w; w = w->next) {
 				for (u = w->userlist; u; u = u->next) {
 					char *groups = (u->groups) ? group_to_string(u->groups, 1, 0) : NULL;
-					remote_writefd(fd, "WINDOWITEM", itoa(w->id), fix(u->uid), itoa(u->status), fix(u->nickname), fix(groups), fix(u->descr), NULL);
+					remote_writefd(fd, "WINDOWITEM", ekg_itoa(w->id), fix(u->uid), ekg_itoa(u->status), fix(u->nickname), fix(groups), fix(u->descr), NULL);
 					xfree(groups);
 				}
 
@@ -658,7 +648,7 @@ static WATCHER_LINE(rc_input_handler_line) {
 			debug_error("unknown command: %s\n", cmd);
 		}
 	}
-	array_free(arr);
+	g_strfreev(arr);
 	return 0;
 }
 
@@ -771,7 +761,7 @@ static int rc_input_new_inet(const char *path, int type)
 {
 	struct sockaddr_in sin;
 	int port, fd;
-	uint32_t addr = INADDR_ANY;
+	guint32 addr = INADDR_ANY;
 
 	if (xstrchr(path, ':')) {
 		char *tmp = xstrdup(path), *c = xstrchr(tmp, ':');
@@ -784,7 +774,7 @@ static int rc_input_new_inet(const char *path, int type)
 		port = atoi(path);
 
 	sin.sin_family = AF_INET;
-	sin.sin_port = htons(port);
+	sin.sin_port = g_htons(port);
 	sin.sin_addr.s_addr = addr;
 
 	if ((fd = socket(AF_INET, type, 0)) == -1) {
@@ -865,7 +855,7 @@ static int rc_input_new_unix(const char *path)
 	int fd;
 
 	beeth.sun_family = AF_UNIX;
-	strlcpy(beeth.sun_path, path, sizeof(beeth.sun_path));
+	g_strlcpy(beeth.sun_path, path, sizeof(beeth.sun_path));
 
 	if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 		debug("[rc] socket() failed: %s\n", strerror(errno));
@@ -1025,7 +1015,7 @@ static void rc_paths_changed(const char *name) {
 		rc_input_close(r);		/* it'll remove l->data */
 	}
 
-	array_free(paths);
+	g_strfreev(paths);
 }
 
 static int remote_window_new(window_t *w) {
@@ -1112,7 +1102,7 @@ static QUERY(remote_postinit) {
 	printf("\n");
 	printf("remote:remote_control (Current value: %s)\n", rc_paths ? rc_paths : "null");
 	printf("\te.g.: tcp:127.0.0.1:1234;tcp:1234;udp:127.0.0.1:1234;unix:mysocket;pipe:/tmp/mypipe\n");
-	printf("\t      (tcp:* or unix:* is prefered!\n");
+	printf("\t      (tcp:* or unix:* is preferred!\n");
 
 	do {
 		char *tmp;
@@ -1130,7 +1120,7 @@ static QUERY(remote_postinit) {
 	printf("\n");
 
 	/* XXX, haslo pozniej */
-	variable_set("remote:password", itoa(getpid()));
+	variable_set("remote:password", ekg_itoa(getpid()));
 	printf("Your password is: %s\n", rc_password);
 
 	variable_set("remote:first_run", "0");
@@ -1153,20 +1143,20 @@ static QUERY(remote_ui_is_initialized) {
 static QUERY(remote_ui_window_clear) {
 	window_t *w	= *(va_arg(ap, window_t **));
 
-	remote_broadcast("WINDOW_CLEAR", itoa(w->id), NULL);
+	remote_broadcast("WINDOW_CLEAR", ekg_itoa(w->id), NULL);
 	return 0;
 }
 
 static QUERY(remote_ui_window_new) {
 	window_t *w	= *(va_arg(ap, window_t **));
 
-	remote_broadcast("WINDOW_NEW", itoa(w->id), w->target, NULL);	/* w->target can be NULL */
+	remote_broadcast("WINDOW_NEW", ekg_itoa(w->id), w->target, NULL);	/* w->target can be NULL */
 
 	if (w->alias)
-		remote_broadcast("WINDOWINFO", itoa(w->id), "ALIAS", w->alias, NULL);
+		remote_broadcast("WINDOWINFO", ekg_itoa(w->id), "ALIAS", w->alias, NULL);
 
 	if (w->session)
-		remote_broadcast("WINDOWINFO", itoa(w->id), "SESSION", w->session->uid, NULL);
+		remote_broadcast("WINDOWINFO", ekg_itoa(w->id), "SESSION", w->session->uid, NULL);
 
 	remote_window_new(w);
 	return 0;
@@ -1175,7 +1165,7 @@ static QUERY(remote_ui_window_new) {
 static QUERY(remote_ui_window_kill) {
 	window_t *w	= *(va_arg(ap, window_t **));
 
-	remote_broadcast("WINDOW_KILL", itoa(w->id), NULL);
+	remote_broadcast("WINDOW_KILL", ekg_itoa(w->id), NULL);
 
 	remote_window_kill(w);
 	return 0;
@@ -1184,19 +1174,19 @@ static QUERY(remote_ui_window_kill) {
 static QUERY(remote_ui_window_switch) {
 	window_t *w	= *(va_arg(ap, window_t **));
 
-	remote_broadcast("WINDOW_SWITCH", itoa(w->id), NULL);
+	remote_broadcast("WINDOW_SWITCH", ekg_itoa(w->id), NULL);
 	return 0;
 }
 
 static QUERY(remote_ui_window_print) {
 	window_t *w	= *(va_arg(ap, window_t **));
-	fstring_t *line = *(va_arg(ap, fstring_t **));
+	const fstring_t *line = *(va_arg(ap, const fstring_t **));
 	char *fstr;
 
 	remote_window_t *n;
 
 	if (w == window_debug)		/* XXX! */
-		goto cleanup;
+		return -1;
 
 	if (!(n = w->priv_data)) { 
 		/* BUGFIX, cause @ ui-window-print handler (not ncurses plugin one, ncurses plugin one is called last cause of 0 prio)
@@ -1215,11 +1205,9 @@ static QUERY(remote_ui_window_print) {
 		remote_backlog_add(w, ln);
 	}
 
-	remote_broadcast("WINDOW_PRINT", itoa(w->id), itoa(line->ts), fstr, NULL);		/* XXX, using id is ok? */
+	remote_broadcast("WINDOW_PRINT", ekg_itoa(w->id), ekg_itoa(line->ts), fstr, NULL);		/* XXX, using id is ok? */
 
-cleanup:
-	fstring_free(line);
-	return -1;		/* XXX, sry, jak ktos potrzebuje tego stringa oprocz nas, to go nie dostanie. (memleaki sa gorsze) */
+	return -1;
 }
 
 static QUERY(remote_session_added) {
@@ -1233,7 +1221,7 @@ static QUERY(remote_session_added) {
 	}
 
 	remote_broadcast("SESSION", s->uid, (s->plugin) ? ((plugin_t *) s->plugin)->name : "-", NULL);
-	remote_broadcast("SESSIONINFO", s->uid, "STATUS", itoa(s->status), NULL);
+	remote_broadcast("SESSIONINFO", s->uid, "STATUS", ekg_itoa(s->status), NULL);
 
 	/* NOTE; assuming: connected = 0, alias = NULL */
 	return 0;
@@ -1280,9 +1268,9 @@ static QUERY(remote_ui_window_target_changed) {
 	window_t *w = *(va_arg(ap, window_t **));
 
 /* wysylamy wszystko, bo nie wiemy co sie zmienilo, a co nie */
-	remote_broadcast("WINDOWINFO", itoa(w->id), "ALIAS", w->alias, NULL);
-	remote_broadcast("WINDOWINFO", itoa(w->id), "TARGET", w->target, NULL);
-	remote_broadcast("WINDOWINFO", itoa(w->id), "SESSION", w->session ? w->session->uid : NULL, NULL);
+	remote_broadcast("WINDOWINFO", ekg_itoa(w->id), "ALIAS", w->alias, NULL);
+	remote_broadcast("WINDOWINFO", ekg_itoa(w->id), "TARGET", w->target, NULL);
+	remote_broadcast("WINDOWINFO", ekg_itoa(w->id), "SESSION", w->session ? w->session->uid : NULL, NULL);
 	return 0;
 }
 
@@ -1290,7 +1278,7 @@ static QUERY(remote_ui_window_act_changed) {
 	window_t *w = *(va_arg(ap, window_t **));		/* note: since r4642 */
 	/* XXX, in_typing */
 
-	remote_broadcast("WINDOWINFO", itoa(w->id), "ACTIVITY", itoa(w->act), NULL);
+	remote_broadcast("WINDOWINFO", ekg_itoa(w->id), "ACTIVITY", ekg_itoa(w->act), NULL);
 	return 0;
 }
 
@@ -1336,7 +1324,7 @@ static QUERY(remote_userlist_changed) {
 		return 0;
 	}
 
-	remote_broadcast("USERINFO", s->uid, u->uid, itoa(u->status), u->descr, NULL);
+	remote_broadcast("USERINFO", s->uid, u->uid, ekg_itoa(u->status), u->descr, NULL);
 
 	return 0;
 }
@@ -1393,10 +1381,10 @@ static TIMER(remote_statusbar_timer) {
 	if (type)
 		return 0;
 
-	if (query_emit_id(NULL, MAIL_COUNT, &mail_count) != -2) {
+	if (query_emit(NULL, "mail-count", &mail_count) != -2) {
 		if (mail_count != rc_last_mail_count) {
 			rc_last_mail_count = mail_count;
-			remote_broadcast("MAILCOUNT", itoa(mail_count), NULL);
+			remote_broadcast("MAILCOUNT", ekg_itoa(mail_count), NULL);
 		}
 	}
 
@@ -1407,24 +1395,24 @@ static TIMER(remote_statusbar_timer) {
 	r = window_current->priv_data;
 
 	irctopic = irctopicby = ircmode = NULL;
-	query_emit_id(NULL, IRC_TOPIC, &irctopic, &irctopicby, &ircmode);
+	query_emit(NULL, "irc-topic", &irctopic, &irctopicby, &ircmode);
 
 	if (xstrcmp(irctopic, r->last_irctopic)) {
 		xfree(r->last_irctopic);
 		r->last_irctopic = irctopic;
-		remote_broadcast("WINDOWINFO", itoa(window_current->id), "IRCTOPIC", irctopic, NULL);
+		remote_broadcast("WINDOWINFO", ekg_itoa(window_current->id), "IRCTOPIC", irctopic, NULL);
 	}
 
 	if (xstrcmp(irctopicby, r->last_irctopicby)) {
 		xfree(r->last_irctopicby);
 		r->last_irctopicby = irctopicby;
-		remote_broadcast("WINDOWINFO", itoa(window_current->id), "IRCTOPICBY", irctopicby, NULL);
+		remote_broadcast("WINDOWINFO", ekg_itoa(window_current->id), "IRCTOPICBY", irctopicby, NULL);
 	}
 
 	if (xstrcmp(ircmode, r->last_ircmode)) {
 		xfree(r->last_ircmode);
 		r->last_ircmode = ircmode;
-		remote_broadcast("WINDOWINFO", itoa(window_current->id), "IRCTOPICMODE", ircmode, NULL);
+		remote_broadcast("WINDOWINFO", ekg_itoa(window_current->id), "IRCTOPICMODE", ircmode, NULL);
 	}
 
 	return 0;
@@ -1520,7 +1508,7 @@ EXPORT int remote_plugin_init(int prio) {
 
 	PLUGIN_CHECK_VER("remote");
 
-	query_emit_id(NULL, UI_IS_INITIALIZED, &is_UI);
+	query_emit(NULL, "ui-is-initialized", &is_UI);
 
 	if (is_UI)
 		return -1;
@@ -1532,60 +1520,60 @@ EXPORT int remote_plugin_init(int prio) {
 	variable_add(&remote_plugin, ("remote_control"), VAR_STR, 1, &rc_paths, rc_paths_changed, NULL, NULL);
 	variable_add(&remote_plugin, ("password"), VAR_STR, 0, &rc_password, NULL, NULL, NULL);
 
-	query_connect_id(&remote_plugin, UI_IS_INITIALIZED, remote_ui_is_initialized, NULL);
-	query_connect_id(&remote_plugin, CONFIG_POSTINIT, remote_postinit, NULL);
+	query_connect(&remote_plugin, "ui-is-initialized", remote_ui_is_initialized, NULL);
+	query_connect(&remote_plugin, "config-postinit", remote_postinit, NULL);
 
-	query_connect_id(&remote_plugin, UI_WINDOW_SWITCH, remote_ui_window_switch, NULL);
-	query_connect_id(&remote_plugin, UI_WINDOW_KILL, remote_ui_window_kill, NULL);
-	query_connect_id(&remote_plugin, UI_BEEP, remote_ui_beep, NULL);
-	query_connect_id(&remote_plugin, UI_WINDOW_PRINT, remote_ui_window_print, NULL);
-	query_connect_id(&remote_plugin, UI_WINDOW_CLEAR, remote_ui_window_clear, NULL);
-	query_connect_id(&remote_plugin, UI_WINDOW_NEW, remote_ui_window_new, NULL);
-	query_connect_id(&remote_plugin, UI_WINDOW_TARGET_CHANGED, remote_ui_window_target_changed, NULL);
-	query_connect_id(&remote_plugin, UI_WINDOW_ACT_CHANGED, remote_ui_window_act_changed, NULL);
-	query_connect_id(&remote_plugin, VARIABLE_CHANGED, remote_variable_changed, NULL);
+	query_connect(&remote_plugin, "ui-window-switch", remote_ui_window_switch, NULL);
+	query_connect(&remote_plugin, "ui-window-kill", remote_ui_window_kill, NULL);
+	query_connect(&remote_plugin, "ui-beep", remote_ui_beep, NULL);
+	query_connect(&remote_plugin, "ui-window-print", remote_ui_window_print, NULL);
+	query_connect(&remote_plugin, "ui-window-clear", remote_ui_window_clear, NULL);
+	query_connect(&remote_plugin, "ui-window-new", remote_ui_window_new, NULL);
+	query_connect(&remote_plugin, "ui-window-target-changed", remote_ui_window_target_changed, NULL);
+	query_connect(&remote_plugin, "ui-window-act-changed", remote_ui_window_act_changed, NULL);
+	query_connect(&remote_plugin, "variable-changed", remote_variable_changed, NULL);
 
-	query_connect_id(&remote_plugin, SESSION_ADDED, remote_session_added, NULL);
+	query_connect(&remote_plugin, "session-added", remote_session_added, NULL);
 
 	/* SESSION_EVENT */
-	query_connect_id(&remote_plugin, PROTOCOL_CONNECTED, remote_protocol_connected, NULL);
-	query_connect_id(&remote_plugin, PROTOCOL_DISCONNECTED, remote_protocol_disconnected, NULL);
+	query_connect(&remote_plugin, "protocol-connected", remote_protocol_connected, NULL);
+	query_connect(&remote_plugin, "protocol-disconnected", remote_protocol_disconnected, NULL);
 
-	query_connect_id(&remote_plugin, SESSION_CHANGED, remote_session_changed, NULL);
-	query_connect_id(&remote_plugin, SESSION_RENAMED, remote_session_renamed, NULL);
+	query_connect(&remote_plugin, "session-changed", remote_session_changed, NULL);
+	query_connect(&remote_plugin, "session-renamed", remote_session_renamed, NULL);
 
-	query_connect_id(&remote_plugin, USERLIST_CHANGED, remote_userlist_changed, NULL);
-	query_connect_id(&remote_plugin, USERLIST_REFRESH, remote_userlist_refresh, NULL);
+	query_connect(&remote_plugin, "userlist-changed", remote_userlist_changed, NULL);
+	query_connect(&remote_plugin, "userlist-refresh", remote_userlist_refresh, NULL);
 #if 0
 
-	query_connect_id(&remote_plugin, UI_WINDOW_TARGET_CHANGED, ncurses_ui_window_target_changed, NULL);
-	query_connect_id(&remote_plugin, UI_WINDOW_REFRESH, ncurses_ui_window_refresh, NULL);
-	query_connect_id(&remote_plugin, UI_WINDOW_UPDATE_LASTLOG, ncurses_ui_window_lastlog, NULL);
-	query_connect_id(&remote_plugin, UI_REFRESH, ncurses_ui_refresh, NULL);
-	query_connect_id(&remote_plugin, SESSION_REMOVED, ncurses_statusbar_query, NULL);
-	query_connect_id(&remote_plugin, BINDING_SET, ncurses_binding_set_query, NULL);
-	query_connect_id(&remote_plugin, BINDING_COMMAND, ncurses_binding_adddelete_query, NULL);
-	query_connect_id(&remote_plugin, BINDING_DEFAULT, ncurses_binding_default, NULL);
-	query_connect_id(&remote_plugin, CONFERENCE_RENAMED, ncurses_conference_renamed, NULL);
+	query_connect(&remote_plugin, "ui-window-target-changed", ncurses_ui_window_target_changed, NULL);
+	query_connect(&remote_plugin, "ui-window-refresh", ncurses_ui_window_refresh, NULL);
+	query_connect(&remote_plugin, "ui-window-update-lastlog", ncurses_ui_window_lastlog, NULL);
+	query_connect(&remote_plugin, "ui-refresh", ncurses_ui_refresh, NULL);
+	query_connect(&remote_plugin, "session-removed", ncurses_statusbar_query, NULL);
+	query_connect(&remote_plugin, "binding-set", ncurses_binding_set_query, NULL);
+	query_connect(&remote_plugin, "binding-command", ncurses_binding_adddelete_query, NULL);
+	query_connect(&remote_plugin, "binding-default", ncurses_binding_default, NULL);
+	query_connect(&remote_plugin, "conference-renamed", ncurses_conference_renamed, NULL);
 
-	query_connect_id(&remote_plugin, PROTOCOL_DISCONNECTING, ncurses_session_disconnect_handler, NULL);
+	query_connect(&remote_plugin, "protocol-disconnecting", ncurses_session_disconnect_handler, NULL);
 #endif
 
 	/* podanie czegokolwiek jako data do remote_all_contacts_changed() powoduje wyzerowanie n->start */
-	query_connect_id(&remote_plugin, UI_REFRESH, remote_all_contacts_changed, (void *) 1);
-	query_connect_id(&remote_plugin, USERLIST_REFRESH, remote_all_contacts_changed, NULL /* ? */);
+	query_connect(&remote_plugin, "ui-refresh", remote_all_contacts_changed, (void *) 1);
+	query_connect(&remote_plugin, "userlist-refresh", remote_all_contacts_changed, NULL /* ? */);
 
-	query_connect_id(&remote_plugin, SESSION_CHANGED, remote_all_contacts_changed, (void *) 1);
-	query_connect_id(&remote_plugin, SESSION_EVENT, remote_all_contacts_changed, NULL);
+	query_connect(&remote_plugin, "session-changed", remote_all_contacts_changed, (void *) 1);
+	query_connect(&remote_plugin, "session-event", remote_all_contacts_changed, NULL);
 
-	query_connect_id(&remote_plugin, METACONTACT_ADDED, remote_all_contacts_changed, NULL);
-	query_connect_id(&remote_plugin, METACONTACT_REMOVED, remote_all_contacts_changed, NULL);
-	query_connect_id(&remote_plugin, METACONTACT_ITEM_ADDED, remote_all_contacts_changed, NULL);
-	query_connect_id(&remote_plugin, METACONTACT_ITEM_REMOVED, remote_all_contacts_changed, NULL);
+	query_connect(&remote_plugin, "metacontact-added", remote_all_contacts_changed, NULL);
+	query_connect(&remote_plugin, "metacontact-removed", remote_all_contacts_changed, NULL);
+	query_connect(&remote_plugin, "metacontact-item-added", remote_all_contacts_changed, NULL);
+	query_connect(&remote_plugin, "metacontact-item-removed", remote_all_contacts_changed, NULL);
 
-	query_connect_id(&remote_plugin, USERLIST_ADDED, remote_all_contacts_changed, NULL);
-	query_connect_id(&remote_plugin, USERLIST_REMOVED, remote_all_contacts_changed, NULL);
-	query_connect_id(&remote_plugin, USERLIST_RENAMED, remote_all_contacts_changed, NULL);
+	query_connect(&remote_plugin, "userlist-added", remote_all_contacts_changed, NULL);
+	query_connect(&remote_plugin, "userlist-removed", remote_all_contacts_changed, NULL);
+	query_connect(&remote_plugin, "userlist-renamed", remote_all_contacts_changed, NULL);
 
 	{
 		int i;

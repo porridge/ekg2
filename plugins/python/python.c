@@ -18,7 +18,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "ekg2-config.h"
+#include "ekg2.h"
 
 #include "python.h"
 #include "python-ekg.h"
@@ -35,21 +35,6 @@
 #include <Python.h>
 #include <compile.h>
 #include <node.h>
-
-#include <ekg/commands.h>
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/scripts.h>
-#include <ekg/xmalloc.h>
-
-#include <ekg/dynstuff.h>
-#include <ekg/protocol.h>
-#include <ekg/stuff.h>
-#include <ekg/themes.h>
-#include <ekg/userlist.h>
-#include <ekg/vars.h>
-
-#include <ekg/queries.h>
 
 /**
  * python_plugin
@@ -220,9 +205,9 @@ int python_query(script_t *scr, script_query_t *scr_que, void **args)
 		return 1;
 	for (i=0; i < scr_que->argc; i++) {
 		PyObject *w = NULL;
-		switch ( scr_que->argv_type[i] ) {
+		switch ( scr_que->argv_type[i] & QUERY_ARG_TYPES ) {
 			case (QUERY_ARG_INT):
-				w = PyInt_FromLong((long) *(int *) args[i] );
+				w = PyInt_FromLong( (long) *(int *) args[i] );
 				break;
 			case (QUERY_ARG_CHARP): {
 				char *tmp = *(char **) args[i];
@@ -231,13 +216,13 @@ int python_query(script_t *scr, script_query_t *scr_que, void **args)
 				break;
 			}
 			case (QUERY_ARG_CHARPP): {
-				char *tmp = array_join((* (char ***) args[i]), " ");
+				char *tmp = g_strjoinv(" ", (* (char ***) args[i]));
 				w = PyString_FromString(tmp); /* CHECK: xstrdup ? */
 				xfree(tmp);
 				break;
 			}
 			default:
-			       debug("[NIMP] %s %d %d\n", __(query_name(scr_que->self->id)), i, scr_que->argv_type[i]);
+			       debug("[NIMP] %s %d %d\n", __(scr_que->self->name), i, scr_que->argv_type[i]);
 		}
 		if (!w) {
 			Py_INCREF(Py_None);
@@ -248,8 +233,10 @@ int python_query(script_t *scr, script_query_t *scr_que, void **args)
 	PYTHON_HANDLE_HEADER(scr_que->priv_data, argz)
 	if (__py_r && PyTuple_Check(__py_r)) { /* __py_r - return value */
 		for (i=0; i < scr_que->argc; i++) {
+			if (scr_que->argv_type[i] & QUERY_ARG_CONST)
+				continue;
 			PyObject *w = PyTuple_GetItem(__py_r, i);
-			switch (scr_que->argv_type[i]) {
+			switch ( scr_que->argv_type[i] & QUERY_ARG_TYPES ) {
 				case (QUERY_ARG_INT):
 					if (PyInt_Check(w)) *( (int *) args[i]) = PyInt_AsLong(w);
 					else debug("[recvback,script error] not int ?!\n");
@@ -399,7 +386,7 @@ char *python_geterror(script_t *s) {
 
 	if ((hook = PyObject_GetAttrString(v, "lineno"))) {
 		string_append_c(str, ':');
-		string_append(str, itoa(PyInt_AsLong(hook)));
+		string_append(str, ekg_itoa(PyInt_AsLong(hook)));
 		Py_DECREF(hook);
 	} 
 	string_append_c(str, '\n');
@@ -645,7 +632,7 @@ int python_plugin_init(int prio)
 	command_add(&python_plugin, ("python:load"),   ("!"),	python_command_load,   COMMAND_ENABLEREQPARAMS, NULL);
 	command_add(&python_plugin, ("python:unload"), ("!"),	python_command_unload, COMMAND_ENABLEREQPARAMS, NULL);
 	command_add(&python_plugin, ("python:list"),   NULL,	python_command_list,   0, NULL);
-	query_connect_id(&python_plugin, PLUGIN_PRINT_VERSION, python_print_version, NULL);
+	query_connect(&python_plugin, "plugin-print-version", python_print_version, NULL);
 
 	return 0;
 }

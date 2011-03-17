@@ -1,11 +1,4 @@
-#include <ekg/debug.h>
-#include <ekg/sessions.h> /* sessions */
-#include <ekg/xmalloc.h>
-#include <ekg/dynstuff.h>
-#include <ekg/plugins.h>
-#include <ekg/queries.h>
-#include <ekg/stuff.h> /* ekg_status_int */
-#include <ekg/userlist.h> /* EKG_STATUS_UNKNOWN */
+#include "ekg2.h"
 #define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
 #include "dbus.h"
@@ -113,8 +106,8 @@ static EKG2_DBUS_IFACE_HANDLER(ekg2_dbus_iface_im_getPresence)
 
 			for (a = pp->protocols; *a; a++) {
 				if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, a)) {
-					debug("ekg2_dbus_iface_im_getProtocols cannot allocate memory?\n");
-					ekg_oom_handler();
+					g_printerr("ekg2_dbus_iface_im_getProtocols cannot allocate memory?\n");
+					abort();
 				}
 			}
 		}

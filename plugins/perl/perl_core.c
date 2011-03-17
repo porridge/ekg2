@@ -51,19 +51,11 @@ static const char *ekg_core_code =
 	"}\n";
 
 
-#ifndef __FreeBSD__
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
-#endif
+#include "ekg2.h"
 
 #include <stdarg.h>
 
-#include <ekg/debug.h>
-#include <ekg/dynstuff.h>
 #include <ekg/scripts.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
-#include <ekg/queries.h>
 #undef _
 
 #include "perl_ekg.h"
@@ -103,7 +95,7 @@ int perl_commands(script_t *scr, script_command_t *comm, char **params)
 	char *tmp;
 	PERL_HANDLER_HEADER((char *) comm->priv_data);
 	XPUSHs(sv_2mortal(new_pv(comm->self->name)));
-	tmp = array_join(params, " ");
+	tmp = g_strjoinv(" ", params);
 	XPUSHs(sv_2mortal(new_pv(tmp)));
 	xfree(tmp);
 
@@ -137,15 +129,15 @@ int perl_query(script_t *scr, script_query_t *scr_que, void *args[])
 	for (i=0; i < scr_que->argc; i++) {
 
 		perlarg = NULL;
-		switch ( scr_que->argv_type[i] ) {
+		switch ( scr_que->argv_type[i] & QUERY_ARG_TYPES ) {
 			case (QUERY_ARG_INT):	/* int */
-				perlarg = newSViv( *(int  *) args[i] );
+				perlarg = newSViv( *(int *) args[i] );
 				break;
 			case (QUERY_ARG_CHARP):  /* char * */
-				perlarg = new_pv(*(char **) args[i]);
+				perlarg = new_pv( *(char **) args[i] );
 				break;
 			case (QUERY_ARG_CHARPP): {/* char ** */
-				char *tmp = array_join((* (char ***) args[i]), " ");
+				char *tmp = g_strjoinv(" ", (* (char ***) args[i]));
 				if (xstrlen(tmp)) 
 					perlarg = new_pv(tmp);
 				xfree(tmp);
@@ -158,7 +150,7 @@ int perl_query(script_t *scr, script_query_t *scr_que, void *args[])
 				perlarg = ekg2_bless(BLESS_FSTRING, 0, (*(fstring_t **) args[i]));
 				break;
 			default:
-				debug("[NIMP] %s %d %d\n", __(query_name(scr_que->self->id)), i, scr_que->argv_type[i]);
+				debug("[NIMP] %s %d %d\n", __(scr_que->self->name), i, scr_que->argv_type[i]);
 		}
 
 		if (!perlarg) perlarg = newSViv(0); // TODO: zmienic. ?
@@ -373,11 +365,7 @@ void *perl_handler_bind(char *query_name, char *handler)
 
 void *perl_command_bind(char *command, char *params, char *poss, char *handler)
 {
-#ifdef SCRIPTS_NEW
 	return script_command_bind(&perl_lang, perl_caller(), command, params, poss, xstrdup(handler));
-#else
-	return script_command_bind(&perl_lang, perl_caller(), command, xstrdup(handler));
-#endif
 }
 
 int perl_finalize()

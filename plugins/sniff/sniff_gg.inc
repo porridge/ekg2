@@ -127,7 +127,7 @@ SNIFF_HANDLER(sniff_gg_recv_msg, gg_recv_msg) {
 	char *msg;
 
 	CHECK_LEN(sizeof(gg_recv_msg))	len -= sizeof(gg_recv_msg);
-	msg = ekg_cp_to_locale(xstrndup(pkt->msg_data, len));
+	msg = ekg_cp_to_core(xstrndup(pkt->msg_data, len));
 		sniff_gg_print_message(s, hdr, pkt->sender, EKG_MSGCLASS_CHAT, msg, pkt->time);
 	xfree(msg);
 	return 0;
@@ -137,7 +137,7 @@ SNIFF_HANDLER(sniff_gg_send_msg, gg_send_msg) {
 	char *msg;
 
 	CHECK_LEN(sizeof(gg_send_msg))  len -= sizeof(gg_send_msg);
-	msg = ekg_cp_to_locale(xstrndup(pkt->msg_data, len));
+	msg = ekg_cp_to_core(xstrndup(pkt->msg_data, len));
 		sniff_gg_print_message(s, hdr, pkt->recipient, EKG_MSGCLASS_SENT_CHAT, msg, time(NULL));
 	xfree(msg);
 
@@ -185,7 +185,7 @@ SNIFF_HANDLER(sniff_gg_status, gg_status) {
 	CHECK_LEN(sizeof(gg_status))		len -= sizeof(gg_status);
 
 	status	= gg_status_to_text(pkt->status, &has_descr);
-	descr	= has_descr ? ekg_cp_to_locale(xstrndup(pkt->status_data, len)) : NULL;
+	descr	= has_descr ? ekg_cp_to_core(xstrndup(pkt->status_data, len)) : NULL;
 	sniff_gg_print_status(s, hdr, pkt->uin, status, descr);
 	xfree(descr);
 
@@ -201,7 +201,7 @@ SNIFF_HANDLER(sniff_gg_new_status, gg_new_status) {
 	CHECK_LEN(sizeof(gg_new_status))	len -= sizeof(gg_new_status);
 
 	status	= gg_status_to_text(pkt->status, &has_descr);
-	descr	= has_descr ? ekg_cp_to_locale(xstrndup(pkt->status_data, len)) : NULL;
+	descr	= has_descr ? ekg_cp_to_core(xstrndup(pkt->status_data, len)) : NULL;
 	sniff_gg_print_new_status(s, hdr, 0, status, descr);
 	xfree(descr);
 
@@ -221,7 +221,7 @@ SNIFF_HANDLER(sniff_gg_status60, gg_status60) {
 	uin	= pkt->uin & 0x00ffffff;
 
 	status	= gg_status_to_text(pkt->status, &has_descr);
-	descr 	= has_descr ? ekg_cp_to_locale(xstrndup(pkt->status_data, len)) : NULL;
+	descr 	= has_descr ? ekg_cp_to_core(xstrndup(pkt->status_data, len)) : NULL;
 	sniff_gg_print_status(s, hdr, uin, status, descr);
 	xfree(descr);
 
@@ -229,9 +229,9 @@ SNIFF_HANDLER(sniff_gg_status60, gg_status60) {
 		"sniff_gg_status60",
 
 		inet_ntoa(*(struct in_addr *) &(pkt->remote_ip)),
-		itoa(pkt->remote_port),
-		itoa(pkt->version), build_hex(pkt->version),
-		itoa(pkt->image_size));
+		ekg_itoa(pkt->remote_port),
+		ekg_itoa(pkt->version), build_hex(pkt->version),
+		ekg_itoa(pkt->image_size));
 
 	return 0;
 }
@@ -252,7 +252,7 @@ SNIFF_HANDLER(sniff_gg_login60, gg_login60) {
 			build_hex2(pkt->version));
 	
 	status = gg_status_to_text(pkt->status, &has_descr);
-	descr = has_descr ? ekg_cp_to_locale(xstrndup(pkt->status_data, len)) : NULL;
+	descr = has_descr ? ekg_cp_to_core(xstrndup(pkt->status_data, len)) : NULL;
 	sniff_gg_print_new_status(s, hdr, pkt->uin, status, descr);
 	xfree(descr);
 	return 0;
@@ -310,7 +310,7 @@ SNIFF_HANDLER(sniff_gg_notify_reply60, gg_notify_reply60) {
 		next += desc_len;
 	}
 
-	descr = has_descr ? ekg_cp_to_locale(xstrndup((char *) &pkt->next[1], desc_len)) : NULL;
+	descr = has_descr ? ekg_cp_to_core(xstrndup((char *) &pkt->next[1], desc_len)) : NULL;
 	sniff_gg_print_status(s, hdr, uin, status, descr);
 	xfree(descr);
 
@@ -318,9 +318,9 @@ SNIFF_HANDLER(sniff_gg_notify_reply60, gg_notify_reply60) {
 		"sniff_gg_notify60",
 
 		inet_ntoa(*(struct in_addr *) &(pkt->remote_ip)),
-		itoa(pkt->remote_port),
-		itoa(pkt->version), build_hex(pkt->version),
-		itoa(pkt->image_size));
+		ekg_itoa(pkt->remote_port),
+		ekg_itoa(pkt->version), build_hex(pkt->version),
+		ekg_itoa(pkt->image_size));
 
 	if (pkt->uin & 0x40000000)
 		debug_error("gg_notify_reply60: GG_HAS_AUDIO_MASK set\n");
@@ -355,7 +355,7 @@ SNIFF_HANDLER(sniff_gg_userlist_reply, gg_userlist_reply) {
 		tcp_print_payload((u_char *) pkt->data, len);
 	}
 
-	datatmp = data = len ? ekg_cp_to_locale(xstrndup(pkt->data, len)) : NULL;
+	datatmp = data = len ? ekg_cp_to_core(xstrndup(pkt->data, len)) : NULL;
 	
 	print_window(build_windowip_name(hdr->dstip) /* ip and/or gg# */, s, EKG_WINACT_MSG, 1,
 		"sniff_gg_userlist_reply",
@@ -391,7 +391,7 @@ SNIFF_HANDLER(sniff_gg_userlist_req, gg_userlist_request) {
 		tcp_print_payload((u_char *) pkt->data, len);
 	}
 
-	datatmp = data = len ? ekg_cp_to_locale(xstrndup(pkt->data, len)) : NULL;
+	datatmp = data = len ? ekg_cp_to_core(xstrndup(pkt->data, len)) : NULL;
 
 	print_window(build_windowip_name(hdr->srcip) /* ip and/or gg# */, s, EKG_WINACT_MSG, 1,
 		"sniff_gg_userlist_req",
@@ -448,7 +448,7 @@ SNIFF_HANDLER(sniff_gg_pubdir50_reply, gg_pubdir50_reply) {
 		"sniff_gg_pubdir50_reply",
 		sniff_gg_pubdir50_str(pkt->type),
 		build_hex(pkt->type),
-		itoa(pkt->seq));
+		ekg_itoa(pkt->seq));
 
 	data = pkt->data;
 
@@ -511,7 +511,7 @@ SNIFF_HANDLER(sniff_gg_pubdir50_req, gg_pubdir50_request) {
 		"sniff_gg_pubdir50_req",
 		sniff_gg_pubdir50_str(pkt->type),
 		build_hex(pkt->type),
-		itoa(pkt->seq));
+		ekg_itoa(pkt->seq));
 
 	data = pkt->data;
 
@@ -559,7 +559,7 @@ SNIFF_HANDLER(sniff_gg_list_first, gg_notify) {
 	CHECK_LEN(sizeof(gg_notify));
 
 	print_window(build_windowip_name(hdr->srcip) /* ip and/or gg# */, s, EKG_WINACT_MSG, 1,
-		"sniff_gg_list", "GG_LIST_FIRST", itoa(len));
+		"sniff_gg_list", "GG_LIST_FIRST", ekg_itoa(len));
 
 	while (len >= sizeof(gg_notify)) {
 		print_window(build_windowip_name(hdr->srcip) /* ip and/or gg# */, s, EKG_WINACT_MSG, 1, "sniff_gg_list_data", 
@@ -583,7 +583,7 @@ SNIFF_HANDLER(sniff_gg_list_last, gg_notify) {
 	CHECK_LEN(sizeof(gg_notify));
 
 	print_window(build_windowip_name(hdr->srcip) /* ip and/or gg# */, s, EKG_WINACT_MSG, 1,
-		"sniff_gg_list", "GG_LIST_LAST", itoa(len));
+		"sniff_gg_list", "GG_LIST_LAST", ekg_itoa(len));
 
 	while (len >= sizeof(gg_notify)) {
 		print_window(build_windowip_name(hdr->srcip) /* ip and/or gg# */, s,  EKG_WINACT_MSG, 1, "sniff_gg_list_data", 
@@ -605,7 +605,7 @@ SNIFF_HANDLER(sniff_gg_list_last, gg_notify) {
 
 SNIFF_HANDLER(sniff_gg_list_empty, gg_notify) {
 	print_window(build_windowip_name(hdr->srcip) /* ip and/or gg# */, s,  EKG_WINACT_MSG, 1,
-		"sniff_gg_list", "GG_LIST_EMPTY", itoa(len));
+		"sniff_gg_list", "GG_LIST_EMPTY", ekg_itoa(len));
 
 	if (len) {
 		debug_error("sniff_gg_list_empty() LIST EMPTY BUT len: %d (?)\n", len);
@@ -778,7 +778,7 @@ SNIFF_HANDLER(sniff_gg_dcc_3xx_out, gg_dcc_3xx) {
 	}
 
 	debug_error("XXX sniff_gg_dcc_3xx_out() code1: %s\n", build_code(pkt->code1));
-	CHECK_PRINT(pkt->dunno1, htonl(0x04000000));
+	CHECK_PRINT(pkt->dunno1, g_htonl(0x04000000));
 	CHECK_PRINT(pkt->dunno2, !pkt->dunno2);
 	CHECK_PRINT(pkt->dunno3, !pkt->dunno3);
 	return 0;
@@ -856,7 +856,7 @@ SNIFF_HANDLER(sniff_gg_login70, gg_login70) {
 
 
 	status = gg_status_to_text(pkt->status, &has_descr);
-	descr = has_descr ? ekg_cp_to_locale(xstrndup(pkt->status_data, len)) : NULL;
+	descr = has_descr ? ekg_cp_to_core(xstrndup(pkt->status_data, len)) : NULL;
 	sniff_gg_print_new_status(s, hdr, pkt->uin, status, descr);
 	xfree(descr);
 	
@@ -912,7 +912,7 @@ SNIFF_HANDLER(sniff_gg_notify_reply77, gg_notify_reply77) {
 		next += desc_len;
 	}
 
-	descr = has_descr ? ekg_cp_to_locale(xstrndup((char *) &pkt->next[1], desc_len)) : NULL;
+	descr = has_descr ? ekg_cp_to_core(xstrndup((char *) &pkt->next[1], desc_len)) : NULL;
 	sniff_gg_print_status(s, hdr, uin, status, descr);
 	xfree(descr);
 
@@ -920,9 +920,9 @@ SNIFF_HANDLER(sniff_gg_notify_reply77, gg_notify_reply77) {
 		"sniff_gg_notify77",
 
 		inet_ntoa(*(struct in_addr *) &(pkt->remote_ip)),
-		itoa(pkt->remote_port),
-		itoa(pkt->version), build_hex(pkt->version),
-		itoa(pkt->image_size));
+		ekg_itoa(pkt->remote_port),
+		ekg_itoa(pkt->version), build_hex(pkt->version),
+		ekg_itoa(pkt->image_size));
 
 #if 0
 	if (pkt->uin & 0x40000000)
@@ -963,7 +963,7 @@ SNIFF_HANDLER(sniff_gg_status77, gg_status77) {
 	CHECK_PRINT(dunno2, 0x00);
 
 	status	= gg_status_to_text(pkt->status, &has_descr);
-	descr 	= has_descr ? ekg_cp_to_locale(xstrndup(pkt->status_data, len)) : NULL;
+	descr 	= has_descr ? ekg_cp_to_core(xstrndup(pkt->status_data, len)) : NULL;
 	sniff_gg_print_status(s, hdr, uin, status, descr);
 	xfree(descr);
 
@@ -971,9 +971,9 @@ SNIFF_HANDLER(sniff_gg_status77, gg_status77) {
 		"sniff_gg_status77",
 
 		inet_ntoa(*(struct in_addr *) &(pkt->remote_ip)),
-		itoa(pkt->remote_port),
-		itoa(pkt->version), build_hex(pkt->version),
-		itoa(pkt->image_size));
+		ekg_itoa(pkt->remote_port),
+		ekg_itoa(pkt->version), build_hex(pkt->version),
+		ekg_itoa(pkt->image_size));
 
 	return 0;
 }
@@ -1040,7 +1040,7 @@ SNIFF_HANDLER(sniff_gg_login80, gg_login80) {
 
 
 	status = gg_status_to_text(pkt->status, &has_descr);
-	descr = has_descr ? ekg_cp_to_locale(xstrndup(pkt->status_data, len)) : NULL;
+	descr = has_descr ? ekg_cp_to_core(xstrndup(pkt->status_data, len)) : NULL;
 	sniff_gg_print_new_status(s, hdr, pkt->uin, status, descr);
 	xfree(descr);
 	
@@ -1186,7 +1186,7 @@ SNIFF_HANDLER(sniff_gg_new_status80_real, gg_new_status80_real) {
 		tcp_print_payload((u_char *) pkt->data, len);
 	}
 
-	descr	= has_descr ? ekg_utf8_to_locale(xstrndup(pkt->data, len)) : NULL;
+	descr	= has_descr ? ekg_utf8_to_core(xstrndup(pkt->data, len)) : NULL;
 	sniff_gg_print_new_status(s, hdr, 0, status, descr);
 	xfree(descr);
 	return 0;
@@ -1237,7 +1237,7 @@ SNIFF_HANDLER(sniff_gg_notify_reply80_real, gg_notify_reply80_real) {
 		next += pkt->descr_len;
 	}
 
-	descr = has_descr ? ekg_utf8_to_locale(xstrndup(pkt->next, pkt->descr_len)) : NULL;
+	descr = has_descr ? ekg_utf8_to_core(xstrndup(pkt->next, pkt->descr_len)) : NULL;
 	sniff_gg_print_status(s, hdr, uin, status, descr);
 	xfree(descr);
 
@@ -1245,9 +1245,9 @@ SNIFF_HANDLER(sniff_gg_notify_reply80_real, gg_notify_reply80_real) {
 		"sniff_gg_notify80_real",
 
 		inet_ntoa(*(struct in_addr *) &(pkt->remote_ip)),
-		itoa(pkt->remote_port),
-		itoa(-1), build_hex(-1),		// wersja
-		itoa(pkt->image_size));
+		ekg_itoa(pkt->remote_port),
+		ekg_itoa(-1), build_hex(-1),		// wersja
+		ekg_itoa(pkt->image_size));
 
 	if (len > 0) {
 		debug_error("gg_notify_reply80_real: again? leftlen: %d\n", len);
@@ -1303,7 +1303,7 @@ SNIFF_HANDLER(sniff_gg_status80_real, gg_status80_real) {
 		tcp_print_payload((u_char *) pkt->descr, len);
 	}
 
-	descr 	= has_descr ? ekg_utf8_to_locale(xstrndup(pkt->descr, len)) : NULL;
+	descr 	= has_descr ? ekg_utf8_to_core(xstrndup(pkt->descr, len)) : NULL;
 	sniff_gg_print_status(s, hdr, uin, status, descr);
 	xfree(descr);
 
@@ -1311,9 +1311,9 @@ SNIFF_HANDLER(sniff_gg_status80_real, gg_status80_real) {
 		"sniff_gg_status80_real",
 
 		inet_ntoa(*(struct in_addr *) &(pkt->remote_ip)),
-		itoa(pkt->remote_port),
-		itoa(-1), build_hex(-1), // wersja
-		itoa(pkt->image_size));
+		ekg_itoa(pkt->remote_port),
+		ekg_itoa(-1), build_hex(-1), // wersja
+		ekg_itoa(pkt->image_size));
 
 	return 0;
 }
@@ -1366,7 +1366,7 @@ SNIFF_HANDLER(sniff_gg_notify_reply80, gg_notify_reply80) {
 		next += desc_len;
 	}
 
-	descr = has_descr ? ekg_cp_to_locale(xstrndup((char *) &pkt->next[1], desc_len)) : NULL;
+	descr = has_descr ? ekg_cp_to_core(xstrndup((char *) &pkt->next[1], desc_len)) : NULL;
 	sniff_gg_print_status(s, hdr, uin, status, descr);
 	xfree(descr);
 
@@ -1374,9 +1374,9 @@ SNIFF_HANDLER(sniff_gg_notify_reply80, gg_notify_reply80) {
 		"sniff_gg_notify80",
 
 		inet_ntoa(*(struct in_addr *) &(pkt->remote_ip)),
-		itoa(pkt->remote_port),
-		itoa(pkt->version), build_hex(pkt->version),
-		itoa(pkt->image_size));
+		ekg_itoa(pkt->remote_port),
+		ekg_itoa(pkt->version), build_hex(pkt->version),
+		ekg_itoa(pkt->image_size));
 
 	if (len > 0) {
 		debug_error("gg_notify_reply80: again? leftlen: %d\n", len);
@@ -1424,7 +1424,7 @@ SNIFF_HANDLER(sniff_gg_status80, gg_status80) {
 	CHECK_PRINT(dunno2, 0x00);
 
 	status	= gg_status_to_text(pkt->status, &has_descr);
-	descr 	= has_descr ? ekg_cp_to_locale(xstrndup(pkt->status_data, len)) : NULL;
+	descr 	= has_descr ? ekg_cp_to_core(xstrndup(pkt->status_data, len)) : NULL;
 	sniff_gg_print_status(s, hdr, uin, status, descr);
 	xfree(descr);
 
@@ -1432,9 +1432,9 @@ SNIFF_HANDLER(sniff_gg_status80, gg_status80) {
 		"sniff_gg_status80",
 
 		inet_ntoa(*(struct in_addr *) &(pkt->remote_ip)),
-		itoa(pkt->remote_port),
-		itoa(pkt->version), build_hex(pkt->version),
-		itoa(pkt->image_size));
+		ekg_itoa(pkt->remote_port),
+		ekg_itoa(pkt->version), build_hex(pkt->version),
+		ekg_itoa(pkt->image_size));
 
 	return 0;
 }
@@ -1457,7 +1457,7 @@ SNIFF_HANDLER(sniff_gg_send_msg80, gg_send_msg80) {
 		tcp_print_payload(((unsigned char *) pkt) + pkt->offset_attr, orglen - pkt->offset_attr);
 
 	if (pkt->offset_plain < orglen) {
-		msg = ekg_cp_to_locale(xstrndup(((char *) pkt) + pkt->offset_plain, orglen - pkt->offset_plain));
+		msg = ekg_cp_to_core(xstrndup(((char *) pkt) + pkt->offset_plain, orglen - pkt->offset_plain));
 			sniff_gg_print_message(s, hdr, pkt->recipient, EKG_MSGCLASS_SENT_CHAT, msg, time(NULL));
 		xfree(msg);
 	}

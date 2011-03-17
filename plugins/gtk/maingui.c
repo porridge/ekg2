@@ -34,9 +34,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#define GTK_DISABLE_DEPRECATED
+#include "ekg2.h"
 
-#include <ekg2-config.h>
 #define USE_XLIB
 
 #include <stdlib.h>
@@ -67,11 +66,7 @@
 #include <gtk/gtkbbox.h>
 #include <gtk/gtkvscrollbar.h>
 
-
-#include <ekg/plugins.h>
-#include <ekg/windows.h>
-#include <ekg/stuff.h>
-#include <ekg/xmalloc.h>
+#include <gtk/gtkversion.h>
 
 #include "main.h"
 #include "xtext.h"
@@ -227,15 +222,24 @@ static void unflash_window(GtkWidget *win) {
 int fe_gui_info(window_t *sess, int info_type) {	/* code from fe-gtk.c */
 	switch (info_type) {
 		case 0:	/* window status */
-			if (!GTK_WIDGET_VISIBLE(GTK_WINDOW(gtk_private_ui(sess)->window)))
+#if GTK_CHECK_VERSION(2,20,0)
+			if (!gtk_widget_get_visible(GTK_WIDGET(gtk_private_ui(sess)->window)))
+#else
+			if (!GTK_WIDGET_VISIBLE(GTK_WIDGET(gtk_private_ui(sess)->window)))
+#endif
 				return 2;	/* hidden (iconified or systray) */
 
-#warning "GTK issue."
-	/* 2.4.0 -> gtk_window_is_active(GTK_WINDOW(gtk_private_ui(sess)->window))
-	 * 2.2.0 -> GTK_WINDOW(gtk_private_ui(sess)->window)->is_active)
-	 *
-	 *		return 1
-	 */
+#if GTK_CHECK_VERSION(2,4,0)
+			if (gtk_window_is_active(GTK_WINDOW(gtk_private_ui(sess)->window)))
+#else
+#if GTK_CHECK_VERSION(2,2,0)
+			if (GTK_WINDOW(gtk_private_ui(sess)->window)->is_active)
+#else
+			if (0)	/* ? */
+#endif
+#endif
+				return 1;	/* active/focused */
+
 		return 0;		/* normal (no keyboard focus or behind a window) */
 	}
 
@@ -282,8 +286,12 @@ static void mg_set_myself_away(gtk_window_ui_t *gui, gboolean away) {
 
 void mg_set_access_icon(gtk_window_ui_t *gui, GdkPixbuf *pix, gboolean away) {
 	if (gui->op_xpm) {
+		if (pix == gtk_image_get_pixbuf (GTK_IMAGE (gui->op_xpm))) { /* no change? */
+			mg_set_myself_away (gui, away);
+			return;
+		}
 		gtk_widget_destroy(gui->op_xpm);
-		gui->op_xpm = 0;
+		gui->op_xpm = NULL;
 	}
 
 	if (pix) {
@@ -305,7 +313,7 @@ static gboolean mg_inputbox_focus(GtkWidget *widget, GdkEventFocus *event, gtk_w
 
 	for (w = windows; w; w = w->next) {
 		if (gtk_private(w)->gui == gui) {
-#warning "window_switch() XXX"
+/* window_switch() XXX */
 			window_switch(w->id);
 			return FALSE;
 		}
@@ -437,7 +445,11 @@ static void mg_show_generic_tab(GtkWidget *box) {
 	int num;
 	GtkWidget *f = NULL;
 
+#if defined(GTK_WIDGET_HAS_FOCUS)
 	if (current_sess && GTK_WIDGET_HAS_FOCUS(current_sess->gui->input_box))
+#else
+	if (current_sess && gtk_widget_has_focus(current_sess->gui->input_box))
+#endif
 		f = current_sess->gui->input_box;
 
 	num = gtk_notebook_page_num(GTK_NOTEBOOK(mg_gui->note_book), box);
@@ -514,8 +526,14 @@ void mg_set_topic_tip(session *sess) {
 #endif
 
 static void mg_hide_empty_pane(GtkPaned * pane) {
+#if defined(GTK_WIDGET_VISIBLE)
 	if ((pane->child1 == NULL || !GTK_WIDGET_VISIBLE(pane->child1)) &&
-	    (pane->child2 == NULL || !GTK_WIDGET_VISIBLE(pane->child2))) {
+	    (pane->child2 == NULL || !GTK_WIDGET_VISIBLE(pane->child2))) 
+#else
+	if ((pane->child1 == NULL || !gtk_widget_get_visible(pane->child1)) &&
+		 (pane->child2 == NULL || !gtk_widget_get_visible(pane->child2)))
+#endif
+	{
 		gtk_widget_hide(GTK_WIDGET(pane));
 		return;
 	}
@@ -585,10 +603,10 @@ static int ul_tag = 0;
 	if (!sess)
 		sess = window_current;
 
-#warning "mg_populate_userlist() hack, slowdown"
+/* mg_populate_userlist() hack, slowdown */
 	fe_userlist_clear(sess);
 
-#warning "xchat->ekg2, mg_populate_userlist() xchat here check if param is valid window_t, XXX"
+/* xchat->ekg2, mg_populate_userlist() xchat here check if param is valid window_t, XXX */
 
 	if (sess->userlist) {
 		userlist_t *ul;
@@ -765,7 +783,7 @@ void mg_switch_page(int relative, int num) {
 /* a toplevel IRC window was destroyed */
 
 static void mg_topdestroy_cb(GtkWidget *win, window_t *sess) {
-#warning "xchat->ekg2: mg_topdestroy_cb() BIG XXX"
+/* xchat->ekg2: mg_topdestroy_cb() BIG XXX */
 	printf("mg_topdestroy_cb() XXX\n");
 #if 0
 /*	printf("enter mg_topdestroy. sess %p was destroyed\n", sess);*/
@@ -819,7 +837,7 @@ static void mg_ircdestroy(session *sess) {
 #endif
 
 void mg_tab_close(window_t *sess) {
-#warning "xchat->ekg2: mg_tab_close() XXX"
+/* xchat->ekg2: mg_tab_close() XXX */
 	if (chan_remove(gtk_private(sess)->tab, FALSE))
 #if 0
 		mg_ircdestroy(sess);
@@ -827,27 +845,6 @@ void mg_tab_close(window_t *sess) {
 		;
 #endif
 }
-
-#if 0
-
-static void mg_traymsg_cb(GtkCheckMenuItem * item, session *sess) {
-	sess->tray = FALSE;
-	if (item->active)
-		sess->tray = TRUE;
-}
-
-static void mg_beepmsg_cb(GtkCheckMenuItem * item, session *sess) {
-	sess->beep = FALSE;
-	if (item->active)
-		sess->beep = TRUE;
-}
-
-static void mg_hidejp_cb(GtkCheckMenuItem * item, session *sess) {
-	sess->hide_join_part = TRUE;
-	if (item->active)
-		sess->hide_join_part = FALSE;
-}
-#endif
 
 static void mg_menu_destroy(GtkWidget *menu, gpointer userdata) {
 	gtk_widget_destroy(menu);
@@ -885,15 +882,15 @@ void mg_open_quit_dialog(gboolean minimize_button) {
 	}
 
 	if (config_save_quit == 1) {
-#warning "Display question if user want to /save config"
+/* Display question if user want to /save config */
 /*
-		if (config_changed)				format_find("config_changed")
-		else if (config_keep_reason && reason_changed)	format_find("quit_keep_reason");
+		if (config_changed)					format_find("config_changed")
+		else if (config_keep_reason && ekg2_reason_changed)	format_find("quit_keep_reason");
 */
 		config_save_quit = 0;
 	}
 
-#warning "xchat->ekg2 XXX"
+/* xchat->ekg2 XXX */
 	/*	xchat count dcc's + connected network, and display warning about it.
 	 *
 	 *		"<span weight=\"bold\" size=\"larger\">Are you sure you want to quit?</span>\n
@@ -1018,7 +1015,7 @@ static void mg_xbutton_cb(chanview * cv, chan * ch, int tag, gpointer userdata) 
 	if (tag == TAG_IRC)	/* irc tab */
 		mg_close_sess(userdata);
 
-#warning "xchat->ekg2, removed support for generic tabs"
+/* xchat->ekg2, removed support for generic tabs */
 }
 
 
@@ -1028,7 +1025,7 @@ static void mg_detach_tab_cb(GtkWidget *item, chan * ch) {
 		mg_link_irctab(chan_get_userdata(ch), 1);
 		return;
 	}
-#warning "xchat->ekg2, removed support for generic tabs"
+/* xchat->ekg2, removed support for generic tabs */
 }
 
 static void mg_destroy_tab_cb(GtkWidget *item, chan * ch) {
@@ -1124,24 +1121,13 @@ static void mg_create_color_menu(GtkWidget *menu, window_t *sess) {
 	}
 }
 
-static gboolean mg_tab_contextmenu_cb(chanview * cv, chan * ch, int tag, gpointer ud, GdkEventButton * event) {
+static void mg_create_tabmenu(window_t *sess, GdkEventButton *event, chan *ch) {
 	GtkWidget *menu, *item;
-	window_t *sess = ud;
-
-	/* shift-click to close a tab */
-	if ((event->state & GDK_SHIFT_MASK) && event->type == GDK_BUTTON_PRESS) {
-		mg_xbutton_cb(cv, ch, tag, ud);
-		return FALSE;
-	}
-
-	if (event->button != 3)
-		return FALSE;
+	char buf[256];
 
 	menu = gtk_menu_new();
 
-	if (tag == TAG_IRC) {
-		char buf[256];
-
+	if (sess) {
 		const char *w_target = gtk_window_target(sess);
 		char *target = g_markup_escape_text(w_target[0] ? w_target : "<none>", -1);
 
@@ -1157,29 +1143,28 @@ static gboolean mg_tab_contextmenu_cb(chanview * cv, chan * ch, int tag, gpointe
 		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 		gtk_widget_show(item);
 
-#if 0
 		/* separator */
 		item = gtk_menu_item_new();
 		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 		gtk_widget_show(item);
 
-		menu_toggle_item(_("Beep on message"), menu, mg_beepmsg_cb, sess, sess->beep);
-		if (prefs.gui_tray)
-			menu_toggle_item(_("Blink tray on message"), menu, mg_traymsg_cb, sess,
-					 sess->tray);
+#if 0
+		/* per-channel alerts */
+		mg_create_alertmenu (sess, menu);
+
+		/* per-channel settings */
+		mg_create_perchannelmenu (sess, menu);
+
+		/* separator */
+		menu_quick_item (0, 0, menu, XCMENU_SHADED, 0, 0);
+
 		if (sess->type == SESS_CHANNEL)
-			menu_toggle_item(_("Show join/part messages"), menu, mg_hidejp_cb,
-					 sess, !sess->hide_join_part);
+			menu_addfavoritemenu (sess->server, menu, sess->channel);
 #endif
-
 	}
-	/* separator */
-	item = gtk_menu_item_new();
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-	gtk_widget_show(item);
 
-	mg_create_icon_item(_("_Close Tab"), GTK_STOCK_CLOSE, menu, mg_destroy_tab_cb, ch);
-	mg_create_icon_item(_("_Detach Tab"), GTK_STOCK_REDO, menu, mg_detach_tab_cb, ch);
+	mg_create_icon_item(_("_Close"), GTK_STOCK_CLOSE, menu, mg_destroy_tab_cb, ch);
+	mg_create_icon_item(_("_Detach"), GTK_STOCK_REDO, menu, mg_detach_tab_cb, ch);
 #if 0
 
 	if (sess && tabmenu_list)
@@ -1194,7 +1179,24 @@ static gboolean mg_tab_contextmenu_cb(chanview * cv, chan * ch, int tag, gpointe
 	g_object_unref(menu);
 	g_signal_connect(G_OBJECT(menu), "selection-done", G_CALLBACK(mg_menu_destroy), NULL);
 	gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, event->time);
-	return TRUE;
+}
+
+static gboolean mg_tab_contextmenu_cb (chanview *cv, chan *ch, int tag, gpointer ud, GdkEventButton *event) {
+	/* shift-click to close a tab */
+	if ((event->state & GDK_SHIFT_MASK) && event->type == GDK_BUTTON_PRESS) {
+		mg_xbutton_cb(cv, ch, tag, ud);
+		return FALSE;
+	}
+
+	if (event->button != 3)
+		return FALSE;
+
+	if (tag == TAG_IRC)
+		mg_create_tabmenu(ud, event, ch);
+	else
+		mg_create_tabmenu(NULL, event, ch);
+
+ 	return TRUE;
 }
 
 /* add a tabbed channel */
@@ -1435,7 +1437,7 @@ mg_create_topicbar(window_t *sess, GtkWidget *box)
 static int
 mg_word_check(GtkWidget *xtext, char *word, int len)
 {
-#warning "xchat->ekg2: mg_word_check() nice functionality XXX"
+/* xchat->ekg2: mg_word_check() nice functionality XXX */
 	return 0;
 }
 
@@ -1444,7 +1446,7 @@ mg_word_check(GtkWidget *xtext, char *word, int len)
 static void
 mg_word_clicked(GtkWidget *xtext, char *word, GdkEventButton * even)
 {
-#warning "xchat->ekg2: mg_word_clicked() nice functionality XXX"
+/* xchat->ekg2: mg_word_clicked() nice functionality XXX */
 }
 
 void
@@ -1515,7 +1517,7 @@ mg_create_textarea(window_t *sess, GtkWidget *box)
 	gui->vscrollbar = gtk_vscrollbar_new(GTK_XTEXT(xtext)->adj);
 	gtk_box_pack_start(GTK_BOX(inbox), gui->vscrollbar, FALSE, TRUE, 0);
 
-#warning "xchat->ekg2: g_signal_connect() \"drag_begin\", \"drag_drop\", \"drag_motion\", \"drag_end\", \"drag_data_received\" && gtk_drag_dest_set() do zaimplementowania"
+/* xchat->ekg2: g_signal_connect() \"drag_begin\", \"drag_drop\", \"drag_motion\", \"drag_end\", \"drag_data_received\" && gtk_drag_dest_set() do zaimplementowania */
 }
 
 static void
@@ -1553,9 +1555,9 @@ mg_rightpane_cb(GtkPaned * pane, GParamSpec * param, gtk_window_ui_t* gui)
 {
 	int handle_size;
 
-/*	if (pane->child1 == NULL || (!GTK_WIDGET_VISIBLE (pane->child1)))
+/*	if (pane->child1 == NULL || (!GTK_WIDGET_VISIBLE(pane->child1)))
 		return;
-	if (pane->child2 == NULL || (!GTK_WIDGET_VISIBLE (pane->child2)))
+	if (pane->child2 == NULL || (!GTK_WIDGET_VISIBLE(pane->child2)))
 		return;*/
 
 	gtk_widget_style_get(GTK_WIDGET(pane), "handle-size", &handle_size, NULL);
@@ -1570,7 +1572,7 @@ static gboolean mg_add_pane_signals(gtk_window_ui_t *gui) {
 			 G_CALLBACK(mg_rightpane_cb), gui);
 	g_signal_connect(G_OBJECT(gui->hpane_left), "notify::position",
 			 G_CALLBACK(mg_leftpane_cb), gui);
-	return -1;
+	return FALSE;
 }
 
 static void
@@ -1624,7 +1626,7 @@ mg_create_center(window_t *sess, gtk_window_ui_t *gui, GtkWidget *box)
 }
 
 static void mg_sessionclick_cb(GtkWidget *button, gpointer userdata) {
-#warning "xchat->ekg2: mg_sessionclick_cb() XXX, change session using this [like ^X] implement"
+/* xchat->ekg2: mg_sessionclick_cb() XXX, change session using this [like ^X] implement */
 	/* xchat: 
 	 *	fe_get_str (_("Enter new nickname:"), current_sess->server->nick, mg_change_nick, NULL);
 	 */
@@ -1831,7 +1833,7 @@ static void mg_switch_tab_cb(chanview * cv, chan * ch, int tag, gpointer ud) {
 	active_tab = ch;
 
 	if (active_tab != old) {
-#warning "xchat->ekg2 mg_switch_tab_cb() mg_unpopulate()"
+/* xchat->ekg2 mg_switch_tab_cb() mg_unpopulate() */
 		mg_populate(sess);
 
 		/* it's switched by gui, let's inform ekg2 */
@@ -1848,8 +1850,16 @@ static int mg_tabs_compare(window_t *a, window_t *b) {	/* it's lik: window_new_c
 }
 
 static void mg_create_tabs(gtk_window_ui_t *gui) {
+	gboolean use_icons = FALSE;
+
+#if 0
+	/* if any one of these PNGs exist, the chanview will create
+	 * the extra column for icons. */
+	if (pix_channel || pix_dialog || pix_server || pix_util)
+		use_icons = TRUE;
+#endif
 	gui->chanview = chanview_new(tab_layout_config, truncchans_config,
-				     tab_sort_config, tab_icons_config,
+				     tab_sort_config, use_icons,
 				     style_namelistgad_config ? input_style : NULL);
 	chanview_set_callbacks(gui->chanview, mg_switch_tab_cb, mg_xbutton_cb,
 			       mg_tab_contextmenu_cb, (void *) mg_tabs_compare);
@@ -2131,7 +2141,7 @@ fe_clear_channel(window_t *sess)
 
 		if (gui->op_xpm) {
 			gtk_widget_destroy(gui->op_xpm);
-			gui->op_xpm = 0;
+			gui->op_xpm = NULL;
 		}
 	} else {
 	}

@@ -77,7 +77,7 @@ static int remote_fd;
 static unsigned int read_total, write_total;
 int remote_mail_count;
 
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 static unsigned int zlib_read_total, zlib_write_total;
 static int zlib_used;
 #endif
@@ -589,7 +589,7 @@ static WATCHER_LINE(remote_read_line) {
 					s->connected = (atoi(arr[3]) != 0);
 					event = (s->connected) ? 1 : 2;
 
-					query_emit_id(NULL, SESSION_EVENT, &s, &event);	/* Notify UI */
+					query_emit(NULL, "session-event", &s, &event);	/* Notify UI */
 
 				} else if (!strcmp(arr[2], "STATUS")) {
 					s->status = atoi(arr[3]);
@@ -607,7 +607,7 @@ static WATCHER_LINE(remote_read_line) {
 					xfree(s->alias);
 					s->alias = ((arrcnt == 4) ? xstrdup(arr[3]) : NULL);
 
-					query_emit_id(NULL, SESSION_RENAMED, &(s->alias));	/* notify-ui */
+					query_emit(NULL, "session-renamed", &(s->alias));	/* notify-ui */
 				}
 			}
 			/* popsute */
@@ -647,7 +647,7 @@ static WATCHER_LINE(remote_read_line) {
 				if (!strcmp(arr[2], "ALIAS")) {
 					xfree(w->alias);
 					w->alias = ((arrcnt == 4) ? xstrdup(arr[3]) : NULL);
-					query_emit_id(NULL, UI_WINDOW_TARGET_CHANGED, &w);
+					query_emit(NULL, "ui-window-target-changed", &w);
 
 				} else if (!strcmp(arr[2], "SESSION")) {
 					window_session_set(w, ((arrcnt == 4) ? session_find(arr[3]) : NULL));
@@ -656,7 +656,7 @@ static WATCHER_LINE(remote_read_line) {
 				} else if (!strcmp(arr[2], "TARGET")) {
 					xfree(w->target);
 					w->target = ((arrcnt == 4) ? xstrdup(arr[3]) : NULL);
-					query_emit_id(NULL, UI_WINDOW_TARGET_CHANGED, &w);
+					query_emit(NULL, "ui-window-target-changed", &w);
 
 	/* IRCTOPIC/IRCTOPICBY/IRCTOPICMODE 
 	 * XXX, informowac ui
@@ -676,7 +676,7 @@ static WATCHER_LINE(remote_read_line) {
 
 				} else if (!strcmp(arr[2], "ACTIVITY") && arrcnt == 4) {
 					w->act = atoi(arr[3]);
-					query_emit_id(NULL, UI_WINDOW_ACT_CHANGED, &w);
+					query_emit(NULL, "ui-window-act-changed", &w);
 				}
 			}
 			/* popsute */
@@ -718,7 +718,7 @@ static WATCHER_LINE(remote_read_line) {
 				xfree(u->descr);
 				u->descr = (arrcnt == 5) ? xstrdup(arr[4]) : NULL;
 
-				query_emit_id(NULL, USERLIST_CHANGED, &(arr[1]), &(arr[2]));	/* notify-ui */
+				query_emit(NULL, "userlist-changed", &(arr[1]), &(arr[2]));	/* notify-ui */
 			}
 		}
 
@@ -735,7 +735,7 @@ static WATCHER_LINE(remote_read_line) {
 			window_t *w;
 
 			if ((w = window_exist(id))) {
-				query_emit_id(NULL, UI_WINDOW_CLEAR, &w);
+				query_emit(NULL, "ui-window-clear", &w);
 
 			} else {
 				/* fucked */
@@ -773,7 +773,7 @@ static WATCHER_LINE(remote_read_line) {
 
 	} else if (!strcmp(cmd, "BEEP")) {
 		if (arrcnt == 1) {
-			query_emit_id(NULL, UI_BEEP, NULL);
+			query_emit(NULL, "ui-beep", NULL);
 		}
 
 	} else if (!strcmp(cmd, "MAILCOUNT")) {
@@ -1080,7 +1080,7 @@ void remote_print_stats() {
 	} else
 #endif
 
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 	if (zlib_used) { 
 		/* deinit */
 

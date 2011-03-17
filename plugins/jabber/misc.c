@@ -1,25 +1,15 @@
 /* $Id$ */
 
+#include "ekg2.h"
+
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "ekg2-config.h"
-
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 # include "zlib.h"
 #endif
 
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/protocol.h>
-#include <ekg/themes.h>
-#include <ekg/recode.h>
-#include <ekg/stuff.h>
-#include <ekg/xmalloc.h>
-#include <ekg/log.h>
-
-#include <ekg/queries.h>
 
 #include "jabber.h"
 #include "jabber-ssl.h"
@@ -59,13 +49,13 @@ char *jabber_openpgp(session_t *s, const char *fromto, enum jabber_opengpg_type_
 
 	switch (way) {
 		case JABBER_OPENGPG_ENCRYPT:
-			ret = query_emit_id(NULL, GPG_MESSAGE_ENCRYPT, &fromto, &message, &err);	break;
+			ret = query_emit(NULL, "gpg-message-encrypt", &fromto, &message, &err);	break;
 		case JABBER_OPENGPG_DECRYPT:
-			ret = query_emit_id(NULL, GPG_MESSAGE_DECRYPT, &s->uid, &message, &err);	break; 
+			ret = query_emit(NULL, "gpg-message-decrypt", &s->uid, &message, &err);	break; 
 		case JABBER_OPENGPG_SIGN:
-			ret = query_emit_id(NULL, GPG_SIGN, &s->uid, &message, &err);			break;
+			ret = query_emit(NULL, "gpg-sign", &s->uid, &message, &err);			break;
 		case JABBER_OPENGPG_VERIFY:
-			ret = query_emit_id(NULL, GPG_VERIFY, &fromto, &message, &key, &err);		break;	/* @ KEY retval key-id */
+			ret = query_emit(NULL, "gpg-verify", &fromto, &message, &key, &err);		break;	/* @ KEY retval key-id */
 	}
 
 	if (ret == -2)
@@ -104,7 +94,7 @@ char *jabber_openpgp(session_t *s, const char *fromto, enum jabber_opengpg_type_
 	return way != JABBER_OPENGPG_VERIFY ? message : key;
 }
 
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 char *jabber_zlib_compress(const char *buf, int *len) {
 	size_t destlen = (*len) * 1.01 + 12;
 	char *compressed = xmalloc(destlen);
@@ -168,11 +158,15 @@ char *jabber_zlib_decompress(const char *buf, int *len) {
 #endif
 
 int JABBER_COMMIT_DATA(watch_t *w) {
+#ifdef FIXME_WATCHES_TRANSFER_LIMITS
 	if (w) { 
 		w->transfer_limit = 0;
 		return watch_handle_write(w); 
 	}
 	return -1;
+#else
+	return 0;
+#endif
 }
 
 char *jabber_attr(char **atts, const char *att)
@@ -235,7 +229,7 @@ char *jabber_escape(const char *text) {
 char *jabber_unescape(const char *text) {
 	if (!text)
 		return NULL;
-	return ekg_utf8_to_locale_dup(text);
+	return ekg_utf8_to_core_dup(text);
 }
 
 /**
@@ -320,7 +314,7 @@ char *tlen_decode(const char *what) {
 	}
 	*dest = '\0';
 
-	return ekg_iso2_to_locale((char *) retval);
+	return ekg_iso2_to_core((char *) retval);
 }
 
 /*
@@ -360,7 +354,7 @@ WATCHER_LINE(jabber_handle_write) /* tylko gdy jest wlaczona kompresja lub TLS/S
 			break;
 
 		case JABBER_COMPRESSION_ZLIB:
-#ifdef HAVE_ZLIB
+#ifdef HAVE_LIBZ
 			res = len;
 			if (!(compressed = jabber_zlib_compress(watch, &len))) return 0;
 #else
@@ -379,7 +373,7 @@ WATCHER_LINE(jabber_handle_write) /* tylko gdy jest wlaczona kompresja lub TLS/S
 	if (j->using_ssl) {
 		res = SSL_SEND(j->ssl_session, watch, (size_t) len);
 
-#ifdef JABBER_HAVE_OPENSSL		/* OpenSSL */
+#ifdef HAVE_LIBSSL		/* OpenSSL */
 		if ((res == 0 && SSL_get_error(j->ssl_session, res) == SSL_ERROR_ZERO_RETURN)); /* connection shut down cleanly */
 		else if (res < 0) 
 			res = SSL_get_error(j->ssl_session, res);
@@ -497,7 +491,7 @@ char *jabber_thread_gen(jabber_private_t *j, const char *uid) {
 	return thread;
 }
 
-static inline uint32_t jabber_formatchar(const char c) {
+static inline guint32 jabber_formatchar(const char c) {
 	if (c == '*')	return EKG_FORMAT_BOLD;
 	if (c == '_')	return EKG_FORMAT_UNDERLINE;
 	if (c == '/')	return EKG_FORMAT_ITALIC;
@@ -527,8 +521,8 @@ static inline int jabber_fc_check(const char *curr, const char *beginning, const
  * e.g. *bold* /italic/
  *
  * some time may also parse XHTML */
-uint32_t *jabber_msg_format(const char *plaintext, const xmlnode_t *html) {
-	uint32_t *fmtstring = NULL, *p = NULL, *pf = NULL;
+guint32 *jabber_msg_format(const char *plaintext, const xmlnode_t *html) {
+	guint32 *fmtstring = NULL, *p = NULL, *pf = NULL;
 	const char *c;
 
 	return NULL; /* disable, because of XXX:
@@ -573,7 +567,7 @@ uint32_t *jabber_msg_format(const char *plaintext, const xmlnode_t *html) {
 					continue;
 
 			if (!p) {
-				fmtstring = xcalloc(xstrlen(plaintext), sizeof(uint32_t));
+				fmtstring = xcalloc(xstrlen(plaintext), sizeof(guint32));
 				pf = &fmtstring[c - plaintext];
 				p = pf+1;
 			}

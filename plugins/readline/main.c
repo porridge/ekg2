@@ -1,25 +1,9 @@
-#include "ekg2-config.h"
-
-#ifndef __FreeBSD__
-#define _XOPEN_SOURCE 600
-#define __EXTENSIONS__
-#endif
+#include "ekg2.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-
-#include <ekg/bindings.h>
-#include <ekg/debug.h>
-#include <ekg/plugins.h>
-#include <ekg/stuff.h>
-#include <ekg/vars.h>
-#include <ekg/windows.h>
-#include <ekg/themes.h>
-#include <ekg/xmalloc.h>
-
-#include <ekg/queries.h>
 
 #ifdef HAVE_READLINE_READLINE_H
 #	include <readline/readline.h>
@@ -32,6 +16,7 @@ static int readline_theme_init();
 PLUGIN_DEFINE(readline, PLUGIN_UI, readline_theme_init);
 
 int config_ctrld_quits = 1;
+int config_print_line = 1;
 
 /*
  * sigint_handler() //XXX może wywalać 
@@ -70,19 +55,21 @@ static void sigwinch_handler()
 
 static int readline_theme_init() {
 #ifndef NO_DEFAULT_THEME
-	/* prompty dla ui-readline */
-	format_add("readline_prompt", "% ", 1);
-	format_add("readline_prompt_away", "/ ", 1);
-	format_add("readline_prompt_invisible", ". ", 1);
-	format_add("readline_prompt_query", "%1> ", 1);
-	format_add("readline_prompt_win", "%1%% ", 1);
-	format_add("readline_prompt_away_win", "%1/ ", 1);
-	format_add("readline_prompt_invisible_win", "%1. ", 1);
-	format_add("readline_prompt_query_win", "%2:%1> ", 1);
-	format_add("readline_prompt_win_act", "%1 (act/%2)%% ", 1);
-	format_add("readline_prompt_away_win_act", "%1 (act/%2)/ ", 1);
-	format_add("readline_prompt_invisible_win_act", "%1 (act/%2). ", 1);
-	format_add("readline_prompt_query_win_act", "%2:%1 (act/%3)> ", 1);
+	/* ui-readline prompts*/
+	/* session, window, [act], [query] */
+
+	format_add("rl_prompt",			"(%1)[%2]%% ", 1);
+	format_add("rl_prompt_act",		"(%1)[%2] (act/%3)%% ", 1);
+
+	format_add("rl_prompt_away",		"(%1)[%2]/ ", 1);
+	format_add("rl_prompt_away_act",	"(%1)[%2] (act/%3)/ ", 1);
+
+	format_add("rl_prompt_invisible",	"(%1)[%2]. ", 1);
+	format_add("rl_prompt_invisible_act",	"(%1)[%2] (act/%3). ", 1);
+
+	format_add("rl_prompt_query",		"(%1)[%2]:%3> ", 1);
+	format_add("rl_prompt_query_act", 	"(%1)[%2]:%4 (act/%3)> ", 1);
+
 	format_add("readline_more", _("-- Press Enter to continue or Ctrl-D to break --"), 1);
 #endif
 	return 0;
@@ -101,7 +88,6 @@ static QUERY(readline_ui_window_kill) { /* window_free */
 
 	for (i = 0; i < MAX_LINES_PER_SCREEN; i++) {
 		xfree(r->line[i]);
-		r->line[i] = NULL;
 	}
 	xfree(r);
 	w->priv_data = NULL;
@@ -109,7 +95,7 @@ static QUERY(readline_ui_window_kill) { /* window_free */
 }
 
 static QUERY(readline_ui_window_refresh) {
-
+	window_refresh();
 	return 0;
 }
 
@@ -118,16 +104,12 @@ static QUERY(readline_ui_window_switch) { /* window_switch */
 	window_current = w;
 	w->act = 0;
 	window_refresh();
-#ifdef HAVE_RL_SET_PROMPT
-	rl_set_prompt((char *) current_prompt());
-#else
-	rl_expand_prompt((char *) current_prompt());
-#endif
+	set_prompt(current_prompt());
 	rl_initialize();
 	return 0;
 }
 
-static char *readline_change_string_t_back_to_char(const char *str, const short *attr) {
+static char *readline_change_string_t_back_to_char(const char *str, const fstr_attr_t *attr) {
 	int i;
 	string_t asc = string_init(NULL);
 
@@ -199,31 +181,37 @@ static char *readline_change_string_t_back_to_char(const char *str, const short 
 	return string_free(asc, 0);
 }
 
-static char *readline_ui_window_print_helper(char *str, short *attr) {
-	char *ascii = readline_change_string_t_back_to_char(str, attr);
-	char *colorful = format_string(ascii);
+static /*locale*/ char *readline_ui_window_print_helper(const fstring_t *f) {
+	const gchar *str = f->str;
+	const fstr_attr_t *attr = f->attr;
 
-	xfree(ascii);
-	return colorful;
+		/* XXX: rewrite, optimize! */
+	gchar *ascii = readline_change_string_t_back_to_char(str, attr);
+	gchar *colorful = format_string(ascii);
+	char *recoded = ekg_recode_to_locale(colorful);
+
+	g_free(ascii);
+	g_free(colorful);
+	return recoded;
 }
 
 static QUERY(readline_ui_window_print) {
 	window_t *w = *(va_arg(ap, window_t **));
-	fstring_t *l = *(va_arg(ap, fstring_t **));
-	char *str = readline_ui_window_print_helper(l->str.b, l->attr);
+	const fstring_t *l = *(va_arg(ap, const fstring_t **));
+	char *str = readline_ui_window_print_helper(l);
 
 	ui_readline_print(w, 1, str);
-	xfree(str);
+	g_free(str);
 	return 0;
 }
 
 static QUERY(readline_variable_changed) {
-	char *name = *(va_arg(ap, char**));
+	gchar *name = *(va_arg(ap, gchar**));
 	if (!xstrcasecmp(name, "sort_windows") && config_sort_windows) {
 		window_t *w;
-		int id = 1;
+		int id = 2;
 		for (w = windows; w; w = w->next)
-			w->id = id++;
+			if (w->id>1) w->id = id++;	/* don't sort debug & status window */
 	}
 	return 0;
 }
@@ -234,7 +222,7 @@ static QUERY(readline_ui_window_clear) {
 	readline_window_t *r = w->priv_data;
 
 	for (i = 0; i < MAX_LINES_PER_SCREEN; i++) {
-		xfree(r->line[i]);
+		g_free(r->line[i]);
 		r->line[i] = NULL;
 	}
 	window_refresh();
@@ -261,7 +249,18 @@ static QUERY(readline_beep) { /* ui_readline_beep() */
 static WATCHER(readline_watch_stdin) {
 	return 0;
 }
-	
+
+static int bind_debug_window(int a, int key) {
+	window_switch(WINDOW_DEBUG_ID);
+	return 0;
+}
+
+static int binding_cycle_sessions(int a, int key) {
+	window_session_cycle(window_current);
+	set_prompt(current_prompt());
+	return 0;
+}
+
 EXPORT int readline_plugin_init(int prio) {
 	char c;
 	struct sigaction sa;
@@ -270,25 +269,27 @@ EXPORT int readline_plugin_init(int prio) {
 
 	PLUGIN_CHECK_VER("readline");
 
-	query_emit_id(NULL, UI_IS_INITIALIZED, &is_UI);
+	query_emit(NULL, "ui-is-initialized", &is_UI);
 
 	if (is_UI)
 		return -1;
 
 	plugin_register(&readline_plugin, prio);
 
-	query_connect_id(&readline_plugin, UI_BEEP, readline_beep, NULL);
-	query_connect_id(&readline_plugin, UI_IS_INITIALIZED, readline_ui_is_initialized, NULL);
-	query_connect_id(&readline_plugin, UI_WINDOW_NEW, readline_ui_window_new, NULL);
-	query_connect_id(&readline_plugin, UI_WINDOW_SWITCH, readline_ui_window_switch, NULL);
-	query_connect_id(&readline_plugin, UI_WINDOW_KILL, readline_ui_window_kill, NULL);
-	query_connect_id(&readline_plugin, UI_WINDOW_PRINT, readline_ui_window_print, NULL);
-	query_connect_id(&readline_plugin, UI_WINDOW_REFRESH, readline_ui_window_refresh, NULL);
-	query_connect_id(&readline_plugin, UI_WINDOW_CLEAR, readline_ui_window_clear, NULL);
-	query_connect_id(&readline_plugin, VARIABLE_CHANGED, readline_variable_changed, NULL);
-	query_connect_id(&readline_plugin, UI_LOOP, ekg2_readline_loop, NULL);
+	query_connect(&readline_plugin, "ui-beep", readline_beep, NULL);
+	query_connect(&readline_plugin, "ui-is-initialized", readline_ui_is_initialized, NULL);
+	query_connect(&readline_plugin, "ui-window-new", readline_ui_window_new, NULL);
+	query_connect(&readline_plugin, "ui-window-switch", readline_ui_window_switch, NULL);
+	query_connect(&readline_plugin, "ui-window-kill", readline_ui_window_kill, NULL);
+	query_connect(&readline_plugin, "ui-window-print", readline_ui_window_print, NULL);
+	query_connect(&readline_plugin, "ui-window-refresh", readline_ui_window_refresh, NULL);
+	query_connect(&readline_plugin, "ui-refresh", readline_ui_window_refresh, NULL);
+	query_connect(&readline_plugin, "ui-window-clear", readline_ui_window_clear, NULL);
+	query_connect(&readline_plugin, "variable-changed", readline_variable_changed, NULL);
+	query_connect(&readline_plugin, "ui-loop", ekg2_readline_loop, NULL);
 
 	variable_add(&readline_plugin, ("ctrld_quits"),  VAR_BOOL, 1, &config_ctrld_quits, NULL, NULL, NULL);
+	variable_add(&readline_plugin, "print_read_lines",  VAR_BOOL, 1, &config_print_line, NULL, NULL, NULL);
 
 	watch_add(&readline_plugin, 0, WATCH_READ, readline_watch_stdin, NULL);
 
@@ -296,12 +297,13 @@ EXPORT int readline_plugin_init(int prio) {
 		w->priv_data = xmalloc(sizeof(readline_window_t));
 	
 	window_refresh();
+
+	rl_readline_name = "ekg2";
 	rl_initialize();
-	
+
 	rl_getc_function = my_getc;
 	rl_event_hook	 = my_loop;
-	rl_readline_name = "ekg2";
-	
+
 	rl_attempted_completion_function = (CPPFunction *) my_completion;
 	rl_completion_entry_function = (void*) empty_generator;
 
@@ -314,7 +316,9 @@ EXPORT int readline_plugin_init(int prio) {
 	rl_set_key("\033[12~", binding_quick_list, emacs_standard_keymap);
 	rl_set_key("\033[N", binding_quick_list, emacs_standard_keymap);
 	
-	//rl_set_key("\033[24~", binding_toggle_debug, emacs_standard_keymap);
+	rl_set_key("\033`", bind_debug_window, emacs_standard_keymap);
+
+	rl_bind_key(24, binding_cycle_sessions);	/* Ctrl-X XXX */
 
 	for (c = '0'; c <= '9'; c++)
 		rl_bind_key_in_map(c, bind_handler_window, emacs_meta_keymap);
@@ -342,6 +346,8 @@ EXPORT int readline_plugin_init(int prio) {
 	ui_screen_width = screen_columns;
 	ui_screen_height = screen_lines;
 	ui_need_refresh = 0;
+
+	rl_parse_and_bind(xstrdup("set completion-ignore-case on"));
 
 	return 0;
 }

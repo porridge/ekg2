@@ -25,6 +25,8 @@
 #ifndef __EKG_STUFF_H
 #define __EKG_STUFF_H
 
+#include <glib.h>
+
 #include <sys/types.h>
 #include <sys/time.h>
 
@@ -54,27 +56,6 @@ extern "C" {
 
 /* obs³uga procesów potomnych */
 
-struct child_s;
-
-typedef void (*child_handler_t)(struct child_s *c, pid_t pid, const char *name, int status, void *data);
-
-typedef struct child_s {
-	struct child_s	*next;
-
-	pid_t		pid;		/* id procesu */
-	plugin_t	*plugin;	/* obs³uguj±cy plugin */
-	char		*name;		/* nazwa, wy¶wietlana przy /exec */
-	child_handler_t	handler;	/* zak³ad pogrzebowy */
-	void		*priv_data;	/* dane procesu */
-} child_t;
-
-#ifndef EKG2_WIN32_NOFUNCTION
-child_t *child_add(plugin_t *plugin, pid_t pid, const char *name, child_handler_t handler, void *priv_data);
-child_t *children_removei(child_t *c);
-void children_destroy(void);
-#endif
-
-
 #ifndef EKG2_WIN32_NOFUNCTION
 typedef struct alias {
 	struct alias	*next;
@@ -89,25 +70,6 @@ enum mesg_t {
 	MESG_OFF,
 	MESG_ON,
 	MESG_DEFAULT
-};
-
-#define TIMER(x)		int x(int type, void *data)
-#define TIMER_SESSION(x)	int x(int type, session_t *s)
-
-struct timer {
-	struct timer	*next;
-
-	char		*name;			/* nazwa timera */
-	plugin_t	*plugin;		/* wtyczka obs³uguj±ca deksryptor */
-	struct timeval	ends;			/* kiedy siê koñczy? */
-	unsigned int	period;			/* ile milisekund ma trwaæ czekanie */
-	int	(*function)(int, void *);	/* funkcja do wywo³ania */
-	void		*data;			/* dane dla funkcji */
-
-	unsigned int	persist		: 1;	/* czy ma byæ na zawsze? */
-	unsigned int	at		: 1;	/* /at? trzeba siê tego jako¶ pozbyæ
-						 * i ujednoliciæ z /timer */
-	unsigned int	is_session	: 1;	/* czy sesyjny */
 };
 
 struct conference {
@@ -148,19 +110,16 @@ struct color_map {
 };
 
 #ifndef EKG2_WIN32_NOFUNCTION
-extern child_t *children;
 extern alias_t *aliases;
 extern list_t autofinds; /* char* data */
-extern struct timer *timers;
 extern struct conference *conferences;
 extern newconference_t *newconferences;
 extern struct buffer_info buffer_debug;
 extern struct buffer_info buffer_speech;
 
-extern time_t last_save;
 extern char *config_profile;
 extern int config_changed;
-extern int reason_changed;
+extern int ekg2_reason_changed;
 
 extern pid_t speech_pid;
 
@@ -169,7 +128,6 @@ extern int no_mouse;
 extern int old_stderr;
 extern int mesg_startup;
 
-extern char *config_audio_device;
 extern char *config_away_reason;
 extern int config_auto_save;
 extern int config_auto_user_add;
@@ -198,15 +156,11 @@ extern int config_history_savedups;
 extern int config_keep_reason;
 extern int config_last;
 extern int config_last_size;
-extern int config_lastlog_case;
-extern int config_lastlog_noitems;
-extern int config_lastlog_display_all;
 extern int config_make_window;
 extern int config_mesg;
 extern int config_query_commands;
 extern int config_slash_messages;
 extern char *config_quit_reason;
-extern int config_reason_limit;
 extern int config_save_password;
 extern int config_save_quit;
 extern char *config_session_default;
@@ -227,9 +181,6 @@ extern char *config_theme;
 extern int config_time_deviation;
 extern char *config_timestamp;
 extern int config_timestamp_show;
-extern int config_use_unicode;	/* for instance in jabber plugin if this is on, than we don't need to make iconv from / to unicode.. */
-extern int config_use_iso;  /* this for ncurses */
-extern char *config_console_charset;	/* */
 extern int config_window_session_allow;
 extern char *config_windows_layout;
 extern int config_windows_save;
@@ -241,7 +192,8 @@ extern char *config_nickname;
 
 extern char *home_dir;
 extern char *config_dir;
-extern char *console_charset;
+extern const char *console_charset;
+extern gboolean console_charset_is_utf8;
 extern int in_autoexec;
 extern int ekg_watches_removed;
 extern time_t ekg_started;
@@ -295,12 +247,12 @@ void newconferences_destroy();
 
 int ekg_hash(const char *name);
 
-FILE *help_path(char *name, char *plugin);
+GDataInputStream *help_open(const gchar *name, const gchar *plugin);
+gchar *read_line(GDataInputStream *f);
 
 int mesg_set(int what);
 char *strip_spaces(char *line);
 int strncasecmp_pl(const char * cs,const char * ct,size_t count);
-int strcasecmp_pl(const char *cs, const char *ct);
 int mkdir_recursive(const char *pathname, int isdir);
 
 #ifdef __GNUC__
@@ -315,11 +267,10 @@ const char *prepare_path(const char *filename, int do_mkdir);
 const char *prepare_pathf(const char *filename, ...);
 const char *prepare_path_user(const char *path);
 char *read_file(FILE *f, int alloc);
-char *read_file_iso(FILE *f, int alloc);
+char *read_file_utf(FILE *f, int alloc);
 
 const char *timestamp(const char *format);
 const char *timestamp_time(const char *format, time_t t);
-int on_off(const char *value);
 char *xstrmid(const char *str, int start, int length);
 void xstrtr(char *text, char from, char to);
 char color_map(unsigned char r, unsigned char g, unsigned char b);
@@ -338,18 +289,6 @@ int isalpha_pl(unsigned char c);
 #define xtolower(c) tolower((int) (unsigned char) c)
 #define xtoupper(c) toupper((int) (unsigned char) c)
 
-struct timer *timer_add(plugin_t *plugin, const char *name, unsigned int period, int persistent, int (*function)(int, void *), void *data);
-struct timer *timer_add_ms(plugin_t *plugin, const char *name, unsigned int period, int persist, int (*function)(int, void *), void *data);
-struct timer *timer_add_session(session_t *session, const char *name, unsigned int period, int persist, int (*function)(int, session_t *));
-struct timer *timer_find_session(session_t *session, const char *name);
-int timer_remove(plugin_t *plugin, const char *name);
-int timer_remove_session(session_t *session, const char *name);
-int timer_remove_user();
-void timers_remove(struct timer *t);
-struct timer *timers_removei(struct timer *t);
-void timers_destroy();
-TIMER(timer_handle_command);
-
 const char *ekg_status_label(const int status, const char *descr, const char *prefix);
 void ekg_update_status(session_t *session);
 #define ekg_update_status_n(a) ekg_update_status(session_find(a))
@@ -357,7 +296,7 @@ const char *ekg_status_string(const int status, const int cmd);
 int ekg_status_int(const char *text);
 
 char *ekg_draw_descr(const int status);
-uint32_t *ekg_sent_message_format(const char *text);
+guint32 *ekg_sent_message_format(const char *text);
 
 void ekg_yield_cpu();
 
@@ -371,6 +310,8 @@ string_t ekg_convert_string_t(string_t s, const char *from, const char *to);
 int ekg_converters_display(int quiet);
 
 char *password_input(const char *prompt, const char *rprompt, const bool norepeat);
+int is_utf8_string(const char *txt);
+
 
 /* funkcje poza stuff.c */
 void ekg_exit();

@@ -14,13 +14,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#include <ekg/win32.h>
-
-#include <ekg/debug.h>
-#include <ekg/stuff.h>
-#include <ekg/sessions.h>
-#include <ekg/windows.h>
-#include <ekg/xmalloc.h>
+#include "ekg2.h"
 
 #include "irc.h"
 #include "autoacts.h"
@@ -122,7 +116,7 @@ static TIMER(irc_autorejoin_timer) {
 		return 0;
 	}
 
-	debug("irc_autorejoin_timer() rejoining to: %s\n", d->chan);
+	debug_white("irc_autorejoin_timer() rejoining to: %s\n", d->chan);
 	irc_autorejoin(d->s, IRC_REJOIN_KICK, (d->chan)+4);
 	return -1;
 }
