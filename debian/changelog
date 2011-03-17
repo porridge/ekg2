@@ -25,8 +25,10 @@ ekg2 (1:0.4~pre+20110317.1-1) unstable; urgency=low
   * [df853be] Updated developer information.
   * [062076c] Added Vcs-* headers.
   * [1b516de] Added libglib2.0-dev to build-deps.
+  * [7f5b84a] Do install the .la files.
+  * [be2ad99] Fixed version in NEWS file.
 
- -- Marcin Owsiany <porridge@debian.org>  Thu, 17 Mar 2011 14:39:03 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 17 Mar 2011 15:00:34 +0000
 
 ekg2 (1:0.3.1~rc1-1) unstable; urgency=low
 
