@@ -1,4 +1,4 @@
-ekg2 (1:0.4~pre+20110317.1-1) unstable; urgency=low
+ekg2 (1:0.4~pre+20110317.1-1) experimental; urgency=low
 
   * Merge a new upstream snapshot.
     - includes complete rewrite of the build system as well as significant
@@ -27,8 +27,12 @@ ekg2 (1:0.4~pre+20110317.1-1) unstable; urgency=low
   * [1b516de] Added libglib2.0-dev to build-deps.
   * [7f5b84a] Do install the .la files.
   * [be2ad99] Fixed version in NEWS file.
+  * [4f6bdbc] Build depend on autopoint or old gettext package.
+  * [f74ae68] Removed build-dependency and references to quilt.
+  * [f69076c] Fixed a spelling error.
+  * [de5c5d3] Use recommended NEWS format, no asterisks.
 
- -- Marcin Owsiany <porridge@debian.org>  Thu, 17 Mar 2011 15:00:34 +0000
+ -- Marcin Owsiany <porridge@debian.org>  Thu, 17 Mar 2011 16:36:45 +0000
 
 ekg2 (1:0.3.1~rc1-1) unstable; urgency=low
 
