@@ -73,7 +73,7 @@ override_dh_auto_clean:
 # Copy config.{sub,guess} if they are available and differ.
 	for ext in sub guess; do \
 	 if test -r /usr/share/misc/config.$$ext && ! cmp --quiet /usr/share/misc/config.$$ext config.$$ext ; then \
-	  cp -fv /usr/share/misc/config.$$ext config.$ext ; \
+	  cp -fv /usr/share/misc/config.$$ext config.$$ext ; \
 	 fi ; \
 	done
 
