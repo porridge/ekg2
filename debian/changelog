@@ -1,3 +1,9 @@
+ekg2 (1:0.4~pre+20110319.1-1) experimental; urgency=low
+
+  * Merged a new upstream snapshot.
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 19 Mar 2011 14:16:06 +0000
+
 ekg2 (1:0.4~pre+20110317.1-1) experimental; urgency=low
 
   * Merge a new upstream snapshot.
