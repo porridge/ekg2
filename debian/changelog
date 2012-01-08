@@ -1,3 +1,9 @@
+ekg2 (1:0.4~pre+20110319.2-1) experimental; urgency=low
+
+  * Merged my static crash handlig patchseries.
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 07 Jan 2012 22:25:13 +0000
+
 ekg2 (1:0.4~pre+20110319.1-1) experimental; urgency=low
 
   * Merged a new upstream snapshot.
