@@ -289,7 +289,7 @@ int isalpha_pl(unsigned char c);
 #define xtolower(c) tolower((int) (unsigned char) c)
 #define xtoupper(c) toupper((int) (unsigned char) c)
 
-inline void ignore_result_helper(int __attribute__((unused)) dummy, ...);
+void ignore_result_helper(int __attribute__((unused)) dummy, ...);
 
 #ifdef __GNUC__
 # define IGNORE_RESULT(X) ignore_result_helper(0, (X))
