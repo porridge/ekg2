@@ -135,8 +135,9 @@ static void update_longest_nick(channel_t *chan)
 	for (p=chan->onchan; p; p=p->next)
 	{
 		people_t *person = (people_t *)p->data;
-		if (person->nick && xstrlen(person->nick+4) > chan->longest_nick)
-			chan->longest_nick = xstrlen(person->nick+4);
+		const gsize nicklen = g_utf8_strlen(person->nick+4, -1);
+		if (person->nick && nicklen > chan->longest_nick)
+			chan->longest_nick = nicklen;
 	}
 	nickpad_string_create(chan);
 }
@@ -490,8 +491,8 @@ static int irc_sync_channel(session_t *s, irc_private_t *j, channel_t *p)
 	/* to ma sie rownac ile ma byc roznych syncow narazie tylko WHO
 	 * ale moze bedziemy syncowac /mode +b, +e, +I) */
 	g_get_current_time(&(p->syncstart));
-	watch_write(j->send_watch, "WHO %s\r\n", p->name+4);
-	watch_write(j->send_watch, "MODE %s +b\r\n", p->name+4);
+	ekg_connection_write(j->send_stream, "WHO %s\r\n", p->name+4);
+	ekg_connection_write(j->send_stream, "MODE %s +b\r\n", p->name+4);
 	return 0;
 }
 

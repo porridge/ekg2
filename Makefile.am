@@ -17,6 +17,7 @@ noinst_HEADERS = \
 	ekg/bindings.h \
 	ekg/commands.h \
 	ekg/completion.h \
+	ekg/connections.h \
 	ekg/configfile.h \
 	ekg/debug.h \
 	ekg/dynstuff.h \
@@ -53,6 +54,7 @@ ekg2_SOURCES = \
 	ekg/commands.c \
 	ekg/completion.c \
 	ekg/configfile.c \
+	ekg/connections.c \
 	ekg/dynstuff.c \
 	ekg/ekg.c \
 	ekg/emoticons.c \
@@ -206,6 +208,35 @@ dist_gpg_DATA = \
 	plugins/gpg/commands-pl.txt
 endif
 
+BASE_PNGS = \
+	$(top_srcdir)/plugins/gtk/iconssets/avail.png \
+	$(top_srcdir)/plugins/gtk/iconssets/away.png \
+	$(top_srcdir)/plugins/gtk/iconssets/dnd.png \
+	$(top_srcdir)/plugins/gtk/iconssets/ffc.png \
+	$(top_srcdir)/plugins/gtk/iconssets/icon_error.png \
+	$(top_srcdir)/plugins/gtk/iconssets/icon_unknown.png \
+	$(top_srcdir)/plugins/gtk/iconssets/invisible.png \
+	$(top_srcdir)/plugins/gtk/iconssets/notavail.png \
+	$(top_srcdir)/plugins/gtk/iconssets/xa.png
+
+GG_PNGS = \
+	$(top_srcdir)/plugins/gtk/iconssets/gg-avail.png \
+	$(top_srcdir)/plugins/gtk/iconssets/gg-away.png \
+	$(top_srcdir)/plugins/gtk/iconssets/gg-invisible.png \
+	$(top_srcdir)/plugins/gtk/iconssets/gg-notavail.png
+
+ICQ_PNGS = \
+	$(top_srcdir)/plugins/gtk/iconssets/icq-avail.png \
+	$(top_srcdir)/plugins/gtk/iconssets/icq-away.png \
+	$(top_srcdir)/plugins/gtk/iconssets/icq-dnd.png \
+	$(top_srcdir)/plugins/gtk/iconssets/icq-ffc.png \
+	$(top_srcdir)/plugins/gtk/iconssets/icq-invisible.png \
+	$(top_srcdir)/plugins/gtk/iconssets/icq-notavail.png \
+	$(top_srcdir)/plugins/gtk/iconssets/icq-unknown.png \
+	$(top_srcdir)/plugins/gtk/iconssets/icq-xa.png
+
+EXTRA_DIST += $(BASE_PNGS) $(GG_PNGS) $(ICQ_PNGS)
+
 if ENABLE_GTK
 plugin_LTLIBRARIES += plugins/gtk/gtk.la
 
@@ -235,41 +266,13 @@ plugins_gtk_gtk_la_SOURCES = \
 	plugins/gtk/xtext.c \
 	plugins/gtk/xtext.h \
 	plugins/gtk/chanview-tabs.inc \
-	plugins/gtk/chanview-tree.inc \
-	$(GTK_INLINE_PNGS)
+	plugins/gtk/chanview-tree.inc
 
 BUILT_SOURCES += \
 	$(GTK_INLINE_PNGS)
 
 MOSTLYCLEANFILES += \
 	$(GTK_INLINE_PNGS)
-
-BASE_PNGS = \
-	$(top_srcdir)/plugins/gtk/iconssets/avail.png \
-	$(top_srcdir)/plugins/gtk/iconssets/away.png \
-	$(top_srcdir)/plugins/gtk/iconssets/dnd.png \
-	$(top_srcdir)/plugins/gtk/iconssets/ffc.png \
-	$(top_srcdir)/plugins/gtk/iconssets/icon_error.png \
-	$(top_srcdir)/plugins/gtk/iconssets/icon_unknown.png \
-	$(top_srcdir)/plugins/gtk/iconssets/invisible.png \
-	$(top_srcdir)/plugins/gtk/iconssets/notavail.png \
-	$(top_srcdir)/plugins/gtk/iconssets/xa.png
-
-GG_PNGS = \
-	$(top_srcdir)/plugins/gtk/iconssets/gg-avail.png \
-	$(top_srcdir)/plugins/gtk/iconssets/gg-away.png \
-	$(top_srcdir)/plugins/gtk/iconssets/gg-invisible.png \
-	$(top_srcdir)/plugins/gtk/iconssets/gg-notavail.png
-
-ICQ_PNGS = \
-	$(top_srcdir)/plugins/gtk/iconssets/icq-avail.png \
-	$(top_srcdir)/plugins/gtk/iconssets/icq-away.png \
-	$(top_srcdir)/plugins/gtk/iconssets/icq-dnd.png \
-	$(top_srcdir)/plugins/gtk/iconssets/icq-ffc.png \
-	$(top_srcdir)/plugins/gtk/iconssets/icq-invisible.png \
-	$(top_srcdir)/plugins/gtk/iconssets/icq-notavail.png \
-	$(top_srcdir)/plugins/gtk/iconssets/icq-unknown.png \
-	$(top_srcdir)/plugins/gtk/iconssets/icq-xa.png
 
 inline_pngs.h: $(BASE_PNGS)
 	$(AM_V_GEN)$(GDK_PIXBUF_CSOURCE) --raw --build-list \
@@ -304,7 +307,6 @@ inline_pngs_icq.h: $(ICQ_PNGS)
 		icq_unknown $(top_srcdir)/plugins/gtk/iconssets/icq-unknown.png \
 		> $@
 
-EXTRA_DIST += $(BASE_PNGS) $(GG_PNGS) $(ICQ_PNGS)
 endif
 
 if ENABLE_ICQ
@@ -350,7 +352,6 @@ plugins_irc_irc_la_SOURCES = \
 	plugins/irc/input.h \
 	plugins/irc/irc.c \
 	plugins/irc/irc.h \
-	plugins/irc/irc-ssl.h \
 	plugins/irc/IRCVERSION.h \
 	plugins/irc/misc.c \
 	plugins/irc/misc.h \
@@ -473,6 +474,28 @@ dist_ncurses_DATA = \
 	plugins/ncurses/vars-pl.txt
 endif
 
+EXTRA_DIST += \
+	plugins/perl/common/Command.xs \
+	plugins/perl/common/Ekg2.pm \
+	plugins/perl/common/Ekg2.xs \
+	plugins/perl/common/Makefile.PL \
+	plugins/perl/common/module.h \
+	plugins/perl/common/Plugin.xs \
+	plugins/perl/common/Session.xs \
+	plugins/perl/common/Timer.xs \
+	plugins/perl/common/typemap \
+	plugins/perl/common/Userlist.xs \
+	plugins/perl/common/Variable.xs \
+	plugins/perl/common/Watch.xs \
+	plugins/perl/common/Window.xs \
+	plugins/perl/irc/Channel.xs \
+	plugins/perl/irc/Irc.pm \
+	plugins/perl/irc/Irc.xs \
+	plugins/perl/irc/Makefile.PL \
+	plugins/perl/irc/module.h \
+	plugins/perl/irc/Server.xs \
+	plugins/perl/irc/typemap \
+	plugins/perl/irc/User.xs
 if ENABLE_PERL
 plugin_LTLIBRARIES += plugins/perl/perl.la
 
@@ -499,9 +522,9 @@ dist_script_DATA += \
 
 if ENABLE_PERL_MODULES
 $(top_srcdir)/plugins/perl/common/Makefile: $(top_srcdir)/plugins/perl/common/Makefile.PL
-	$(AM_V_GEN)cd $(top_srcdir)/plugins/perl/common && $(PERL) Makefile.PL INC="-I$(abs_top_builddir) -I../../.."
+	$(AM_V_GEN)cd $(top_srcdir)/plugins/perl/common && $(PERL) Makefile.PL INC="-I$(abs_top_builddir) -I../../.." $(PERL_MODULE_BUILD_FLAGS)
 $(top_srcdir)/plugins/perl/irc/Makefile: $(top_srcdir)/plugins/perl/irc/Makefile.PL
-	$(AM_V_GEN)cd $(top_srcdir)/plugins/perl/irc && $(PERL) Makefile.PL INC="-I$(abs_top_builddir) -I../../.."
+	$(AM_V_GEN)cd $(top_srcdir)/plugins/perl/irc && $(PERL) Makefile.PL INC="-I$(abs_top_builddir) -I../../.." $(PERL_MODULE_BUILD_FLAGS)
 
 perl-build-common: $(top_srcdir)/plugins/perl/common/Makefile
 	cd $(top_srcdir)/plugins/perl/common && $(MAKE) CC="$(CC)" CCFLAGS="$(plugins_perl_perl_la_CPPFLAGS) $(CFLAGS)"
@@ -529,28 +552,6 @@ distclean-local: perl-distclean
 install-exec-local: perl-install-common perl-install-irc
 endif
 
-EXTRA_DIST += \
-	plugins/perl/common/Command.xs \
-	plugins/perl/common/Ekg2.pm \
-	plugins/perl/common/Ekg2.xs \
-	plugins/perl/common/Makefile.PL \
-	plugins/perl/common/module.h \
-	plugins/perl/common/Plugin.xs \
-	plugins/perl/common/Session.xs \
-	plugins/perl/common/Timer.xs \
-	plugins/perl/common/typemap \
-	plugins/perl/common/Userlist.xs \
-	plugins/perl/common/Variable.xs \
-	plugins/perl/common/Watch.xs \
-	plugins/perl/common/Window.xs \
-	plugins/perl/irc/Channel.xs \
-	plugins/perl/irc/Irc.pm \
-	plugins/perl/irc/Irc.xs \
-	plugins/perl/irc/Makefile.PL \
-	plugins/perl/irc/module.h \
-	plugins/perl/irc/Server.xs \
-	plugins/perl/irc/typemap \
-	plugins/perl/irc/User.xs
 endif
 
 if ENABLE_NNTP
@@ -598,6 +599,19 @@ dist_python_DATA = \
 dist_script_DATA += \
 	contrib/python/notify-bubble.py \
 	contrib/python/sample.py
+endif
+
+if ENABLE_RC
+plugin_LTLIBRARIES += plugins/rc/rc.la
+
+plugins_rc_rc_la_SOURCES = \
+	$(noinst_HEADERS) \
+	plugins/rc/rc.h \
+	plugins/rc/inputs.c \
+	plugins/rc/main.c
+
+dist_rc_DATA = \
+	plugins/rc/vars-pl.txt
 endif
 
 if ENABLE_READLINE

@@ -53,6 +53,8 @@ int config_text_bottomalign		= 0;
 
 static int config_traditional_clear	= 1;
 
+static int redraw_timer_id = 0;
+
 int ncurses_initialized;
 int ncurses_plugin_destroyed;
 
@@ -176,6 +178,19 @@ static QUERY(ncurses_ui_window_switch) {
 	return 0;
 }
 
+static int redraw_timer(gpointer data) {
+	window_t *w = (window_t *)data;
+
+	if (window_find_ptr(w)) {
+		ncurses_redraw(w);
+		if (w->lock == 0)
+			ncurses_commit();
+	}
+
+	redraw_timer_id = 0;
+	return FALSE;	// done. destroy timer
+}
+
 static QUERY(ncurses_ui_window_print)
 {
 	window_t *w	= *(va_arg(ap, window_t **));
@@ -225,9 +240,15 @@ static QUERY(ncurses_ui_window_print)
 		w->more = 1;
 
 	if (!w->floating) {
-		ncurses_redraw(w);
-		if (w->lock == 0) // && w == window_current) it should be tested
-			ncurses_commit();
+		n->redraw = 1;
+		if (window_current && window_current->id == w->id && !w->more) {
+			/* redraw only visible window and lines,
+			 * but wait 5ms for next lines
+			 */
+			if (redraw_timer_id>0)
+				g_source_remove(redraw_timer_id);
+			redraw_timer_id = g_timeout_add(5/*ms*/, redraw_timer, w);
+		}
 	}
 
 	return 0;
@@ -593,14 +614,8 @@ static int ncurses_theme_init() {
 	/* prompty i statusy dla ui-ncurses */
 	format_add("ncurses_prompt_none", "", 1);
 	format_add("ncurses_prompt_query", "[%Y%1%n] ", 1);
-	format_add("statusbar", " %c(%w%{time}%c)%w %c(%w%{?session %{?away %G}%{?avail %Y}%{?chat %W}%{?dnd %K}%{?xa %g}%{?gone %R}"
-			"%{?invisible %C}%{?notavail %r}%{session}}%{?!session ---}%c) %{?window (%wwin%c/%w%{?typing %C}%{window}}"
-			"%{?query %c:%W%{query}}%{?debug %c(%Cdebug}%c)%w%{?activity  %c(%wact%c/%W}%{activity}%{?activity %c)%w}"
-			"%{?mail  %c(%wmail%c/%w}%{mail}%{?mail %c)}%{?more  %c(%Gmore%c)}", 1);
-	format_add("header", " %{?query %c(%{?query_away %w}%{?query_avail %W}%{?query_invisible %K}%{?query_notavail %k}"
-			"%{?query_chat %W}%{?query_dnd %K}%{query_xa %g}%{?query_gone %R}%{?query_unknown %M}%{?query_error %m}%{?query_blocking %m}"
-			"%{query}%{?query_descr %c/%w%{query_descr}}%c) %{?query_ip (%wip%c/%w%{query_ip}%c)} %{irctopic}}"
-			"%{?!query %c(%wekg2%c/%w%{version}%c) (%w%{url}%c)}", 1);
+	format_add("statusbar", " %c(%w%{time}%c)%w %c(%w%{?session %{?away %G}%{?avail %Y}%{?chat %W}%{?dnd %K}%{?xa %g}%{?gone %R}%{?invisible %C}%{?notavail %r}%{session}}%{?!session ---}%c) %{?window (%wwin%c/%w%{?typing %C}%{window}}%{?query %c:%W%{query}}%{?debug %c(%Cdebug}%c)%w%{?activity  %c(%wact%c/%W}%{activity}%{?activity %c)%w}%{?mail  %c(%wmail%c/%w}%{mail}%{?mail %c)}%{?more  %c(%Gmore%c)}", 1);
+	format_add("header", " %{?query %c(%{?query_away %w}%{?query_avail %W}%{?query_invisible %K}%{?query_notavail %k}%{?query_chat %W}%{?query_dnd %K}%{query_xa %g}%{?query_gone %R}%{?query_unknown %M}%{?query_error %m}%{?query_blocking %m}%{query}%{?query_descr %c/%w%{query_descr}}%c) %{?query_ip (%wip%c/%w%{query_ip}%c)} %{irctopic}}%{?!query %c(%wekg2%c/%w%{version}%c) (%w%{url}%c)}", 1);
 	format_add("statusbar_act_important", "%Y", 1);
 	format_add("statusbar_act_important2us", "%W", 1);
 	format_add("statusbar_act", "%K", 1);
@@ -813,6 +828,8 @@ static int ncurses_plugin_destroy()
 		watch_remove(&ncurses_plugin, winch_pipe[0], WATCH_READ);
 
 	timer_remove(&ncurses_plugin, "ncurses:clock");
+	if (redraw_timer_id>0)
+		g_source_remove(redraw_timer_id);
 
 	ncurses_deinit();
 	g_free(ncurses_hellip);

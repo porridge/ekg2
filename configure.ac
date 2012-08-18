@@ -99,6 +99,10 @@ AC_CHECK_FUNC([dn_expand], [], [
 	])
 ])
 
+AC_EKG2_WITH([gnutls], [
+	AC_EKG2_CHECK_PKGCONFIG_LIB([gnutls], [gnutls], [gnutls_init], [gnutls/gnutls.h])
+])
+
 EKG_LIBS="$LIBS"
 AC_SUBST([EKG_LIBS])
 
@@ -156,14 +160,7 @@ AC_EKG2_PLUGIN([gtk], [
 
 AC_EKG2_PLUGIN([icq])
 
-AC_EKG2_PLUGIN([irc],, [
-	AC_EKG2_WITH([openssl], [
-		AC_EKG2_CHECK_PKGCONFIG_LIB([openssl], [ssl], [RSA_new], [openssl/ssl.h],,, [
-			LIBS="-lssl -lcrypto $LIBS"
-			AC_DEFINE([HAVE_LIBSSL], [1], [define if you want to use openssl for ssl connections])
-		])
-	])
-])
+AC_EKG2_PLUGIN([irc])
 
 AC_EKG2_PLUGIN([jabber], [
 	AC_EKG2_WITH([expat], [
@@ -173,25 +170,6 @@ AC_EKG2_PLUGIN([jabber], [
 	AC_EKG2_WITH([zlib], [
 		AC_EKG2_CHECK_PKGCONFIG_LIB([zlib], [z], [gzopen], [zlib.h])
 	])
-
-	try_openssl=no
-
-	AC_EKG2_WITH([gnutls], [
-		AC_EKG2_CHECK_PKGCONFIG_LIB([gnutls], [gnutls], [gnutls_init], [gnutls/gnutls.h],, [
-			try_openssl=yes
-		])
-	], [try_openssl=yes])
-
-	AS_IF([test $try_openssl = yes], [
-		AC_EKG2_WITH([openssl], [
-			AC_EKG2_CHECK_PKGCONFIG_LIB([openssl], [ssl], [RSA_new], [openssl/ssl.h],,, [
-				LIBS="-lssl -lcrypto $LIBS"
-				AC_DEFINE([HAVE_LIBSSL], [1], [define if you want to use openssl for ssl connections])
-			])
-		])
-	])
-
-	AS_UNSET([try_openssl])
 ])
 
 AC_EKG2_PLUGIN([jogger])
@@ -268,6 +246,7 @@ AC_EKG2_PLUGIN([ncurses], [
 
 AC_EKG2_PLUGIN([nntp])
 
+perl_module_build_flags=
 AC_EKG2_PLUGIN([perl], [
 	AC_EKG2_WITH([perl], [
 		AC_PATH_PROG([PERL], [perl])
@@ -285,7 +264,16 @@ AC_EKG2_PLUGIN([perl], [
 	, [
 		enable_perl_modules=yes
 	])
+
+	AC_ARG_WITH([perl-module-build-flags],
+		AS_HELP_STRING([--with-perl-module-build-flags=...],
+			[additional flags passed to Makefile.PL (e.g. INSTALLDIRS)]),
+	[
+		perl_module_build_flags=$withval
+	])
 ])
+
+AC_SUBST([PERL_MODULE_BUILD_FLAGS], [$perl_module_build_flags])
 AM_CONDITIONAL([ENABLE_PERL_MODULES], [test x"$enable_perl_modules" = x"yes"])
 
 AC_EKG2_PLUGIN([polchat])
@@ -318,6 +306,8 @@ AC_EKG2_PLUGIN([python], [
 		], [EKG2_FAILED_TEST])
 	])
 ])
+
+AC_EKG2_PLUGIN([rc])
 
 AC_EKG2_PLUGIN([readline], [
 	AC_EKG2_WITH([readline], [
