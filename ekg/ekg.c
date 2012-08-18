@@ -348,22 +348,11 @@ void ekg_debug_handler(int level, const char *format, va_list ap) {
 	if (!config_debug)
 		return;
 
-	/* This function may be called asynchronously as a callback from
-	 * third-party code, in particular as a debugging handler from libgadu
-	 * in the gg plugin. Since this code or the code this function calls,
-	 * is not re-entrant, we need to lock it with a mutex.
-	 * See bug#125
-	 */
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
-	g_static_mutex_lock(&mutex);
-
 	if (line) {
 		g_string_append_vprintf(line, format, ap);
 
-		if (line->len == 0 || line->str[line->len - 1] != '\n') {
-			g_static_mutex_unlock(&mutex);
+		if (line->len == 0 || line->str[line->len - 1] != '\n')
 			return;
-		}
 
 		line->str[line->len - 1] = '\0';	/* remove '\n' */
 		tmp = g_string_free(line, FALSE);
@@ -371,15 +360,12 @@ void ekg_debug_handler(int level, const char *format, va_list ap) {
 	} else {
 		int tmplen = g_vasprintf(&tmp, format, ap);
 
-		if (tmplen < 0 || !tmp) {	/* OutOfMemory? */
-			g_static_mutex_unlock(&mutex);
+		if (tmplen < 0 || !tmp)	/* OutOfMemory? */
 			return;
-		}
 
 		if (tmplen == 0 || tmp[tmplen - 1] != '\n') {
 			line = g_string_new_len(tmp, tmplen);
 			g_free(tmp);
-			g_static_mutex_unlock(&mutex);
 			return;
 		}
 		tmp[tmplen - 1] = 0;			/* remove '\n' */
@@ -410,7 +396,6 @@ void ekg_debug_handler(int level, const char *format, va_list ap) {
 		fprintf(stderr, "%s\n", tmp);
 #endif
 	xfree(tmp);
-	g_static_mutex_unlock(&mutex);
 }
 
 static void glib_debug_handler(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer user_data) {
