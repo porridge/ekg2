@@ -1,3 +1,10 @@
+ekg2 (1:0.3.1-2) unstable; urgency=medium
+
+  * RC-bugfix upload aimed at testing
+  * [57a396e] Do not install conflicting symlinks. (Closes: #685469)
+
+ -- Marcin Owsiany <porridge@debian.org>  Tue, 21 Aug 2012 22:57:55 +0200
+
 ekg2 (1:0.3.1-1) unstable; urgency=low
 
   * New upstream release.
