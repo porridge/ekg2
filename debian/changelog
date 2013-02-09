@@ -1,3 +1,14 @@
+ekg2 (1:0.3.1-3) unstable; urgency=medium
+
+  [ Andreas Beckmann ]
+  * Add ekg2.postinst script to perform the directory to symlink
+    transformation of /usr/share/doc/ekg2.  (Closes: #685469)
+
+  [ Marcin Owsiany ]
+  * important bug fix upload, aimed at testing
+
+ -- Marcin Owsiany <porridge@debian.org>  Sat, 09 Feb 2013 21:00:43 +0000
+
 ekg2 (1:0.3.1-2) unstable; urgency=medium
 
   * RC-bugfix upload aimed at testing
