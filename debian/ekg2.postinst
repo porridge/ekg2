@@ -1,13 +1,14 @@
 #!/bin/sh
 set -e
 
-docdir="/usr/share/doc/ekg2"
-doclnk="ekg2-core"
-
 if [ "$1" = "configure" ]; then
+	docdir="/usr/share/doc/ekg2"
+	# /usr/share/doc/ekg2 was shipped as a directory in ekg2-core by
+	# mistake in 1:0.3.1-1 (#685469). dpkg does not fix this automatically
+	# on upgrades, we need to do it manually here.
 	if [ ! -L "$docdir" ] && [ -d "$docdir" ]; then
 		rmdir "$docdir"
-		ln -s "$doclnk" "$docdir"
+		ln -s "ekg2-core" "$docdir"
 	fi
 fi
 
