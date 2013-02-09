@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+docdir="/usr/share/doc/ekg2"
+doclnk="ekg2-core"
+
+if [ "$1" = "configure" ]; then
+	if [ ! -L "$docdir" ] && [ -d "$docdir" ]; then
+		rmdir "$docdir"
+		ln -s "$doclnk" "$docdir"
+	fi
+fi
+
+#DEBHELPER#

@@ -1,3 +1,11 @@
+ekg2 (1:0.3.1-2.1) UNRELEASED; urgency=low
+
+  * Non-maintainer upload.
+  * Add ekg2.postinst script to perform the directory to symlink
+    transformation of /usr/share/doc/ekg2.  (Closes: #685469)
+
+ -- Andreas Beckmann <anbe@debian.org>  Sun, 03 Feb 2013 03:42:00 +0100
+
 ekg2 (1:0.3.1-2) unstable; urgency=medium
 
   * RC-bugfix upload aimed at testing
