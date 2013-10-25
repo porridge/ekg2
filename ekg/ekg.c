@@ -78,6 +78,7 @@
 #include "scripts.h"
 
 char *config_dir;
+char *old_config_dir;		/* used for copy old config files */
 int mesg_startup;
 static char argv0[PATH_MAX];
 static gchar last_err_message[128] = {0};
@@ -456,36 +457,42 @@ static GOptionEntry ekg_options[] = {
 	{ NULL }
 };
 
+struct option_callback_args {
+	gint *new_status;
+	gchar **new_descr;
+};
+
+gboolean set_status_callback(const gchar *optname, const gchar *optval,
+		gpointer data, GError **error)
+{
+	struct option_callback_args *args = data;
+
+	gchar c = optname[1] == '-' ? optname[2] : optname[1];
+	switch (c) {
+		case 'a': *args->new_status = EKG_STATUS_AWAY; break;
+		case 'b': *args->new_status = EKG_STATUS_AVAIL; break;
+		case 'd': *args->new_status = EKG_STATUS_DND; break;
+		case 'f': *args->new_status = EKG_STATUS_FFC; break;
+		case 'i': *args->new_status = EKG_STATUS_INVISIBLE; break;
+		case 'x': *args->new_status = EKG_STATUS_XA; break;
+	}
+	xfree(*args->new_descr);
+	*args->new_descr = xstrdup(optval);
+
+	return TRUE;
+}
+
 int main(int argc, char **argv)
 {
 	gint auto_connect = 1, no_global_config = 0, no_config = 0, new_status = 0, print_version = 0;
 	char *tmp = NULL, *new_descr = NULL;
 	gchar *load_theme = NULL, *new_profile = NULL, *frontend = NULL;
-	GOptionContext *opt;
 	GError *err = NULL;
 #ifndef NO_POSIX_SYSTEM
 	struct rlimit rlim;
 #else
 	WSADATA wsaData;
 #endif
-
-	gboolean set_status_callback(const gchar *optname, const gchar *optval,
-			gpointer data, GError **error) {
-
-		gchar c = optname[1] == '-' ? optname[2] : optname[1];
-		switch (c) {
-			case 'a': new_status = EKG_STATUS_AWAY; break;
-			case 'b': new_status = EKG_STATUS_AVAIL; break;
-			case 'd': new_status = EKG_STATUS_DND; break;
-			case 'f': new_status = EKG_STATUS_FFC; break;
-			case 'i': new_status = EKG_STATUS_INVISIBLE; break;
-			case 'x': new_status = EKG_STATUS_XA; break;
-		}
-		xfree(new_descr);
-		new_descr = xstrdup(optval);
-
-		return TRUE;
-	}
 
 	g_type_init();
 
@@ -560,17 +567,29 @@ int main(int argc, char **argv)
 	ekg_options[11].arg_data = &set_status_callback;
 	ekg_options[12].arg_data = &print_version;
 
-	opt = g_option_context_new("[COMMAND...]");
-	g_option_context_set_description(opt, "Options concerned with status depend on the protocol of particular session -- \n" \
-"some sessions may not support ``do not disturb'' status, etc.\n");
-	g_option_context_add_main_entries(opt, ekg_options, "ekg2");
+	{
+		GOptionContext *opt;
+		GOptionGroup *g;
+		struct option_callback_args optargs = { &new_status, &new_descr };
 
-	if (!g_option_context_parse(opt, &argc, &argv, &err)) {
-		g_print("Option parsing failed: %s\n", err->message);
-		return 1;
+		opt = g_option_context_new("[COMMAND...]");
+		g = g_option_group_new(NULL, NULL, NULL, &optargs, NULL);
+
+		g_option_group_add_entries(g, ekg_options);
+		g_option_group_set_translation_domain(g, "ekg2");
+
+		g_option_context_set_description(opt, "Options concerned with status depend on the protocol of particular session -- \n" \
+	"some sessions may not support ``do not disturb'' status, etc.\n");
+		g_option_context_set_main_group(opt, g);
+
+		if (!g_option_context_parse(opt, &argc, &argv, &err)) {
+			g_print("Option parsing failed: %s\n", err->message);
+			return 1;
+		}
+
+		g_option_context_free(opt);
+		/* GOptionGroup is freed implicitly */
 	}
-	
-	g_option_context_free(opt);
 
 	if (print_version) {
 		g_print("ekg2-%s (compiled on %s)\n", VERSION, compile_time());
@@ -593,9 +612,11 @@ int main(int argc, char **argv)
 		tmp = xstrdup("");
 
 	if (getenv("HOME_ETC"))
-		config_dir = saprintf("%s/ekg2%s", getenv("HOME_ETC"), tmp);
+		old_config_dir = saprintf("%s/ekg2%s", getenv("HOME_ETC"), tmp);
 	else
-		config_dir = saprintf("%s/.ekg2%s", home_dir, tmp);
+		old_config_dir = saprintf("%s/.ekg2%s", home_dir, tmp);
+
+	config_dir = g_build_filename(g_get_user_config_dir(), "ekg2", tmp, NULL);
 
 	xfree(tmp);
 	tmp = NULL;
@@ -955,6 +976,7 @@ void ekg_exit()
 	xfree(home_dir);
 
 	xfree(config_dir);
+	xfree(old_config_dir);
 
 	mesg_set(mesg_startup);
 #ifdef NO_POSIX_SYSTEM
