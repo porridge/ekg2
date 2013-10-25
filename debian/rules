@@ -12,7 +12,7 @@ DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 /usr/share/topgit/tg2quilt.mk:
 
 %:
-	dh --with quilt,python-central --parallel $@
+	dh --with quilt,python2,autotools_dev --parallel $@
 
 # Remember to update README.Debian as well...
 override_dh_auto_configure:
@@ -70,12 +70,6 @@ override_dh_auto_clean:
 	rm -rf docs/doxygen
 	if [ -e Makefile ] ; then $(MAKE) distclean ; fi
 	rm -f docs/ekg2.1 docs/ekg2-remote.1
-# Copy config.{sub,guess} if they are available and differ.
-	for ext in sub guess; do \
-	 if test -r /usr/share/misc/config.$$ext && ! cmp --quiet /usr/share/misc/config.$$ext config.$$ext ; then \
-	  cp -fv /usr/share/misc/config.$$ext config.$$ext ; \
-	 fi ; \
-	done
 
 override_dh_strip:
 	dh_strip --dbg-package=ekg2-dbg
