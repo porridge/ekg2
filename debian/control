@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 7.0.50~), dh-autoreconf,
 # UI
  libncursesw5-dev, libgpmg1-dev, libaspell-dev, libgtk2.0-dev,
 # scripting
- python, python-dev, python-central (>= 0.5), libperl-dev,
+ python, python-dev, libperl-dev,
 # Protocols
  libgadu-dev, libexpat1-dev,
 # Encryption

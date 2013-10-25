@@ -10,7 +10,7 @@ export AUTOMAKE=automake-1.11
 /usr/share/topgit/tg2quilt.mk:
 
 %:
-	dh $@ --with autoreconf,python-central --parallel
+	dh $@ --with autoreconf,python2 --parallel
 
 # Remember to update README.Debian as well...
 override_dh_auto_configure:
