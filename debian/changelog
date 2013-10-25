@@ -1,3 +1,9 @@
+ekg2 (1:0.4~pre+20120506.1-1) experimental; urgency=low
+
+  * Merge a new upstream snapshot.
+
+ -- Marcin Owsiany <porridge@debian.org>  Fri, 25 Oct 2013 22:03:10 +0200
+
 ekg2 (1:0.4~pre+20110319.3-1) experimental; urgency=low
 
   * Add locking to ekg_debug_handler to fix threading issues.
