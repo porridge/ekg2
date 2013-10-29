@@ -1,3 +1,9 @@
+ekg2 (1:0.4~pre+20120506.1-2) experimental; urgency=low
+
+  * Fix varargs handling to build on arm (Closes: #618716)
+
+ -- Marcin Owsiany <porridge@debian.org>  Tue, 29 Oct 2013 13:17:10 +0100
+
 ekg2 (1:0.4~pre+20120506.1-1) experimental; urgency=low
 
   * Merge a new upstream snapshot.
