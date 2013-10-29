@@ -36,3 +36,4 @@ stamp-h1
 *.swp
 ekg/ekg2
 /tags
+/.pc
