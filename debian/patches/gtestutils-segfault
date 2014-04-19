@@ -1,0 +1,61 @@
+From eb176ad84de984bc260af75645c768b095c7324b Mon Sep 17 00:00:00 2001
+From: Marcin Owsiany <marcin@owsiany.pl>
+Date: Fri, 18 Apr 2014 22:59:09 +0200
+Subject: [PATCH] Fix check_ekg2 segfault.
+
+There are a few interesting things here.
+
+1) When I first saw "char **argv = { NULL }" I thought this initializes
+argv as a pointer to a one-element array holding a null pointer. I
+suspect this was also the intent of the author of this code.
+
+Turns out it's wrong. It actually initializes argv to be just a null
+pointer, and is exactly equivalent to "char **argv = NULL". The curly
+braces only make sense if the type is an array, and are just ignored
+otherwise.
+
+So the first thing was to change argv from char** to char*[] to be able
+to use an array initializer.
+
+2) Since char*[] decays into a char** on assignment, one might think
+that taking argv (which now is a char*[]) and prepending it with & will
+make it decay to a char ***, or at least create a type equivalent to
+that. But it doesn't. "&argv" is of type "char * (*)[]" which is
+(according to http://www.unixwiz.net/techtips/reading-cdecl.html) a
+pointer to an array of pointers to char and (surprise surprise!) causes
+both a warning and a crash if I try to pass it as a char*** argument.
+It's still a bit of a mystery to me, but looking in GDB it looks like
+dereferencing it in g_test_init results in a junk pointer.
+
+3) And finally, recent glib requires the leading element of argv to be
+non-null, and crashes otherwise.
+---
+ plugins/check/check.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/plugins/check/check.c b/plugins/check/check.c
+index b704c0b..57f151e 100644
+--- a/plugins/check/check.c
++++ b/plugins/check/check.c
+@@ -16,14 +16,15 @@ static void simple_errprint(const gchar *out) {
+ }
+ 
+ EXPORT int check_plugin_init(int prio) {
+-	int argc = 0;
+-	char **argv = { NULL };
++	int argc = 1;
++	char *argv[] = { "g_test_init crashes without a string here", NULL };
++	char **argvp = argv;
+ 
+ 	g_set_print_handler(simple_errprint);
+ 	g_set_printerr_handler(simple_errprint);
+ 	g_log_set_default_handler(g_log_default_handler, NULL);
+ 
+-	g_test_init(&argc, &argv, NULL);
++	g_test_init(&argc, &argvp, NULL);
+ 
+ 	add_recode_tests();
+ 	add_static_aborts_tests();
+-- 
+1.9.1.423.g4596e3a
+
